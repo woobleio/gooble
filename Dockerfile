@@ -4,14 +4,14 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 ENV GOROOT /usr/local/go
 
-RUN mkdir -p $GOPATH/src/github.com/wobbleio && chmod -R 777 /go
+RUN mkdir -p $GOPATH/src/wobblapp && chmod -R 777 /go
 
-ADD . $GOPATH/src/github.com/wobbleio
+ADD . $GOPATH/src/wobblapp
 
-RUN cd $GOPATH/src/github.com/wobbleio && go install
+RUN cd $GOPATH/src/wobblapp && go install
 
-ENTRYPOINT $GOPATH/bin/wobbleio
+ENTRYPOINT $GOPATH/bin/wobblapp
 
-WORKDIR $GOPATH/src/github.com/wobbleio
+WORKDIR $GOPATH/src/wobblapp
 
-EXPOSE 8080
+EXPOSE 8000
