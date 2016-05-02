@@ -1,14 +1,15 @@
 package main
 
 import (
+	"os"
 	"net/http"
 )
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("<h1>Hello Docker</h1>"))
+	w.Write([]byte("<h1>y</h1>"))
 }
 
 func main() {
 	http.HandleFunc("/hello", helloHandler)
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":" + os.Getenv("PORT"), nil)
 }

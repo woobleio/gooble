@@ -3,15 +3,18 @@ FROM golang:latest
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 ENV GOROOT /usr/local/go
+ENV PORT 8080
 
 RUN mkdir -p $GOPATH/src/wobblapp && chmod -R 777 /go
 
-ADD . $GOPATH/src/wobblapp
-
-RUN cd $GOPATH/src/wobblapp && go install
-
-ENTRYPOINT $GOPATH/bin/wobblapp
-
 WORKDIR $GOPATH/src/wobblapp
 
-EXPOSE 8000
+COPY . $GOPATH/src/wobblapp
+
+RUN go get github.com/codegangsta/gin
+RUN go-wrapper download
+RUN go-wrapper install
+
+EXPOSE 3000
+
+CMD gin run
