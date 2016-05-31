@@ -1,15 +1,21 @@
 package main
 
-import (
-	"os"
-	"net/http"
-)
-
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("<h1>y</h1>"))
-}
+import "github.com/gin-gonic/gin"
+import ctrl "wobblapp/app/controllers"
 
 func main() {
-	http.HandleFunc("/hello", helloHandler)
-	http.ListenAndServe(":" + os.Getenv("PORT"), nil)
+	router := gin.Default()
+	// MIDDLEWARE
+
+	v1 := router.Group("/v1")
+	{
+		v1.GET("/heartbeat", func(c *gin.Context) {
+			c.JSON(200, gin.H {
+				"message": "Hello world!",
+			})
+		})
+		v1.GET("/dom", ctrl.DomGET)
+	}
+
+	router.Run();
 }
