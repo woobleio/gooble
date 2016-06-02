@@ -11,7 +11,7 @@ func main() {
 	{
 		v1.GET("/heartbeat", func(c *gin.Context) {
 			c.JSON(200, gin.H {
-				"message": "Hello world!",
+				"message": "Hellow world!",
 			})
 		})
 		v1.GET("/dom", ctrl.DomGET)
