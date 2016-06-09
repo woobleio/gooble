@@ -8,6 +8,10 @@ import (
 import ctrl "wobblapp/app/controllers"
 
 func main() {
+	StartGin()
+}
+
+func StartGin() {
 	router := gin.Default()
 	// MIDDLEWARE
 

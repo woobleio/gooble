@@ -5,5 +5,5 @@ import (
 )
 
 func DomGET(c *gin.Context) {
-  c.JSON(200, gin.H{ "message": "DOMI" })
+  c.JSON(200, gin.H{ "message": "DOM" })
 }
