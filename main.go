@@ -1,11 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
 )
 
-import ctrl "wobblapp/app/v1/controllers"
+import (
+	"wobblapp/config"
+	ctrl "wobblapp/app/v1/controllers"
+)
 
 func main() {
 	StartGin()
@@ -13,6 +17,10 @@ func main() {
 
 func StartGin() {
 	router := gin.Default()
+
+	// http://stackoverflow.com/questions/36420863/file-path-in-golang
+	fmt.Printf("%s", config.DBCredentials())
+
 	// MIDDLEWARE
 	v1 := router.Group("/v1")
 	{
