@@ -1,6 +1,10 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"time"
+)
+
 import ctrl "wobblapp/app/controllers"
 
 func main() {
@@ -10,9 +14,7 @@ func main() {
 	v1 := router.Group("/v1")
 	{
 		v1.GET("/heartbeat", func(c *gin.Context) {
-			c.JSON(200, gin.H {
-				"message": "Hellow world!",
-			})
+			c.String(200, "%s", time.Now())
 		})
 		v1.GET("/dom", ctrl.DomGET)
 	}
