@@ -14,6 +14,8 @@ COPY . $GOPATH/src/wobblapp
 RUN go get github.com/codegangsta/gin
 RUN go get github.com/gin-gonic/gin
 RUN go get github.com/smartystreets/goconvey
+RUN go get gopkg.in/mgo.v2
+RUN go get gopkg.in/mgo.v2/bson
 RUN go-wrapper download
 RUN go-wrapper install
 

@@ -14,7 +14,6 @@ func main() {
 func StartGin() {
 	router := gin.Default()
 	// MIDDLEWARE
-
 	v1 := router.Group("/v1")
 	{
 		v1.GET("/heartbeat", func(c *gin.Context) {
