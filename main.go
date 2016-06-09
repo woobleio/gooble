@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-import ctrl "wobblapp/app/controllers"
+import ctrl "wobblapp/app/v1/controllers"
 
 func main() {
 	StartGin()
