@@ -1,5 +1,6 @@
 FROM golang:latest
 
+ENV GOENV dev
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 ENV GOROOT /usr/local/go
@@ -8,7 +9,7 @@ ENV PORT 8080
 RUN mkdir -p $GOPATH/src/wobblapp \
       && chmod -R 777 /go \
       && mkdir $GOPATH/configs \
-      && touch $GOPATH/configs/config.yml
+      && touch $GOPATH/configs/dev.yml
 
 WORKDIR $GOPATH/src/wobblapp
 

@@ -1,23 +1,37 @@
 package main
 
 import (
+	"os"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"gopkg.in/mgo.v2"
 	"time"
 )
 
 import (
 	ctrl "wobblapp/app/v1/controllers"
+	"wobblapp/lib"
 )
 
 func main() {
 	InitConf()
+	InitSession()
 	StartGin()
 }
 
+func InitSession() {
+	var host, dbName, port, username, passwd = viper.GetString("db_host"), viper.GetString("db_name"), viper.GetString("db_port"), viper.GetString("db_username"), viper.GetString("db_password")
+	session, err := mgo.Dial("mongodb://" + username + ":" + passwd + "@" + host + ":" + port + "/" + dbName)
+
+	if err != nil {
+    panic(err)
+  }
+
+	lib.SetSession(session)
+}
+
 func InitConf() {
-	// TODO one conf per env
-	viper.SetConfigName("config")
+	viper.SetConfigName(os.Getenv("GOENV"))
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("/go/configs")
 
