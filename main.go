@@ -22,7 +22,6 @@ func main() {
 func InitSession() {
 	var host, dbName, port, username, passwd = viper.GetString("db_host"), viper.GetString("db_name"), viper.GetString("db_port"), viper.GetString("db_username"), viper.GetString("db_password")
 	session, err := mgo.Dial("mongodb://" + username + ":" + passwd + "@" + host + ":" + port + "/" + dbName)
-
 	if err != nil {
     panic(err)
   }
@@ -33,10 +32,9 @@ func InitSession() {
 func InitConf() {
 	viper.SetConfigName(os.Getenv("GOENV"))
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/go/configs")
+	viper.AddConfigPath(os.Getenv("CONFPATH"))
 
 	errViper := viper.ReadInConfig()
-
 	if errViper != nil {
 		panic(errViper)
 	}

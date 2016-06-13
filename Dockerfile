@@ -5,11 +5,12 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 ENV GOROOT /usr/local/go
 ENV PORT 8080
+ENV CONFPATH $GOPATH/configs
 
 RUN mkdir -p $GOPATH/src/wobblapp \
       && chmod -R 777 /go \
-      && mkdir $GOPATH/configs \
-      && touch $GOPATH/configs/dev.yml
+      && mkdir $CONFPATH \
+      && touch $CONFPATH/dev.yml
 
 WORKDIR $GOPATH/src/wobblapp
 
