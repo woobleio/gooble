@@ -5,8 +5,13 @@ import (
   "wobblapp/lib"
   m "wobblapp/app/v1/models"
   "github.com/gin-gonic/gin"
+  "gopkg.in/mgo.v2"
   "gopkg.in/mgo.v2/bson"
 )
+
+func GetCreationC(s *mgo.Session) *mgo.Collection {
+  return s.DB("").C("Creation")
+}
 
 func CreationPOST(c *gin.Context) {
   title := c.PostForm("title") // TODO should not be empty
@@ -15,10 +20,10 @@ func CreationPOST(c *gin.Context) {
   style := c.DefaultPostForm("style", "")
 
   s := lib.GetSession()
-  creationC := s.DB("").C("Creation")
-  domC := s.DB("").C("DOM")
-  scriptC := s.DB("").C("Script")
-  styleC := s.DB("").C("Style")
+  creationC := GetCreationC(s)
+  domC := GetDomC(s)
+  scriptC := GetScriptC(s)
+  styleC := GetStyleC(s)
   defer s.Close()
 
   domID := bson.NewObjectId()
@@ -37,12 +42,12 @@ func CreationPOST(c *gin.Context) {
 }
 
 func CreationGET(c *gin.Context) {
-  // TODO populate function in lib & refactor Collections 
+  // TODO populate function in lib & refactor Collections
   s := lib.GetSession()
-  creationC := s.DB("").C("Creation")
-  domC := s.DB("").C("DOM")
-  scriptC := s.DB("").C("Script")
-  styleC := s.DB("").C("Style")
+  creationC := GetCreationC(s)
+  domC := GetDomC(s)
+  scriptC := GetScriptC(s)
+  styleC := GetStyleC(s)
   defer s.Close()
 
   title := c.Query("title")
