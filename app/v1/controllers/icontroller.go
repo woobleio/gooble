@@ -12,16 +12,22 @@ type Controller interface {
   Save(*mgo.Session)
   FindOne(*mgo.Session, bson.ObjectId)
   FindOneWithKey(*mgo.Session, string)
+  ValidateAndSet(*gin.Context)
 }
 
 /**
- * Handle all controllers errors
+ * Handle all requests errors
  */
 func RequestErrorHandler(c *gin.Context) {
   if err := recover(); err != nil {
-    // TODO should get the message
     c.JSON(http.StatusBadRequest, gin.H{
-      "error": err,
+      "message": err,
     })
   }
+}
+
+func RequestSuccessHandler(c *gin.Context, message string) {
+  c.JSON(http.StatusOK, gin.H{
+    "message": message,
+  })
 }

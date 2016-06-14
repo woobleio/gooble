@@ -6,28 +6,25 @@ import (
   "gopkg.in/mgo.v2/bson"
 )
 
-const SCRIPT_C = "Script"
+const SCRIPT_C = "scripts"
 
 type ScriptCtrl struct {
   Id bson.ObjectId
-  Form *m.Script
+  Model *m.Script
 }
 
-func (ctrl *ScriptCtrl) Create(s *mgo.Session) {
-  ctrl.Id = bson.NewObjectId()
+func (this *ScriptCtrl) Create(s *mgo.Session) {
+  this.Id = bson.NewObjectId()
 }
 
-func (ctrl *ScriptCtrl) Save(s *mgo.Session) {
-  err := s.DB("").C(SCRIPT_C).Insert(ctrl.Form)
+func (this *ScriptCtrl) Save(s *mgo.Session) {
+  err := s.DB("").C(SCRIPT_C).Insert(this.Model)
   if err != nil {
     panic("Script failed to be saved")
   }
 }
 
-func (ctrl *ScriptCtrl) FindOne(s *mgo.Session, o bson.ObjectId) {
-  ctrl.Form = &m.Script{}
-  err := s.DB("").C(SCRIPT_C).FindId(o).One(&ctrl.Form)
-  if err != nil {
-    panic("Script not found")
-  }
+func (this *ScriptCtrl) FindOne(s *mgo.Session, o bson.ObjectId) {
+  this.Model = &m.Script{}
+  s.DB("").C(SCRIPT_C).FindId(o).One(&this.Model)
 }

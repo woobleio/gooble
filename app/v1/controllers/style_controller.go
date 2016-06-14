@@ -6,28 +6,25 @@ import (
   "gopkg.in/mgo.v2/bson"
 )
 
-const STYLE_C = "Style"
+const STYLE_C = "styles"
 
 type StyleCtrl struct {
   Id bson.ObjectId
-  Form *m.Style
+  Model *m.Style
 }
 
-func (ctrl *StyleCtrl) Create(s *mgo.Session) {
-  ctrl.Id = bson.NewObjectId()
+func (this *StyleCtrl) Create(s *mgo.Session) {
+  this.Id = bson.NewObjectId()
 }
 
-func (ctrl *StyleCtrl) Save(s *mgo.Session) {
-  err := s.DB("").C(STYLE_C).Insert(ctrl.Form)
+func (this *StyleCtrl) Save(s *mgo.Session) {
+  err := s.DB("").C(STYLE_C).Insert(this.Model)
   if err != nil {
     panic("Stylesheet failed to be save")
   }
 }
 
-func (ctrl *StyleCtrl) FindOne(s *mgo.Session, o bson.ObjectId) {
-  ctrl.Form = &m.Style{}
-  err := s.DB("").C(STYLE_C).FindId(o).One(&ctrl.Form)
-  if err != nil {
-    panic("Stylesheet not found")
-  }
+func (this *StyleCtrl) FindOne(s *mgo.Session, o bson.ObjectId) {
+  this.Model = &m.Style{}
+  s.DB("").C(STYLE_C).FindId(o).One(&this.Model)
 }
