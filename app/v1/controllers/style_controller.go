@@ -20,11 +20,14 @@ func (ctrl *StyleCtrl) Create(s *mgo.Session) {
 func (ctrl *StyleCtrl) Save(s *mgo.Session) {
   err := s.DB("").C(STYLE_C).Insert(ctrl.Form)
   if err != nil {
-    panic(err)
+    panic("Stylesheet failed to be save")
   }
 }
 
 func (ctrl *StyleCtrl) FindOne(s *mgo.Session, o bson.ObjectId) {
   ctrl.Form = &m.Style{}
-  s.DB("").C(STYLE_C).FindId(o).One(&ctrl.Form)
+  err := s.DB("").C(STYLE_C).FindId(o).One(&ctrl.Form)
+  if err != nil {
+    panic("Stylesheet not found")
+  }
 }

@@ -20,11 +20,14 @@ func (ctrl *DomCtrl) Create(s *mgo.Session) {
 func (ctrl *DomCtrl) Save(s *mgo.Session) {
   err := s.DB("").C(DOM_C).Insert(ctrl.Form)
   if err != nil {
-    panic(err)
+    panic("HTML document failed to be saved")
   }
 }
 
 func (ctrl *DomCtrl) FindOne(s *mgo.Session, o bson.ObjectId) {
   ctrl.Form = &m.DOM{}
-  s.DB("").C(DOM_C).FindId(o).One(&ctrl.Form)
+  err := s.DB("").C(DOM_C).FindId(o).One(&ctrl.Form)
+  if err != nil {
+    panic("HTML document not found")
+  }
 }

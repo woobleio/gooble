@@ -17,16 +17,21 @@ type CreationCtrl struct {
 func (ctrl *CreationCtrl) Save(s *mgo.Session) {
   err := s.DB("").C(CREA_C).Insert(ctrl.Form)
   if err != nil {
-    panic(err)
+    panic("Creation " + ctrl.Form.Title + " failed to be installed")
   }
 }
 
 func (ctrl *CreationCtrl) FindOneWithKey(s *mgo.Session, k string) {
   ctrl.Form = &m.Creation{}
-  s.DB("").C(CREA_C).FindId(k).One(&ctrl.Form)
+  err := s.DB("").C(CREA_C).FindId(k).One(&ctrl.Form)
+  if err != nil {
+    panic("Creation " + k + " not found")
+  }
 }
 
 func CreationPOST(c *gin.Context) {
+  defer RequestErrorHandler(c)
+
   title := c.PostForm("title") // TODO field verification & error
   dom := c.PostForm("dom") // TODO should not be empty
   script := c.DefaultPostForm("script", "")
@@ -64,6 +69,8 @@ func CreationPOST(c *gin.Context) {
 }
 
 func CreationGET(c *gin.Context) {
+  defer RequestErrorHandler(c)
+
   // TODO populate function in lib & refactor Collections
   s := lib.GetSession()
   defer s.Close()

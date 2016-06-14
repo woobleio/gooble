@@ -20,11 +20,14 @@ func (ctrl *ScriptCtrl) Create(s *mgo.Session) {
 func (ctrl *ScriptCtrl) Save(s *mgo.Session) {
   err := s.DB("").C(SCRIPT_C).Insert(ctrl.Form)
   if err != nil {
-    panic(err)
+    panic("Script failed to be saved")
   }
 }
 
 func (ctrl *ScriptCtrl) FindOne(s *mgo.Session, o bson.ObjectId) {
   ctrl.Form = &m.Script{}
-  s.DB("").C(SCRIPT_C).FindId(o).One(&ctrl.Form)
+  err := s.DB("").C(SCRIPT_C).FindId(o).One(&ctrl.Form)
+  if err != nil {
+    panic("Script not found")
+  }
 }
