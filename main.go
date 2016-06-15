@@ -49,7 +49,7 @@ func StartGin() {
 		v1.GET("/heartbeat", func(c *gin.Context) {
 			c.String(200, "%s", time.Now())
 		})
-		v1.GET("/creation", ctrl.CreationGET)
+		v1.GET("/creation/:title", ctrl.CreationGET)
 		v1.POST("/creation", ctrl.CreationPOST)
 	}
 

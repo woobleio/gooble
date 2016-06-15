@@ -5,10 +5,7 @@ import (
   "wobblapp/lib"
   m "wobblapp/app/v1/models"
   "github.com/gin-gonic/gin"
-  "gopkg.in/mgo.v2"
 )
-
-const CREA_C = "creations"
 
 type CreationForm struct {
   Title string `json:"title" binding:"required"`
@@ -17,75 +14,47 @@ type CreationForm struct {
   Script string `json:"script"`
 }
 
-type CreationCtrl struct {
-  Form *CreationForm
-  Model *m.Creation
-}
-
-func (this *CreationCtrl) Save(s *mgo.Session) {
-  if err := s.DB("").C(CREA_C).Insert(&this.Model); err != nil {
-    // TODO be more specific for the error
-    panic("Creation '" + this.Model.Title + "' failed to be saved")
-  }
-}
-
-func (this *CreationCtrl) FindOneWithKey(s *mgo.Session, k string) {
-  this.Model = &m.Creation{}
-  err := s.DB("").C(CREA_C).FindId(k).One(&this.Model)
-  if err != nil {
-    panic("Creation '" + k + "' not found")
-  }
-}
-
-func (this *CreationCtrl) ValidateAndSet(c *gin.Context) {
-  var form CreationForm
-  if err := c.BindJSON(&form); err != nil {
-    panic("Can't validate data, either dom or title is missing")
-  }
-  this.Form = &form
-}
-
 func CreationPOST(c *gin.Context) {
   defer RequestErrorHandler(c)
 
   s := lib.GetSession()
   defer s.Close()
 
-  this := new(CreationCtrl)
-  domCtrl := new(DomCtrl)
-  scriptCtrl := new(ScriptCtrl)
-  styleCtrl := new(StyleCtrl)
+  dom := new(m.Dom)
+  script := new(m.Script)
+  style := new(m.Style)
 
-  this.ValidateAndSet(c)
-  form := this.Form
+  var form CreationForm
+  if err := c.BindJSON(&form); err != nil {
+    panic("Can't validate data, either dom or title is missing")
+  }
 
-  // Create obj ; Populate ; Push TODO better populate
-  domCtrl.Create(s)
-  domCtrl.Model = &m.DOM{ID: domCtrl.Id, Dom: form.Dom}
-  domCtrl.Save(s)
+  dom.Create(s)
+  dom = &m.Dom{Id: dom.Id, Dom: form.Dom}
+  dom.Save(s)
 
   if form.Script != "" {
-    scriptCtrl.Create(s)
-    scriptCtrl.Model = &m.Script{ID: scriptCtrl.Id, Script: form.Script}
-    scriptCtrl.Save(s)
+    script.Create(s)
+    script = &m.Script{Id: script.Id, Script: form.Script}
+    script.Save(s)
   }
 
   if form.Style != "" {
-    styleCtrl.Create(s)
-    styleCtrl.Model = &m.Style{ID: styleCtrl.Id, Style: form.Style}
-    styleCtrl.Save(s)
+    style.Create(s)
+    style = &m.Style{Id: style.Id, Style: form.Style}
+    style.Save(s)
   }
 
-  this.Model = &m.Creation{
+  creation := &m.Creation{
     Title: form.Title,
-    Dom: domCtrl.Id,
-    Style: styleCtrl.Id,
-    Script: scriptCtrl.Id,
+    Dom: dom.Id,
+    Style: style.Id,
+    Script: script.Id,
   }
 
-  this.Save(s)
+  creation.Save(s)
 
-  RequestSuccessHandler(c, "Creation '" + this.Model.Title + "' successfuly created")
+  RequestSuccessHandler(c, "Creation '" + creation.Title + "' successfuly created")
 }
 
 func CreationGET(c *gin.Context) {
@@ -94,24 +63,24 @@ func CreationGET(c *gin.Context) {
   s := lib.GetSession()
   defer s.Close()
 
-  this := new(CreationCtrl)
-  domCtrl := new(DomCtrl)
-  scriptCtrl := new(ScriptCtrl)
-  styleCtrl := new(StyleCtrl)
+  creation := new(m.Creation)
+  dom := new(m.Dom)
+  script := new(m.Script)
+  style := new(m.Style)
 
-  title := c.Query("title")
+  title := c.Param("title")
 
   // TODO better error handling (think to validate instead of panicing error when not found)
-  this.FindOneWithKey(s, title)
-  domCtrl.FindOne(s, this.Model.Dom)
-  scriptCtrl.FindOne(s, this.Model.Script)
-  styleCtrl.FindOne(s, this.Model.Style)
+  creation.FindOneWithKey(s, title)
+  dom.FindOne(s, creation.Dom)
+  script.FindOne(s, creation.Script)
+  style.FindOne(s, creation.Style)
 
   json := &CreationForm{
-    this.Model.Title,
-    domCtrl.Model.Dom,
-    scriptCtrl.Model.Script,
-    styleCtrl.Model.Style,
+    creation.Title,
+    dom.Dom,
+    script.Script,
+    style.Style,
   }
 
   c.JSON(http.StatusOK, json)
