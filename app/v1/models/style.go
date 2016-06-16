@@ -15,12 +15,11 @@ func (this *Style) Create(s *mgo.Session) {
 }
 
 func (this *Style) Save(s *mgo.Session) {
-  err := s.DB("").C(STYLE_C).Insert(this)
-  if err != nil {
+  if err := s.DB("").C(STYLE_C).Insert(this); err != nil {
     panic("Stylesheet failed to be save")
   }
 }
 
-func (this *Style) FindOne(s *mgo.Session, o bson.ObjectId) {
-  s.DB("").C(STYLE_C).FindId(o).One(&this)
+func (this *Style) Populate(s *mgo.Session) {
+  s.DB("").C(STYLE_C).FindId(this.Id).One(&this)
 }

@@ -20,41 +20,38 @@ func CreationPOST(c *gin.Context) {
   s := lib.GetSession()
   defer s.Close()
 
-  dom := new(m.Dom)
-  script := new(m.Script)
-  style := new(m.Style)
-
   var form CreationForm
   if err := c.BindJSON(&form); err != nil {
     panic("Can't validate data, either dom or title is missing")
   }
 
+  var dom m.Model = &m.Dom{Dom: form.Dom}
+  var script m.Model = &m.Script{Script: form.Script}
+  var style m.Model = &m.Style{Style: form.Style}
+
   dom.Create(s)
-  dom = &m.Dom{Id: dom.Id, Dom: form.Dom}
   dom.Save(s)
 
   if form.Script != "" {
     script.Create(s)
-    script = &m.Script{Id: script.Id, Script: form.Script}
     script.Save(s)
   }
 
   if form.Style != "" {
     style.Create(s)
-    style = &m.Style{Id: style.Id, Style: form.Style}
     style.Save(s)
   }
 
-  creation := &m.Creation{
+  var creation m.Model = &m.Creation{
     Title: form.Title,
-    Dom: dom.Id,
-    Style: style.Id,
-    Script: script.Id,
+    Dom: dom.(*m.Dom).Id,
+    Style: style.(*m.Style).Id,
+    Script: script.(*m.Script).Id,
   }
 
   creation.Save(s)
 
-  RequestSuccessHandler(c, "Creation '" + creation.Title + "' successfuly created")
+  RequestSuccessHandler(c, "Creation '" + form.Title + "' successfuly created")
 }
 
 func CreationGET(c *gin.Context) {
@@ -63,24 +60,28 @@ func CreationGET(c *gin.Context) {
   s := lib.GetSession()
   defer s.Close()
 
-  creation := new(m.Creation)
-  dom := new(m.Dom)
-  script := new(m.Script)
-  style := new(m.Style)
-
   title := c.Param("title")
 
-  // TODO better error handling (think to validate instead of panicing error when not found)
-  creation.FindOneWithKey(s, title)
-  dom.FindOne(s, creation.Dom)
-  script.FindOne(s, creation.Script)
-  style.FindOne(s, creation.Style)
+  var creation m.Model = &m.Creation{Title: title}
+  creation.Populate(s)
+
+  var dom m.Model = &m.Dom{Id: creation.(*m.Creation).Dom}
+  var script m.Model = &m.Script{Id: creation.(*m.Creation).Script}
+  var style m.Model = &m.Style{Id: creation.(*m.Creation).Style}
+
+  dom.Populate(s)
+  script.Populate(s)
+  style.Populate(s)
 
   json := &CreationForm{
-    creation.Title,
-    dom.Dom,
-    script.Script,
-    style.Style,
+    creation.(*m.Creation).Title,
+    dom.(*m.Dom).Dom,
+    script.(*m.Script).Script,
+    style.(*m.Style).Style,
+  }
+
+  if json.Title == "" || json.Dom == "" {
+    panic("Creation " + creation.(*m.Creation).Title + " not found or dom is empty")
   }
 
   c.JSON(http.StatusOK, json)

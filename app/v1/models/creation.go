@@ -6,10 +6,11 @@ import (
 )
 
 type Creation struct {
+  Id bson.ObjectId `bson:",omitempty"`
   Title string `bson:"_id"`
   Dom bson.ObjectId `json:"dom"`
-  Style bson.ObjectId `bson:",omitempty" json:"style"`
-  Script bson.ObjectId `bson:",omitempty" json:"script"`
+  Style bson.ObjectId `bson:",omitempty"`
+  Script bson.ObjectId `bson:",omitempty"`
 }
 
 func (this *Creation) Save(s *mgo.Session) {
@@ -19,9 +20,12 @@ func (this *Creation) Save(s *mgo.Session) {
   }
 }
 
-func (this *Creation) FindOneWithKey(s *mgo.Session, k string) {
-  err := s.DB("").C(CREA_C).FindId(k).One(&this)
-  if err != nil {
-    panic("Creation '" + k + "' not found")
+func (this *Creation) Populate(s *mgo.Session) {
+  if err := s.DB("").C(CREA_C).FindId(this.Title).One(&this); err != nil {
+    panic("Creation '" + this.Title + "' not found")
   }
+}
+
+func (this *Creation) Create(s *mgo.Session) {
+  this.Id = bson.NewObjectId()
 }

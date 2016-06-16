@@ -15,12 +15,11 @@ func (this *Script) Create(s *mgo.Session) {
 }
 
 func (this *Script) Save(s *mgo.Session) {
-  err := s.DB("").C(SCRIPT_C).Insert(this)
-  if err != nil {
+  if err := s.DB("").C(SCRIPT_C).Insert(this); err != nil {
     panic("Script failed to be saved")
   }
 }
 
-func (this *Script) FindOne(s *mgo.Session, o bson.ObjectId) {
-  s.DB("").C(SCRIPT_C).FindId(o).One(&this)
+func (this *Script) Populate(s *mgo.Session) {
+  s.DB("").C(SCRIPT_C).FindId(this.Id).One(&this)
 }

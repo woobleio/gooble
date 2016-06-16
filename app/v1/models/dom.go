@@ -20,15 +20,11 @@ func (this *Dom) Create(s *mgo.Session) {
 }
 
 func (this *Dom) Save(s *mgo.Session) {
-  err := s.DB("").C(DOM_C).Insert(this)
-  if err != nil {
+  if err := s.DB("").C(DOM_C).Insert(this); err != nil {
     panic("HTML document failed to be saved")
   }
 }
 
-func (this *Dom) FindOne(s *mgo.Session, o bson.ObjectId) {
-  err := s.DB("").C(DOM_C).FindId(o).One(&this)
-  if err != nil {
-    panic("HTML document not found")
-  }
+func (this *Dom) Populate(s *mgo.Session) {
+  s.DB("").C(DOM_C).FindId(this.Id).One(&this)
 }
