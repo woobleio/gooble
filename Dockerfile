@@ -10,7 +10,23 @@ ENV CONFPATH $GOPATH/configs
 RUN mkdir -p $GOPATH/src/wobblapp \
       && chmod -R 777 /go \
       && mkdir $CONFPATH \
-      && touch $CONFPATH/dev.yml
+      && touch $CONFPATH/dev.yml \
+      && touch $CONFPATH/test.yml
+
+#
+# SET DATABASE CONF
+#
+RUN echo "db_host: wobbleservice_wobbledb_1" >> $CONFPATH/dev.yml \
+      && echo "db_name: wobbleapp" >> $CONFPATH/dev.yml \
+      && echo "db_port:" >> $CONFPATH/dev.yml \
+      && echo "db_username:" >> $CONFPATH/dev.yml \
+      && echo "db_password:" >> $CONFPATH/dev.yml
+
+RUN echo "db_host: wobbleservice_wobbledb_1" >> $CONFPATH/test.yml \
+      && echo "db_name: wobbleapp_test" >> $CONFPATH/test.yml \
+      && echo "db_port:" >> $CONFPATH/test.yml \
+      && echo "db_username:" >> $CONFPATH/test.yml \
+      && echo "db_password:" >> $CONFPATH/test.yml
 
 WORKDIR $GOPATH/src/wobblapp
 
