@@ -1,12 +1,25 @@
 package tests
 
 import (
+  "os"
+  "github.com/spf13/viper"
   "testing"
   "github.com/gin-gonic/gin"
   . "github.com/smartystreets/goconvey/convey"
   "net/http"
   "net/http/httptest"
 )
+
+func init() {
+  viper.SetConfigName("test")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(os.Getenv("CONFPATH"))
+
+	errViper := viper.ReadInConfig()
+	if errViper != nil {
+		panic(errViper)
+	}
+}
 
 func TestMain(t *testing.T) {
   router := gin.New()
