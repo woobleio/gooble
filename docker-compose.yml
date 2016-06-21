@@ -3,7 +3,7 @@ gowobble:
   ports:
     - "3000:3000"
   volumes:
-    - /var/wobble:/go/src/wobblapp
+    - $PWD:/go/src/wobblapp
   links:
     - wobbledb
 
