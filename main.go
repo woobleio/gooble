@@ -21,8 +21,20 @@ func main() {
 
 func InitSession() {
 	var host, dbName, port, username, passwd = viper.GetString("db_host"), viper.GetString("db_name"), viper.GetString("db_port"), viper.GetString("db_username"), viper.GetString("db_password")
-	session, err := mgo.Dial("mongodb://" + username + ":" + passwd + "@" + host + ":" + port + "/" + dbName)
-
+	var dbUrl = "mongodb://"
+	switch {
+	case username != "":
+		dbUrl += username
+		dbUrl += ":" + passwd + "@"
+	case host != "":
+		dbUrl += host
+	case port != "":
+		dbUrl += ":" + port
+	case dbName != "":
+		dbUrl += "/" + dbName
+		break
+	}
+	session, err := mgo.Dial(dbUrl)
 	if err != nil {
     panic(err)
   }
@@ -33,10 +45,9 @@ func InitSession() {
 func InitConf() {
 	viper.SetConfigName(os.Getenv("GOENV"))
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/go/configs")
+	viper.AddConfigPath(os.Getenv("CONFPATH"))
 
 	errViper := viper.ReadInConfig()
-
 	if errViper != nil {
 		panic(errViper)
 	}
@@ -51,7 +62,8 @@ func StartGin() {
 		v1.GET("/heartbeat", func(c *gin.Context) {
 			c.String(200, "%s", time.Now())
 		})
-		v1.GET("/dom", ctrl.DomGET)
+		v1.GET("/creation/:title", ctrl.CreationGET)
+		v1.POST("/creation", ctrl.CreationPOST)
 	}
 
 	router.Run();
