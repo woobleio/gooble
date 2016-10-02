@@ -9,8 +9,8 @@ import (
 )
 
 import (
-	ctrl "wobblapp/app/v1/controllers"
-	"wobblapp/lib"
+	ctrl "wooblapp/app/v1/controllers"
+	"wooblapp/lib"
 )
 
 func main() {
@@ -20,20 +20,28 @@ func main() {
 }
 
 func InitSession() {
-	var host, dbName, port, username, passwd = viper.GetString("db_host"), viper.GetString("db_name"), viper.GetString("db_port"), viper.GetString("db_username"), viper.GetString("db_password")
+	var host, dbName, port, username, passwd =
+		viper.GetString("db_host"),
+		viper.GetString("db_name"),
+		viper.GetString("db_port"),
+		viper.GetString("db_username"),
+		viper.GetString("db_password")
+
 	var dbUrl = "mongodb://"
+
 	switch {
-	case username != "":
-		dbUrl += username
-		dbUrl += ":" + passwd + "@"
-	case host != "":
-		dbUrl += host
-	case port != "":
-		dbUrl += ":" + port
-	case dbName != "":
-		dbUrl += "/" + dbName
-		break
+		case username != "":
+			dbUrl += username
+			dbUrl += ":" + passwd + "@"
+		case host != "":
+			dbUrl += host
+		case port != "":
+			dbUrl += ":" + port
+		case dbName != "":
+			dbUrl += "/" + dbName
+			break
 	}
+
 	session, err := mgo.Dial(dbUrl)
 	if err != nil {
     panic(err)

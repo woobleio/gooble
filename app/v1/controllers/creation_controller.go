@@ -2,8 +2,8 @@ package controllers
 
 import (
   "net/http"
-  "wobblapp/lib"
-  m "wobblapp/app/v1/models"
+  "wooblapp/lib"
+  m "wooblapp/app/v1/models"
   "github.com/gin-gonic/gin"
 )
 

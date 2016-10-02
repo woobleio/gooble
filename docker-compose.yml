@@ -1,12 +1,12 @@
-gowobble:
+gowooble:
   build: .
   ports:
     - "3000:3000"
   volumes:
-    - $PWD:/go/src/wobblapp
+    - $PWD:/go/src/wooblapp
   links:
-    - wobbledb
+    - woobledb
 
-wobbledb:
+woobledb:
   image: mongo:3.0
   command: mongod --smallfiles --quiet --logpath=/dev/null
