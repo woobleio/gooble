@@ -4,22 +4,31 @@ import (
 	"os"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"gopkg.in/mgo.v2"
 	"time"
 )
 
 import (
-	ctrl "wooblapp/app/v1/controllers"
 	"wooblapp/lib"
 )
 
 func main() {
-	InitConf()
-	InitSession()
-	StartGin()
+	initConf()
+	initDB()
+	startApp()
 }
 
-func InitSession() {
+func initConf() {
+	viper.SetConfigName(os.Getenv("GOENV"))
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(os.Getenv("CONFPATH"))
+
+	errViper := viper.ReadInConfig()
+	if errViper != nil {
+		panic(errViper)
+	}
+}
+
+func initDB() {
 	var host, dbName, port, username, passwd =
 		viper.GetString("db_host"),
 		viper.GetString("db_name"),
@@ -27,7 +36,7 @@ func InitSession() {
 		viper.GetString("db_username"),
 		viper.GetString("db_password")
 
-	var dbUrl = "mongodb://"
+	var dbUrl = "postgres://"
 
 	switch {
 		case username != "":
@@ -42,26 +51,10 @@ func InitSession() {
 			break
 	}
 
-	session, err := mgo.Dial(dbUrl)
-	if err != nil {
-    panic(err)
-  }
-
-	lib.SetSession(session)
+	lib.InitDB(dbUrl)
 }
 
-func InitConf() {
-	viper.SetConfigName(os.Getenv("GOENV"))
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(os.Getenv("CONFPATH"))
-
-	errViper := viper.ReadInConfig()
-	if errViper != nil {
-		panic(errViper)
-	}
-}
-
-func StartGin() {
+func startApp() {
 	router := gin.Default()
 
 	// MIDDLEWARE
@@ -70,8 +63,8 @@ func StartGin() {
 		v1.GET("/heartbeat", func(c *gin.Context) {
 			c.String(200, "%s", time.Now())
 		})
-		v1.GET("/creation/:title", ctrl.CreationGET)
-		v1.POST("/creation", ctrl.CreationPOST)
+		//v1.GET("/creation/:title", ctrl.CreationGET)
+		//v1.POST("/creation", ctrl.CreationPOST)
 	}
 
 	router.Run();
