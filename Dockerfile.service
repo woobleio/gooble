@@ -17,16 +17,15 @@ RUN mkdir -p $GOPATH/src/wooblapp \
 # SET DATABASE CONF
 #
 RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/dev.yml \
-      && echo "db_name: wooblapp" >> $CONFPATH/dev.yml \
-      && echo "db_port:" >> $CONFPATH/dev.yml \
-      && echo "db_username:" >> $CONFPATH/dev.yml \
-      && echo "db_password:" >> $CONFPATH/dev.yml
+      && echo "db_name: wooble" >> $CONFPATH/dev.yml \
+      && echo "db_port: 5432" >> $CONFPATH/dev.yml \
+      && echo "db_username: wooble" >> $CONFPATH/dev.yml \
+      && echo "db_password: w00b" >> $CONFPATH/dev.yml
 
 RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/test.yml \
-      && echo "db_name: wooblapp_test" >> $CONFPATH/test.yml \
-      && echo "db_port:" >> $CONFPATH/test.yml \
-      && echo "db_username:" >> $CONFPATH/test.yml \
-      && echo "db_password:" >> $CONFPATH/test.yml
+      && echo "db_name: wooble_test" >> $CONFPATH/test.yml \
+      && echo "db_port: 5432" >> $CONFPATH/test.yml \
+      && echo "db_username: user_test" >> $CONFPATH/test.yml
 
 WORKDIR $GOPATH/src/wooblapp
 
@@ -34,11 +33,11 @@ COPY . $GOPATH/src/wooblapp
 
 RUN go get github.com/codegangsta/gin
 RUN go get github.com/gin-gonic/gin
+RUN go get github.com/jmoiron/sqlx
+RUN go get github.com/lib/pq
 RUN go get github.com/smartystreets/goconvey
 RUN go get github.com/spf13/viper
-RUN go get gopkg.in/mgo.v2
-RUN go get gopkg.in/mgo.v2/bson
-RUN go get -u github.com/gopherjs/gopherjs
+
 RUN go-wrapper download
 RUN go-wrapper install
 

@@ -1,4 +1,4 @@
-# Wobble Backend
+# Wooble Service
 AYY LMAO!
 
 ## Installation
@@ -7,13 +7,10 @@ AYY LMAO!
 docker-compose build && docker-compose up -d
 ```
 ## Configuration
-
 ```
-docker exec -it wobbleservice_gowobble_1 /bin/bash
+docker exec -it woobleservice_gowooble_1 /bin/bash
 cd $CONFPATH
+
+#dev.yml for dev environment
+#test.yml for tests
 ```
-`dev.yml`: dev environment
-
-`test.yml`: for integration tests
-
-_Let non-needed fields empty_

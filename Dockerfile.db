@@ -1,0 +1,6 @@
+FROM postgres:9.5
+
+ENV POSTGRES_USER wooble
+ENV POSTGRES_PASSWORD w00b
+
+ADD ./lib/init_db.sh /docker-entrypoint-initdb.d/
