@@ -1,18 +1,12 @@
 package lib
 
-import "gopkg.in/mgo.v2"
+import (
+  _ "github.com/lib/pq"
+  "github.com/jmoiron/sqlx"
+)
 
-var session *mgo.Session
+var DB *sqlx.DB
 
-func GetSession() *mgo.Session {
-  return session.Copy()
-}
-
-/**
- * Singleton
- */
-func SetSession(s *mgo.Session) {
-  if session == nil {
-    session = s
-  }
+func InitDB(url string) {
+  DB = sqlx.MustOpen("postgres", url)
 }

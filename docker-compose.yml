@@ -1,5 +1,6 @@
 gowooble:
   build: .
+  dockerfile: Dockerfile.service
   ports:
     - "3000:3000"
   volumes:
@@ -8,5 +9,7 @@ gowooble:
     - woobledb
 
 woobledb:
-  image: mongo:3.0
-  command: mongod --smallfiles --quiet --logpath=/dev/null
+  build: .
+  dockerfile: Dockerfile.db
+  ports:
+    - "5432:5432"
