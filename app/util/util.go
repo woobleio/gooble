@@ -44,11 +44,13 @@ func ParseOptions(c *gin.Context) (Option) {
 
   limit, errLimit := strconv.ParseInt(pLimit, 10, 64)
   if errLimit != nil {
+    limit = 0
     fmt.Errorf("Option limit(%s) is invalid, error : %s", pLimit, errLimit)
   }
 
   offset, errOffset := strconv.ParseInt(pOffset, 10, 64)
   if errOffset != nil {
+    offset = 0
     fmt.Errorf("Option offset(%s) is invalid, error : %s", pOffset, errOffset)
   }
 
