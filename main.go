@@ -2,13 +2,12 @@ package main
 
 import (
 	"os"
+	"time"
+	"wooblapp/app"
+	"wooblapp/lib"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"time"
-)
-
-import (
-	"wooblapp/lib"
 )
 
 func main() {
@@ -42,14 +41,17 @@ func initDB() {
 		case username != "":
 			dbUrl += username
 			dbUrl += ":" + passwd + "@"
+			fallthrough
 		case host != "":
 			dbUrl += host
+			fallthrough
 		case port != "":
 			dbUrl += ":" + port
+			fallthrough
 		case dbName != "":
 			dbUrl += "/" + dbName
-			break
 	}
+	dbUrl += "?sslmode=disable"
 
 	lib.InitDB(dbUrl)
 }
@@ -63,7 +65,7 @@ func startApp() {
 		v1.GET("/heartbeat", func(c *gin.Context) {
 			c.String(200, "%s", time.Now())
 		})
-		//v1.GET("/creation/:title", ctrl.CreationGET)
+		v1.GET("/creation/:title", app.GETCreation)
 		//v1.POST("/creation", ctrl.CreationPOST)
 	}
 
