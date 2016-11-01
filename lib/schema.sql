@@ -136,10 +136,10 @@ ALTER SEQUENCE source_id_seq OWNED BY source.id;
 
 --
 -- TOC entry 182 (class 1259 OID 16390)
--- Name: APP_USER; Type: TABLE; Schema: public; Owner: wooble
+-- Name: user; Type: TABLE; Schema: public; Owner: wooble
 --
 
-CREATE TABLE "APP_USER" (
+CREATE TABLE "user" (
     id integer NOT NULL,
     name character(14) NOT NULL,
     email text NOT NULL,
@@ -150,7 +150,7 @@ CREATE TABLE "APP_USER" (
 );
 
 
-ALTER TABLE "APP_USER" OWNER TO wooble;
+ALTER TABLE "user" OWNER TO wooble;
 
 --
 -- TOC entry 181 (class 1259 OID 16388)
