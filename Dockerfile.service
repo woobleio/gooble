@@ -16,13 +16,13 @@ RUN mkdir -p $GOPATH/src/wooblapp \
 #
 # SET DATABASE CONF
 #
-RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/dev.yml \
+RUN echo "db_host: localhost" >> $CONFPATH/dev.yml \
       && echo "db_name: wooble" >> $CONFPATH/dev.yml \
       && echo "db_port: 5432" >> $CONFPATH/dev.yml \
       && echo "db_username: wooble" >> $CONFPATH/dev.yml \
       && echo "db_password: w00b" >> $CONFPATH/dev.yml
 
-RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/test.yml \
+RUN echo "db_host: localhost" >> $CONFPATH/test.yml \
       && echo "db_name: wooble_test" >> $CONFPATH/test.yml \
       && echo "db_port: 5432" >> $CONFPATH/test.yml \
       && echo "db_username: user_test" >> $CONFPATH/test.yml
