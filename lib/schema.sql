@@ -62,7 +62,7 @@ SET default_with_oids = false;
 
 CREATE TABLE creation (
     id integer NOT NULL,
-    title character(25) DEFAULT 'toto'::bpchar NOT NULL,
+    title text DEFAULT 'toto'::bpchar NOT NULL,
     creator_id integer NOT NULL,
     version text DEFAULT 1.0 NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
@@ -141,7 +141,7 @@ ALTER SEQUENCE source_id_seq OWNED BY source.id;
 
 CREATE TABLE "user" (
     id integer NOT NULL,
-    name character(14) NOT NULL,
+    name text NOT NULL,
     email text NOT NULL,
     created_at date DEFAULT ('now'::text)::date,
     updated_at date,

@@ -1,17 +1,16 @@
 package model
 
 import (
-  "database/sql"
-  "time"
+  "wooblapp/app/util"
 )
 
 type User struct {
-  ID        int64  `db:"id"`
+  ID        uint64  `json:"id"                 db:"user.id"`
 
-  Email     string `db:"email"`
-  Name      string `db:"name"`
-  IsCreator bool   `db:"is_creator"`
+  Email     string `json:"email,omitempty"     db:"email"`
+  Name      string `json:"name"                db:"name"`
+  IsCreator bool   `json:"isCreator,omitempty" db:"is_creator"`
 
-  CreatedAt time.Time `db:"created_at"`
-  UpdatedAt sql.NullString `db:"updated_at"`
+  CreatedAt *util.NullTime `json:"createdAt,omitempty" db:"user.created_at"`
+  UpdatedAt *util.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
 }
