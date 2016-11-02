@@ -1,11 +1,14 @@
 package util
 
 import (
+  "encoding/json"
   "fmt"
   "strconv"
   "strings"
+  "time"
 
   "github.com/gin-gonic/gin"
+  "github.com/lib/pq"
 )
 
 type Query struct {
@@ -58,4 +61,30 @@ func ParseOptions(c *gin.Context) (Option) {
   populate := strings.Split(pPopulate, ",")
 
   return Option{limit, offset, populate}
+}
+
+type NullTime struct {
+  pq.NullTime
+}
+
+func (v NullTime) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.Time)
+	} else {
+		return json.Marshal("")
+	}
+}
+
+func (v *NullTime) UnmarshalJSON(data []byte) error {
+	var x *time.Time
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != nil {
+		v.Valid = true
+		v.Time = *x
+	} else {
+		v.Valid = false
+	}
+	return nil
 }

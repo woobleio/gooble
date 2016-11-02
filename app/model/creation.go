@@ -1,39 +1,37 @@
 package model
 
 import (
-  "database/sql"
-  "time"
-
   "wooblapp/lib"
   "wooblapp/app/util"
 )
 
 type Creation struct {
-  ID        int64   `db:"id"`
+  ID        uint64  `json:"id"      db:"crea.id"`
 
-  CreatorID int64   `db:"creator_id"`
-  Creator   User    `db:""`
-  SourceID  int64   `db:"source_id"`
-  Source    Source  `db:""`
-  Title     string  `db:"title"`
-  Version   string  `db:"version"`
+  CreatorID uint64  `json:"-"       db:"creator_id"`
+  Creator   User    `json:"creator" db:""`
+  SourceID  uint64  `json:"-"       db:"source_id"`
+  Source    Source  `json:"source"  db:""`
+  Title     string  `json:"title"   db:"title"`
+  Version   string  `json:"version" db:"version"`
 
-  CreatedAt time.Time `db:"created_at"`
-  UpdatedAt sql.NullString `db:"updated_at"`
+  CreatedAt *util.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
+  UpdatedAt *util.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
 }
 
 func AllCreations(opt util.Option) (*[]Creation, error) {
   var creations []Creation
   q := util.Query{`
     SELECT
-      c.*,
-      s.*,
-      u.id,
-      u.email,
-      u.name,
-      u.is_creator,
-      u.created_at,
-      u.updated_at
+      c.id "crea.id",
+      c.title,
+      c.created_at "crea.created_at",
+      c.updated_at "crea.updated_at",
+      c.version,
+      s.id "src.id",
+      s.host,
+      u.id "user.id",
+      u.name
     FROM creation c
     INNER JOIN source s ON (c.source_id = s.id)
     INNER JOIN app_user u ON (c.creator_id = u.id)`,
@@ -53,14 +51,15 @@ func CreationByTitle(title string, opt util.Option) (*Creation, error) {
   var crea Creation
   q := util.Query{`
     SELECT
-      c.*,
-      s.*,
-      u.id,
-      u.email,
-      u.name,
-      u.is_creator,
-      u.created_at,
-      u.updated_at
+      c.id "crea.id",
+      c.title,
+      c.created_at "crea.created_at",
+      c.updated_at "crea.updated_at",
+      c.version,
+      s.id "src.id",
+      s.host,
+      u.id "user.id",
+      u.name
     FROM creation c
     INNER JOIN source s ON (c.source_id = s.id)
     INNER JOIN app_user u ON (c.creator_id = u.id)

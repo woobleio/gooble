@@ -1,7 +1,7 @@
 package model
 
 type Source struct {
-  ID   int64 `db:"id"`
+  ID   uint64 `json:"id"   db:"src.id"`
 
-  Host string `db:"host"`
+  Host string `json:"host" db:"host"`
 }
