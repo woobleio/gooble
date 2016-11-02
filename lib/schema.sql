@@ -17,7 +17,7 @@ SET row_security = off;
 
 --
 -- TOC entry 1 (class 3079 OID 12361)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
@@ -26,7 +26,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- TOC entry 2152 (class 0 OID 0)
 -- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -62,7 +62,7 @@ SET default_with_oids = false;
 
 CREATE TABLE creation (
     id integer NOT NULL,
-    title character(1) DEFAULT 'toto'::bpchar NOT NULL,
+    title text DEFAULT 'toto'::bpchar NOT NULL,
     creator_id integer NOT NULL,
     version text DEFAULT 1.0 NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
@@ -141,7 +141,7 @@ ALTER SEQUENCE source_id_seq OWNED BY source.id;
 
 CREATE TABLE "user" (
     id integer NOT NULL,
-    name character(1) NOT NULL,
+    name text NOT NULL,
     email text NOT NULL,
     created_at date DEFAULT ('now'::text)::date,
     updated_at date,
@@ -341,7 +341,7 @@ CREATE TRIGGER update_date BEFORE UPDATE OF name, email, is_creator ON "user" FO
 --
 
 ALTER TABLE ONLY creation
-    ADD CONSTRAINT source_id_fk FOREIGN KEY (id) REFERENCES source(id);
+    ADD CONSTRAINT source_id_fk FOREIGN KEY (source_id) REFERENCES source(id);
 
 
 --
@@ -370,4 +370,3 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
-
