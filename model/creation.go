@@ -1,8 +1,7 @@
 package model
 
 import (
-  "wooblapp/lib"
-  "wooblapp/app/util"
+  "wooble/lib"
 )
 
 type Creation struct {
@@ -15,13 +14,13 @@ type Creation struct {
   Title     string  `json:"title"   db:"title"`
   Version   string  `json:"version" db:"version"`
 
-  CreatedAt *util.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
-  UpdatedAt *util.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
+  CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
+  UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
 }
 
-func AllCreations(opt util.Option) (*[]Creation, error) {
+func AllCreations(opt lib.Option) (*[]Creation, error) {
   var creations []Creation
-  q := util.Query{`
+  q := lib.Query{`
     SELECT
       c.id "crea.id",
       c.title,
@@ -47,9 +46,9 @@ func AllCreations(opt util.Option) (*[]Creation, error) {
   return &creations, nil
 }
 
-func CreationByTitle(title string, opt util.Option) (*Creation, error) {
+func CreationByTitle(title string, opt lib.Option) (*Creation, error) {
   var crea Creation
-  q := util.Query{`
+  q := lib.Query{`
     SELECT
       c.id "crea.id",
       c.title,
