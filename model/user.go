@@ -1,7 +1,7 @@
 package model
 
 import (
-  "wooblapp/app/util"
+  "wooble/lib"
 )
 
 type User struct {
@@ -11,6 +11,6 @@ type User struct {
   Name      string `json:"name"                db:"name"`
   IsCreator bool   `json:"isCreator,omitempty" db:"is_creator"`
 
-  CreatedAt *util.NullTime `json:"createdAt,omitempty" db:"user.created_at"`
-  UpdatedAt *util.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
+  CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"user.created_at"`
+  UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
 }

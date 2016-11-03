@@ -7,7 +7,7 @@ ENV GOROOT /usr/local/go
 ENV PORT 8080
 ENV CONFPATH $GOPATH/configs
 
-RUN mkdir -p $GOPATH/src/wooblapp \
+RUN mkdir -p $GOPATH/src/wooble/ \
       && chmod -R 777 /go \
       && mkdir $CONFPATH \
       && touch $CONFPATH/dev.yml \
@@ -16,20 +16,20 @@ RUN mkdir -p $GOPATH/src/wooblapp \
 #
 # SET DATABASE CONF
 #
-RUN echo "db_host: localhost" >> $CONFPATH/dev.yml \
+RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/dev.yml \
       && echo "db_name: wooble" >> $CONFPATH/dev.yml \
       && echo "db_port: 5432" >> $CONFPATH/dev.yml \
       && echo "db_username: wooble" >> $CONFPATH/dev.yml \
       && echo "db_password: w00b" >> $CONFPATH/dev.yml
 
-RUN echo "db_host: localhost" >> $CONFPATH/test.yml \
+RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/test.yml \
       && echo "db_name: wooble_test" >> $CONFPATH/test.yml \
       && echo "db_port: 5432" >> $CONFPATH/test.yml \
       && echo "db_username: user_test" >> $CONFPATH/test.yml
 
-WORKDIR $GOPATH/src/wooblapp
+WORKDIR $GOPATH/src/wooble/app
 
-COPY . $GOPATH/src/wooblapp
+COPY . $GOPATH/src/wooble/
 
 RUN go get github.com/codegangsta/gin
 RUN go get github.com/gin-gonic/gin
