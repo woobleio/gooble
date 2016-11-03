@@ -2,33 +2,29 @@ package handler
 
 import (
   "net/http"
-  "fmt"
 
   "wooble/model"
   "wooble/lib"
 
-  "github.com/gin-gonic/gin"
+  "gopkg.in/gin-gonic/gin.v1"
 )
 
-func GETAllCreations(c *gin.Context) {
-  opts := lib.ParseOptions(c)
+func GETCreations(c *gin.Context) {
+  var res interface{}
+  var err error
 
-  creas, err := model.AllCreations(opts)
-  if err != nil {
-    fmt.Println(err)
-  }
-
-  c.JSON(http.StatusOK, creas)
-}
-
-func GETCreation(c *gin.Context) {
   opts := lib.ParseOptions(c)
   title := c.Param("title")
 
-  crea, err := model.CreationByTitle(title, opts)
-  if err != nil {
-    fmt.Println(err)
+  if title != "" {
+    res, err = model.CreationByTitle(title, opts)
+    if err != nil {
+      c.JSON(http.StatusNotFound, NewError(NotFound, "Creation", title))
+      return
+    }
+  } else {
+    res, _ = model.AllCreations(opts)
   }
 
-  c.JSON(http.StatusOK, crea)
+  c.JSON(http.StatusOK, res)
 }

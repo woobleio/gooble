@@ -14,9 +14,8 @@ func init() {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(os.Getenv("CONFPATH"))
 
-	errViper := viper.ReadInConfig()
-	if errViper != nil {
-		panic(errViper)
+	if err := viper.ReadInConfig(); err != nil {
+		panic(err)
 	}
 
 	lib.LoadDB()
