@@ -4,7 +4,7 @@ import (
   "fmt"
   "strconv"
 
-  "github.com/gin-gonic/gin"
+  "gopkg.in/gin-gonic/gin.v1"
 )
 
 type Option struct {
