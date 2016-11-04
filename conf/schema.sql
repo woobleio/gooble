@@ -136,10 +136,10 @@ ALTER SEQUENCE source_id_seq OWNED BY source.id;
 
 --
 -- TOC entry 182 (class 1259 OID 16390)
--- Name: user; Type: TABLE; Schema: public; Owner: wooble
+-- Name: app_user; Type: TABLE; Schema: public; Owner: wooble
 --
 
-CREATE TABLE "user" (
+CREATE TABLE "app_user" (
     id integer NOT NULL,
     name text NOT NULL,
     email text NOT NULL,
@@ -150,14 +150,14 @@ CREATE TABLE "user" (
 );
 
 
-ALTER TABLE "user" OWNER TO wooble;
+ALTER TABLE "app_user" OWNER TO wooble;
 
 --
 -- TOC entry 181 (class 1259 OID 16388)
--- Name: user_id_seq; Type: SEQUENCE; Schema: public; Owner: wooble
+-- Name: app_user_id_seq; Type: SEQUENCE; Schema: public; Owner: wooble
 --
 
-CREATE SEQUENCE user_id_seq
+CREATE SEQUENCE app_user_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -165,15 +165,15 @@ CREATE SEQUENCE user_id_seq
     CACHE 1;
 
 
-ALTER TABLE user_id_seq OWNER TO wooble;
+ALTER TABLE app_user_id_seq OWNER TO wooble;
 
 --
 -- TOC entry 2155 (class 0 OID 0)
 -- Dependencies: 181
--- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
+-- Name: app_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
 
-ALTER SEQUENCE user_id_seq OWNED BY "user".id;
+ALTER SEQUENCE app_user_id_seq OWNED BY "app_user".id;
 
 
 --
@@ -197,7 +197,7 @@ ALTER TABLE ONLY source ALTER COLUMN id SET DEFAULT nextval('source_id_seq'::reg
 -- Name: id; Type: DEFAULT; Schema: public; Owner: wooble
 --
 
-ALTER TABLE ONLY "user" ALTER COLUMN id SET DEFAULT nextval('user_id_seq'::regclass);
+ALTER TABLE ONLY "app_user" ALTER COLUMN id SET DEFAULT nextval('app_user_id_seq'::regclass);
 
 
 --
@@ -241,20 +241,20 @@ SELECT pg_catalog.setval('source_id_seq', 1, false);
 --
 -- TOC entry 2140 (class 0 OID 16390)
 -- Dependencies: 182
--- Data for Name: user; Type: TABLE DATA; Schema: public; Owner: wooble
+-- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY "user" (id, name, email, created_at, updated_at, is_creator, passwd) FROM stdin;
+COPY "app_user" (id, name, email, created_at, updated_at, is_creator, passwd) FROM stdin;
 \.
 
 
 --
 -- TOC entry 2158 (class 0 OID 0)
 -- Dependencies: 181
--- Name: user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
+-- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('user_id_seq', 1, false);
+SELECT pg_catalog.setval('app_user_id_seq', 1, false);
 
 
 --
@@ -271,7 +271,7 @@ ALTER TABLE ONLY creation
 -- Name: email; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
-ALTER TABLE ONLY "user"
+ALTER TABLE ONLY "app_user"
     ADD CONSTRAINT email UNIQUE (email);
 
 
@@ -280,7 +280,7 @@ ALTER TABLE ONLY "user"
 -- Name: name; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
-ALTER TABLE ONLY "user"
+ALTER TABLE ONLY "app_user"
     ADD CONSTRAINT name UNIQUE (name);
 
 
@@ -304,19 +304,19 @@ ALTER TABLE ONLY creation
 
 --
 -- TOC entry 2013 (class 2606 OID 16398)
--- Name: user_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
+-- Name: app_user_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
-ALTER TABLE ONLY "user"
-    ADD CONSTRAINT user_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY "app_user"
+    ADD CONSTRAINT app_user_pkey PRIMARY KEY (id);
 
 
 --
 -- TOC entry 2016 (class 1259 OID 16495)
--- Name: fki_fk_user_id; Type: INDEX; Schema: public; Owner: wooble
+-- Name: fki_fk_app_user_id; Type: INDEX; Schema: public; Owner: wooble
 --
 
-CREATE INDEX fki_fk_user_id ON creation USING btree (creator_id);
+CREATE INDEX fki_fk_app_user_id ON creation USING btree (creator_id);
 
 
 --
@@ -332,7 +332,7 @@ CREATE TRIGGER update_date BEFORE UPDATE OF version ON creation FOR EACH ROW EXE
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
-CREATE TRIGGER update_date BEFORE UPDATE OF name, email, is_creator ON "user" FOR EACH ROW EXECUTE PROCEDURE update_date();
+CREATE TRIGGER update_date BEFORE UPDATE OF name, email, is_creator ON "app_user" FOR EACH ROW EXECUTE PROCEDURE update_date();
 
 
 --
@@ -346,11 +346,11 @@ ALTER TABLE ONLY creation
 
 --
 -- TOC entry 2021 (class 2606 OID 16490)
--- Name: user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
+-- Name: app_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
 ALTER TABLE ONLY creation
-    ADD CONSTRAINT user_id_fk FOREIGN KEY (creator_id) REFERENCES "user"(id);
+    ADD CONSTRAINT app_user_id_fk FOREIGN KEY (creator_id) REFERENCES "app_user"(id);
 
 
 --

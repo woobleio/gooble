@@ -4,7 +4,7 @@ gowooble:
   ports:
     - "3000:3000"
   volumes:
-    - $PWD:/go/src/wooblapp
+    - $PWD:/go/src/wooble
   links:
     - woobledb
 
