@@ -1,8 +1,6 @@
 package handler
 
 import (
-  "net/http"
-
   "wooble/model"
   "wooble/lib"
 
@@ -10,21 +8,27 @@ import (
 )
 
 func GETCreations(c *gin.Context) {
-  var res interface{}
+  var data interface{}
   var err error
+
+  res := NewRes()
 
   opts := lib.ParseOptions(c)
   title := c.Param("title")
 
   if title != "" {
-    res, err = model.CreationByTitle(title, opts)
+    data, err = model.CreationByTitle(title, opts)
     if err != nil {
-      c.JSON(http.StatusNotFound, NewError(NotFound, "Creation", title))
-      return
+      res.Error(ResNotFound, "Creation", title)
     }
   } else {
-    res, _ = model.AllCreations(opts)
+    data, err = model.AllCreations(opts)
+    if err != nil {
+      res.Error(NotFound, "creations")
+    }
   }
 
-  c.JSON(http.StatusOK, res)
+  res.Response(data)
+
+  c.JSON(res.HttpStatus(), res)
 }
