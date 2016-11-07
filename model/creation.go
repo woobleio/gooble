@@ -1,26 +1,26 @@
 package model
 
 import (
-  "wooble/lib"
+	"wooble/lib"
 )
 
 type Creation struct {
-  ID        uint64  `json:"id"      db:"crea.id"`
+	ID uint64 `json:"id"      db:"crea.id"`
 
-  CreatorID uint64  `json:"-"       db:"creator_id"`
-  Creator   User    `json:"creator" db:""`
-  SourceID  uint64  `json:"-"       db:"source_id"`
-  Source    Source  `json:"source"  db:""`
-  Title     string  `json:"title"   db:"title"`
-  Version   string  `json:"version" db:"version"`
+	CreatorID uint64 `json:"-"       db:"creator_id"`
+	Creator   User   `json:"creator" db:""`
+	SourceID  uint64 `json:"-"       db:"source_id"`
+	Source    Source `json:"source"  db:""`
+	Title     string `json:"title"   db:"title"`
+	Version   string `json:"version" db:"version"`
 
-  CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
-  UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
+	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
+	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
 }
 
 func AllCreations(opt lib.Option) (*[]Creation, error) {
-  var creations []Creation
-  q := lib.Query{`
+	var creations []Creation
+	q := lib.Query{`
     SELECT
       c.id "crea.id",
       c.title,
@@ -34,21 +34,21 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
     FROM creation c
     INNER JOIN source s ON (c.source_id = s.id)
     INNER JOIN app_user u ON (c.creator_id = u.id)`,
-    &opt,
-  }
+		&opt,
+	}
 
-  query := q.String()
+	query := q.String()
 
-  if err := lib.DB.Select(&creations, query); err != nil {
-    return nil, err
-  }
+	if err := lib.DB.Select(&creations, query); err != nil {
+		return nil, err
+	}
 
-  return &creations, nil
+	return &creations, nil
 }
 
 func CreationByTitle(title string, opt lib.Option) (*Creation, error) {
-  var crea Creation
-  q := lib.Query{`
+	var crea Creation
+	q := lib.Query{`
     SELECT
       c.id "crea.id",
       c.title,
@@ -63,14 +63,14 @@ func CreationByTitle(title string, opt lib.Option) (*Creation, error) {
     INNER JOIN source s ON (c.source_id = s.id)
     INNER JOIN app_user u ON (c.creator_id = u.id)
     WHERE c.title = $1`,
-    &opt,
-  }
+		&opt,
+	}
 
-  query := q.String()
+	query := q.String()
 
-  if err := lib.DB.Get(&crea, query, title); err != nil {
-    return nil, err
-  }
+	if err := lib.DB.Get(&crea, query, title); err != nil {
+		return nil, err
+	}
 
-  return &crea, nil
+	return &crea, nil
 }

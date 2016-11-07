@@ -1,15 +1,15 @@
 package router
 
 import (
-  "time"
+	"time"
 
-  "wooble/router/handler"
+	"wooble/router/handler"
 
-  "gopkg.in/gin-gonic/gin.v1"
+	"gopkg.in/gin-gonic/gin.v1"
 )
 
 func Load() {
-  r := gin.Default()
+	r := gin.Default()
 
 	// MIDDLEWARE
 	v1 := r.Group("/v1")
