@@ -7,39 +7,50 @@ import (
 
 // errors code
 const (
-	cResNotFound int = iota + 100
-	cNotFound
+	resNotFound int = iota + 100
+	dbSelect        // 101
+	badForm         // 102
+	dbSave          // 103
+	servErr         // 104
 )
 
 // API errors
 var (
-	ErrResNotFound = ReqError{cResNotFound, "Resource not found", "%s %s not found", http.StatusNotFound}
-	ErrNotFound    = ReqError{cNotFound, "Resource not found", "No %s found", http.StatusNotFound}
+	ErrDBSave      = ReqError{dbSave, "Database error", "One or many issues encountered while saving the data :\n %s", http.StatusInternalServerError}
+	ErrDBSelect    = ReqError{dbSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError}
+	ErrBadForm     = ReqError{badForm, "Form not valid", "%s", http.StatusBadRequest}
+	ErrResNotFound = ReqError{resNotFound, "Resource not found", "%s %s not found", http.StatusNotFound}
+	ErrServ        = ReqError{servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError}
+)
+
+const (
+	Created int = http.StatusCreated
 )
 
 type JSONRes struct {
 	Data   *interface{} `json:"data"`
 	Errors []ReqError   `json:"errors,omitempty"`
+	Status int          `json:"-"`
 }
 
 func NewRes() JSONRes {
 	return JSONRes{
 		nil,
 		make([]ReqError, 0),
+		http.StatusOK,
 	}
 }
 
 // Lookup all errors found and return the prioritized HTTP status (the greatest value)
 func (j *JSONRes) HttpStatus() int {
 	cStatus := 0
-	status := http.StatusOK
 	for _, err := range j.Errors {
 		cStatus = err.Status
 	}
-	if cStatus > status {
-		status = cStatus
+	if cStatus > j.Status {
+		j.Status = cStatus
 	}
-	return status
+	return j.Status
 }
 
 func (j *JSONRes) Response(data *interface{}) {

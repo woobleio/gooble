@@ -17,8 +17,10 @@ func Load() {
 		v1.GET("/heartbeat", func(c *gin.Context) {
 			c.String(200, "%s", time.Now())
 		})
+
 		v1.GET("/creations/:title", handler.GETCreations)
 		v1.GET("/creations", handler.GETCreations)
+		v1.POST("/creations", handler.POSTCreations)
 	}
 
 	r.Run()

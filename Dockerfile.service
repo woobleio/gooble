@@ -7,11 +7,26 @@ ENV GOROOT /usr/local/go
 ENV PORT 8080
 ENV CONFPATH $GOPATH/configs
 
+ENV AWS_REGION eu-central-1
+
 RUN mkdir -p $GOPATH/src/wooble/ \
       && chmod -R 777 /go \
       && mkdir $CONFPATH \
       && touch $CONFPATH/dev.yml \
-      && touch $CONFPATH/test.yml
+      && touch $CONFPATH/test.yml \
+      && mkdir $HOME/.aws \
+      && touch $HOME/.aws/credentials
+
+#
+# SET CLOUD S3 CONF (~/.aws/credentials should be edited when the container is built)
+#
+RUN echo "[default]" >> $HOME/.aws/credentials \
+      && echo "aws_access_key_id = <ACCESS_KEY_ID>" >> $HOME/.aws/credentials \
+      && echo "aws_secret_access_key = <SECRET_KEY>\n" >> $HOME/.aws/credentials
+
+RUN echo "[prod-acc]" >> $HOME/.aws/credentials \
+      && echo "aws_access_key_id = <ACCESS_KEY_ID>" >> $HOME/.aws/credentials \
+      && echo "aws_secret_access_key = <SECRET_KEY>\n" >> $HOME/.aws/credentials
 
 #
 # SET DATABASE CONF
@@ -20,22 +35,26 @@ RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/dev.yml \
       && echo "db_name: wooble" >> $CONFPATH/dev.yml \
       && echo "db_port: 5432" >> $CONFPATH/dev.yml \
       && echo "db_username: wooble" >> $CONFPATH/dev.yml \
-      && echo "db_password: w00b" >> $CONFPATH/dev.yml
+      && echo "db_password: w00b" >> $CONFPATH/dev.yml \
+      && echo "cloud_repo: wooble-dev" >> $CONFPATH/dev.yml
 
 RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/test.yml \
       && echo "db_name: wooble_test" >> $CONFPATH/test.yml \
       && echo "db_port: 5432" >> $CONFPATH/test.yml \
-      && echo "db_username: user_test" >> $CONFPATH/test.yml
+      && echo "db_username: user_test" >> $CONFPATH/test.yml \
+      && echo "cloud_repo: wooble-dev" >> $CONFPATH/dev.yml
 
 WORKDIR $GOPATH/src/wooble
 
 COPY . $GOPATH/src/wooble/
 
+RUN go get github.com/aws/aws-sdk-go/...
 RUN go get github.com/codegangsta/gin
 RUN go get gopkg.in/gin-gonic/gin.v1
 RUN go get github.com/jmoiron/sqlx
 RUN go get github.com/lib/pq
 RUN go get github.com/spf13/viper
+RUN go get github.com/woobleio/wooblizer
 
 EXPOSE 3000
 
