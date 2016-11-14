@@ -26,20 +26,19 @@ func getDBUrl() string {
 
 	var dbUrl = "postgres://"
 
-	switch {
-	case username != "":
+	if username != "" {
 		dbUrl += username
 		dbUrl += ":" + passwd + "@"
-		fallthrough
-	case host != "":
-		dbUrl += host
-		fallthrough
-	case port != "":
-		dbUrl += ":" + port
-		fallthrough
-	case dbName != "":
-		dbUrl += "/" + dbName
 	}
+
+	dbUrl += host
+
+	if port != "" {
+		dbUrl += ":" + port
+	}
+
+	dbUrl += "/" + dbName
+
 	dbUrl += "?sslmode=disable"
 
 	return dbUrl

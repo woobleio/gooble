@@ -13,4 +13,8 @@ cd $CONFPATH
 
 #dev.yml for dev environment
 #test.yml for tests
+
+cd $HOME/.aws
+
+#credentials for amazon s3 creds
 ```
