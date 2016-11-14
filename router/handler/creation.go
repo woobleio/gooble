@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"wooble/lib"
 	"wooble/model"
 
@@ -42,7 +41,7 @@ func POSTCreations(c *gin.Context) {
 	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "creatorId (int) and title (string) are required")
+		res.Error(ErrBadForm, "title (string) are required")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
@@ -52,13 +51,12 @@ func POSTCreations(c *gin.Context) {
 	}
 
 	// TODO Authenticated user and put in CreatorID
-	user, _ := model.UserByID(1)
+	user, _ := model.UserByID(4)
+	data.CreatorID = 4
 
-	// TODO delete row if push to bucket fails
-	_, err := model.NewCreation(&data)
+	creaId, err := model.NewCreation(&data)
 	if err != nil {
-		res.Error(ErrDBSave, "- Title should be unique for the creator\n - Creator should exist")
-		fmt.Print(err)
+		res.Error(ErrDBSave, "- Title should be unique for the creator\n")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
@@ -68,16 +66,18 @@ func POSTCreations(c *gin.Context) {
 	storage := lib.NewStorage(lib.SrcCreations, user.Name, data.Version)
 
 	if data.Document != "" {
-		storage.StoreFile(data.Document, eng.ContentType, data.Title, "doc.html")
+		storage.StoreFile(data.Document, "text/html", data.Title, "doc.html")
 	}
 	if data.Script != "" {
 		storage.StoreFile(data.Script, eng.ContentType, data.Title, "script"+eng.Extension)
 	}
 	if data.Style != "" {
-		storage.StoreFile(data.Style, eng.ContentType, data.Title, "style.css")
+		storage.StoreFile(data.Style, "text/css", data.Title, "style.css")
 	}
 
 	if storage.Error != nil {
+		// Delete the crea since files failed to be save in the cloud
+		model.DeleteCreation(creaId)
 		res.Error(ErrServ, "doc, script and style files")
 	}
 

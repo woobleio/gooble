@@ -62,7 +62,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 		return nil, err
 	}
 
-	return &creations, nil
+	return &creations, lib.DB.Select(&creations, query)
 }
 
 func CreationByTitle(title string) (*Creation, error) {
@@ -85,19 +85,16 @@ func CreationByTitle(title string) (*Creation, error) {
     WHERE c.title = $1
 	`
 
-	if err := lib.DB.Get(&crea, q, title); err != nil {
-		return nil, err
-	}
-
-	return &crea, nil
+	return &crea, lib.DB.Get(&crea, q, title)
 }
 
-func NewCreation(data *CreationForm) (creaId int64, err error) {
-	q := `INSERT INTO creation(title, creator_id, version, has_document, has_script, has_style, engine) VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	crea, err := lib.DB.Exec(q, data.Title, data.CreatorID, data.Version, data.Document != "", data.Script != "", data.Style != "", data.Engine)
-	if err != nil {
-		return 0, err
-	}
-	creaId, _ = crea.LastInsertId()
-	return creaId, nil
+func DeleteCreation(id uint64) error {
+	_, err := lib.DB.Exec(`DELETE FROM creation WHERE id = $1`, id)
+	return err
+}
+
+func NewCreation(data *CreationForm) (creaId uint64, err error) {
+	q := `INSERT INTO creation(title, creator_id, version, has_document, has_script, has_style, engine) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+	err = lib.DB.QueryRow(q, data.Title, data.CreatorID, data.Version, data.Document != "", data.Script != "", data.Style != "", data.Engine).Scan(&creaId)
+	return creaId, err
 }
