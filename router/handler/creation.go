@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"wooble/lib"
 	"wooble/model"
 
@@ -19,7 +20,11 @@ func GETCreations(c *gin.Context) {
 	if title != "" {
 		data, err = model.CreationByTitle(title)
 		if err != nil {
-			res.Error(ErrResNotFound, "Creation", title)
+			if err == sql.ErrNoRows {
+				res.Error(ErrResNotFound, "Creation", title)
+			} else {
+				res.Error(ErrDBSelect)
+			}
 		}
 	} else {
 		data, err = model.AllCreations(opts)
@@ -41,7 +46,7 @@ func POSTCreations(c *gin.Context) {
 	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string) are required")
+		res.Error(ErrBadForm, "title (string) is required")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
