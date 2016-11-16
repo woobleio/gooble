@@ -10,8 +10,9 @@ const (
 	resNotFound int = iota + 100
 	dbSelect        // 101
 	badForm         // 102
-	dbSave          // 103
-	servErr         // 104
+	badParam        // 103
+	dbSave          // 104
+	servErr         // 105
 )
 
 // API errors
@@ -19,6 +20,7 @@ var (
 	ErrDBSave      = ReqError{dbSave, "Database error", "One or many issues encountered while saving the data :\n %s", http.StatusInternalServerError}
 	ErrDBSelect    = ReqError{dbSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError}
 	ErrBadForm     = ReqError{badForm, "Form not valid", "%s", http.StatusBadRequest}
+	ErrBadParam    = ReqError{badParam, "Bad param", "Param should be of type %s", http.StatusBadRequest}
 	ErrResNotFound = ReqError{resNotFound, "Resource not found", "%s %s not found", http.StatusNotFound}
 	ErrServ        = ReqError{servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError}
 )
