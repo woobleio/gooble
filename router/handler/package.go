@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"wooble/lib"
 	"wooble/model"
 
+	"github.com/woobleio/wooblizer/wbzr"
+	"github.com/woobleio/wooblizer/wbzr/engine"
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
@@ -23,7 +26,7 @@ func POSTPackages(c *gin.Context) {
 	}
 
 	// TODO Authenticated user and put in CreatorID
-	data.UserID = 5
+	data.UserID = 1
 
 	_, err := model.NewPackage(&data)
 	if err != nil {
@@ -70,6 +73,86 @@ func PushCreations(c *gin.Context) {
 	}
 
 	res.Status = Created
+
+	c.JSON(res.HttpStatus(), res)
+}
+
+func BuildPackage(c *gin.Context) {
+	var data interface{}
+	res := NewRes()
+
+	param := c.Param("id")
+	pkgID, err := strconv.ParseUint(param, 10, 64)
+	if err != nil {
+		res.Error(ErrBadParam, "int")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
+
+	pkg, err := model.PackageByID(pkgID)
+	if err != nil {
+		fmt.Print(err)
+		res.Error(ErrResNotFound, "package", "")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
+
+	// TODO auth user, version choosen
+	storage := lib.NewStorage(lib.SrcPackages, "toto", "1.0")
+
+	storage.Source = lib.SrcCreations
+	wb := wbzr.New(wbzr.JSES5)
+	for _, creation := range pkg.Creations {
+		var script engine.Script
+		var err error
+
+		storage.Username = creation.Creator.Name
+		storage.Version = creation.Version
+
+		if creation.HasScript {
+			// TODO a creation Title, if two creations has the same name it'll trigger an error
+			src := storage.GetFileContent(creation.Title, "script"+creation.Engine.Extension)
+
+			script, err = wb.Inject(src, creation.Title)
+		} else {
+			script, err = wb.Inject("", creation.Title)
+		}
+
+		if err != nil {
+			panic(err)
+		}
+
+		if creation.HasDoc {
+			src := storage.GetFileContent(creation.Title, "doc.html")
+			err = script.IncludeHtml(src)
+		}
+		if creation.HasStyle {
+			src := storage.GetFileContent(creation.Title, "style.css")
+			err = script.IncludeCss(src)
+		}
+
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	storage.Source = lib.SrcPackages
+	storage.Username = "toto" // TODO current authd username
+	storage.Version = ""
+
+	bf, err := wb.Wrap()
+
+	if err != nil {
+		res.Error(ErrServ, "creations packaging")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
+
+	storage.StoreFile(bf.String(), "application/javascript", pkg.Title, "pkg.js")
+
+	res.Response(&data)
+
+	res.Status = OK
 
 	c.JSON(res.HttpStatus(), res)
 }

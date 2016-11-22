@@ -22,8 +22,9 @@ func Load() {
 		v1.GET("/creations", handler.GETCreations)
 		v1.POST("/creations", handler.POSTCreations)
 
+		v1.GET("/packages/:id/build", handler.BuildPackage)
 		v1.POST("/packages", handler.POSTPackages)
-		v1.POST("/packages/:id", handler.PushCreations)
+		v1.POST("/packages/:id/push", handler.PushCreations)
 	}
 
 	r.Run()

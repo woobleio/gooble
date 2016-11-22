@@ -15,7 +15,7 @@ type Creation struct {
 	HasDoc    bool   `json:"-"       db:"has_document"`
 	HasScript bool   `json:"-"       db:"has_script"`
 	HasStyle  bool   `json:"-"       db:"has_style"`
-	Engine    string `json:"engine"  db:"engine"`
+	Engine    Engine `json:"engine"  db:""`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
@@ -39,20 +39,24 @@ const BASE_VERSION string = "1.0"
 func AllCreations(opt lib.Option) (*[]Creation, error) {
 	var creations []Creation
 	q := lib.Query{`
-    SELECT
-      c.id "crea.id",
-      c.title,
-      c.created_at "crea.created_at",
-      c.updated_at "crea.updated_at",
-      c.version,
+	  SELECT
+	    c.id "crea.id",
+	    c.title,
+	    c.created_at "crea.created_at",
+	    c.updated_at "crea.updated_at",
+	    c.version,
 			c.has_document,
 			c.has_script,
 			c.has_style,
-			c.engine,
-      u.id "user.id",
-      u.name
-    FROM creation c
-    INNER JOIN app_user u ON (c.creator_id = u.id)`,
+			e.name "eng.name",
+			e.extension,
+			e.content_type,
+	    u.id "user.id",
+	    u.name
+	  FROM creation c
+	  INNER JOIN app_user u ON (c.creator_id = u.id)
+		INNER JOIN engine e ON (c.engine=e.name)
+		`,
 		&opt,
 	}
 
@@ -68,21 +72,24 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 func CreationByTitle(title string) (*Creation, error) {
 	var crea Creation
 	q := `
-    SELECT
-      c.id "crea.id",
-      c.title,
-      c.created_at "crea.created_at",
-      c.updated_at "crea.updated_at",
-      c.version,
-			c.has_document,
-			c.has_script,
-			c.has_style,
-			c.engine,
-      u.id "user.id",
-      u.name
-    FROM creation c
-    INNER JOIN app_user u ON (c.creator_id = u.id)
-    WHERE c.title = $1
+  SELECT
+    c.id "crea.id",
+    c.title,
+    c.created_at "crea.created_at",
+    c.updated_at "crea.updated_at",
+    c.version,
+		c.has_document,
+		c.has_script,
+		c.has_style,
+		e.name "eng.name",
+		e.extension,
+		e.content_type,
+    u.id "user.id",
+    u.name
+  FROM creation c
+  INNER JOIN app_user u ON (c.creator_id = u.id)
+	INNER JOIN engine e ON (c.engine=e.name)
+  WHERE c.title = $1
 	`
 
 	return &crea, lib.DB.Get(&crea, q, title)

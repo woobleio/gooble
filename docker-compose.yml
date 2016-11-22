@@ -2,7 +2,7 @@ gowooble:
   build: .
   dockerfile: Dockerfile.service
   ports:
-    - "4000:4000"
+    - "3000:3000"
   volumes:
     - $PWD:/go/src/wooble
   links:

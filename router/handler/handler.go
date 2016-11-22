@@ -27,6 +27,7 @@ var (
 
 const (
 	Created int = http.StatusCreated
+	OK      int = http.StatusOK
 )
 
 type JSONRes struct {

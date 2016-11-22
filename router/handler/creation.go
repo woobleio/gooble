@@ -56,8 +56,8 @@ func POSTCreations(c *gin.Context) {
 	}
 
 	// TODO Authenticated user and put in CreatorID
-	user, _ := model.UserByID(5)
-	data.CreatorID = 5
+	user, _ := model.UserByID(1)
+	data.CreatorID = 1
 
 	creaId, err := model.NewCreation(&data)
 	if err != nil {
