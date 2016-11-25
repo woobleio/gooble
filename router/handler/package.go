@@ -20,17 +20,18 @@ func POSTPackages(c *gin.Context) {
 	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string) is required")
+		res.Error(ErrBadForm, "title (string) is required and engine (string) is required")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
 
 	// TODO Authenticated user and put in CreatorID
 	data.UserID = 1
+	data.Key = lib.GenKey()
 
 	_, err := model.NewPackage(&data)
 	if err != nil {
-		res.Error(ErrDBSave, "- Title should be unique for the creator\n")
+		res.Error(ErrDBSave, "- Title should be unique for the creator")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
@@ -98,7 +99,7 @@ func BuildPackage(c *gin.Context) {
 	}
 
 	// TODO auth user, version choosen
-	storage := lib.NewStorage(lib.SrcPackages, "toto", "1.0")
+	storage := lib.NewStorage(lib.SrcPackages, "1.0")
 
 	storage.Source = lib.SrcCreations
 	wb := wbzr.New(wbzr.JSES5)
@@ -106,12 +107,11 @@ func BuildPackage(c *gin.Context) {
 		var script engine.Script
 		var err error
 
-		storage.Username = creation.Creator.Name
 		storage.Version = creation.Version
 
 		if creation.HasScript {
 			// TODO a creation Title, if two creations has the same name it'll trigger an error
-			src := storage.GetFileContent(creation.Title, "script"+creation.Engine.Extension)
+			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "script"+creation.Engine.Extension, "")
 
 			script, err = wb.Inject(src, creation.Title)
 		} else {
@@ -123,11 +123,11 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		if creation.HasDoc {
-			src := storage.GetFileContent(creation.Title, "doc.html")
+			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "doc.html", "")
 			err = script.IncludeHtml(src)
 		}
 		if creation.HasStyle {
-			src := storage.GetFileContent(creation.Title, "style.css")
+			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "style.css", "")
 			err = script.IncludeCss(src)
 		}
 
@@ -137,18 +137,18 @@ func BuildPackage(c *gin.Context) {
 	}
 
 	storage.Source = lib.SrcPackages
-	storage.Username = "toto" // TODO current authd username
 	storage.Version = ""
 
-	bf, err := wb.Wrap()
+	bf, err := wb.SecureAndWrap(pkg.Domains...)
 
-	if err != nil {
+	if err != nil || storage.Error != nil {
 		res.Error(ErrServ, "creations packaging")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
 
-	storage.StoreFile(bf.String(), "application/javascript", pkg.Title, "pkg.js")
+	// TODO toto should be authd user
+	storage.StoreFile(bf.String(), pkg.Engine.ContentType, "toto", pkg.Title, "pkg"+pkg.Engine.Extension, pkg.Key)
 
 	res.Response(&data)
 

@@ -7,9 +7,12 @@ import (
 type Package struct {
 	ID uint64 `json:"id" db:"pkg.id"`
 
-	UserID uint64 `json:"-" db:"user_id"`
-	User   User   `json:"user" db:""`
-	Title  string `json:"title" db:"pkg.title"`
+	Domains lib.StringSlice `json:"domains" db:"domains"`
+	Engine  Engine          `json:"engine" db:""`
+	Key     string          `json:"-" db:"key"`
+	UserID  uint64          `json:"-" db:"user_id"`
+	User    User            `json:"user" db:""`
+	Title   string          `json:"title" db:"pkg.title"`
 
 	Creations []Creation `json:"creations" db:""`
 
@@ -18,8 +21,10 @@ type Package struct {
 }
 
 type PackageForm struct {
-	Title string `json:"title" binding:"required"`
+	Engine string `json:"engine" binding:"required"`
+	Title  string `json:"title" binding:"required"`
 
+	Key    string
 	UserID uint64
 }
 
@@ -53,12 +58,18 @@ func PackageByID(id uint64) (*Package, error) {
 	SELECT
 		pkg.id "pkg.id",
 		pkg.title "pkg.title",
+		pkg.domains,
+		pkg.key,
 		pkg.created_at "pkg.created_at",
 		pkg.updated_at "pkg.updated_at",
 		u.id "user.id",
-    u.name
+    u.name,
+		e.name "eng.name",
+		e.content_type,
+		e.extension
 	FROM package pkg
 	INNER JOIN app_user u ON (pkg.user_id = u.id)
+	INNER JOIN engine e ON (pkg.engine = e.name)
 	WHERE pkg.id = $1
 	`
 
@@ -70,8 +81,9 @@ func PackageByID(id uint64) (*Package, error) {
 }
 
 func NewPackage(data *PackageForm) (pkgId uint64, err error) {
-	q := `INSERT INTO package(title, user_id) VALUES ($1, $2) RETURNING id`
-	err = lib.DB.QueryRow(q, data.Title, data.UserID).Scan(&pkgId)
+	// TODO create domains
+	q := `INSERT INTO package(title, engine, user_id, key) VALUES ($1, $2, $3, $4) RETURNING id`
+	err = lib.DB.QueryRow(q, data.Title, data.Engine, data.UserID, data.Key).Scan(&pkgId)
 	return pkgId, err
 }
 

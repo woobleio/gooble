@@ -68,16 +68,16 @@ func POSTCreations(c *gin.Context) {
 
 	eng, _ := model.EngineByName(data.Engine)
 
-	storage := lib.NewStorage(lib.SrcCreations, user.Name, data.Version)
+	storage := lib.NewStorage(lib.SrcCreations, data.Version)
 
 	if data.Document != "" {
-		storage.StoreFile(data.Document, "text/html", data.Title, "doc.html")
+		storage.StoreFile(data.Document, "text/html", user.Name, data.Title, "doc.html", "")
 	}
 	if data.Script != "" {
-		storage.StoreFile(data.Script, eng.ContentType, data.Title, "script"+eng.Extension)
+		storage.StoreFile(data.Script, eng.ContentType, user.Name, data.Title, "script"+eng.Extension, "")
 	}
 	if data.Style != "" {
-		storage.StoreFile(data.Style, "text/css", data.Title, "style.css")
+		storage.StoreFile(data.Style, "text/css", user.Name, data.Title, "style.css", "")
 	}
 
 	if storage.Error != nil {
