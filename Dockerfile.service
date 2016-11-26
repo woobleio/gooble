@@ -36,13 +36,15 @@ RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/dev.yml \
       && echo "db_port: 5432" >> $CONFPATH/dev.yml \
       && echo "db_username: wooble" >> $CONFPATH/dev.yml \
       && echo "db_password: w00b" >> $CONFPATH/dev.yml \
-      && echo "cloud_repo: wooble-dev" >> $CONFPATH/dev.yml
+      && echo "cloud_repo: wooble-dev" >> $CONFPATH/dev.yml \
+      && echo "key_range: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" >> $CONFPATH/test.yml
 
 RUN echo "db_host: woobleservice_woobledb_1" >> $CONFPATH/test.yml \
       && echo "db_name: wooble_test" >> $CONFPATH/test.yml \
       && echo "db_port: 5432" >> $CONFPATH/test.yml \
       && echo "db_username: user_test" >> $CONFPATH/test.yml \
-      && echo "cloud_repo: wooble-dev" >> $CONFPATH/dev.yml
+      && echo "cloud_repo: wooble-dev" >> $CONFPATH/test.yml \
+      && echo "key_range: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" >> $CONFPATH/test.yml
 
 WORKDIR $GOPATH/src/wooble
 

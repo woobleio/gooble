@@ -5,7 +5,7 @@ import (
 )
 
 type Engine struct {
-	Name string `json:"name"   db:"name"`
+	Name string `json:"name"   db:"eng.name"`
 
 	ContentType string `json:"-" db:"content_type"`
 	Extension   string `json:"-" db:"extension"`
@@ -15,8 +15,10 @@ func EngineByName(name string) (*Engine, error) {
 	var eng Engine
 	q := `
 		SELECT
-			*
-		FROM engine
+			e.name "eng.name",
+			e.extension,
+			e.content_type
+		FROM engine e
 		WHERE name = $1
 	`
 

@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,14 +17,13 @@ const (
 )
 
 type Storage struct {
-	Error    error
-	Session  *session.Session
-	Source   string
-	Username string
-	Version  string
+	Error   error
+	Session *session.Session
+	Source  string
+	Version string
 }
 
-func NewStorage(src string, username string, v string) *Storage {
+func NewStorage(src string, v string) *Storage {
 	s, err := session.NewSession()
 	if err != nil {
 		panic(err)
@@ -33,22 +33,64 @@ func NewStorage(src string, username string, v string) *Storage {
 		nil,
 		s,
 		src,
-		username,
 		v,
 	}
 
 	return stor
 }
 
-func (s *Storage) StoreFile(content string, contentType string, title string, filename string) {
+func (s *Storage) GetFileContent(username string, title string, filename string, key string) string {
 	svc := s3.New(s.Session)
 
-	p := &s3.PutObjectInput{
+	obj := &s3.GetObjectInput{
+		Bucket: aws.String(viper.GetString("cloud_repo")),
+
+		Key: aws.String(s.getBucketPath(makeId(username, key, title), filename)),
+	}
+	out, err := svc.GetObject(obj)
+	if err != nil {
+		s.Error = err
+		return ""
+	}
+	bf := new(bytes.Buffer)
+	bf.ReadFrom(out.Body)
+	return bf.String()
+}
+
+func (s *Storage) StoreFile(content string, contentType string, username string, title string, filename string, key string) string {
+	svc := s3.New(s.Session)
+
+	path := s.getBucketPath(makeId(username, key, title), filename)
+
+	obj := &s3.PutObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
 
 		Body:        bytes.NewReader([]byte(content)),
-		Key:         aws.String(fmt.Sprintf("%s/%s/%s/%s/%s", s.Source, s.Username, title, s.Version, filename)),
+		Key:         aws.String(path),
 		ContentType: aws.String(contentType),
 	}
-	_, s.Error = svc.PutObject(p)
+	_, s.Error = svc.PutObject(obj)
+	return path
+}
+
+func (s *Storage) getBucketPath(key []byte, filename string) string {
+	var path string
+	switch s.Source {
+	case SrcCreations:
+		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, key, s.Version, filename)
+	case SrcPackages:
+		path = fmt.Sprintf("%s/%x/%s", s.Source, key, filename)
+	}
+	return path
+}
+
+func makeId(username string, key string, title string) []byte {
+	h := sha1.New()
+	h.Write([]byte(username))
+	if key != "" {
+		h.Write([]byte(key))
+	}
+	h.Write([]byte(title))
+
+	return h.Sum(nil)
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"fmt"
 	"wooble/lib"
 	"wooble/model"
 
@@ -33,7 +34,7 @@ func GETCreations(c *gin.Context) {
 		}
 	}
 
-	res.Response(&data)
+	res.Response(data)
 
 	c.JSON(res.HttpStatus(), res)
 }
@@ -56,8 +57,8 @@ func POSTCreations(c *gin.Context) {
 	}
 
 	// TODO Authenticated user and put in CreatorID
-	user, _ := model.UserByID(4)
-	data.CreatorID = 4
+	user, _ := model.UserByID(1)
+	data.CreatorID = 1
 
 	creaId, err := model.NewCreation(&data)
 	if err != nil {
@@ -68,16 +69,16 @@ func POSTCreations(c *gin.Context) {
 
 	eng, _ := model.EngineByName(data.Engine)
 
-	storage := lib.NewStorage(lib.SrcCreations, user.Name, data.Version)
+	storage := lib.NewStorage(lib.SrcCreations, data.Version)
 
 	if data.Document != "" {
-		storage.StoreFile(data.Document, "text/html", data.Title, "doc.html")
+		storage.StoreFile(data.Document, "text/html", user.Name, data.Title, "doc.html", "")
 	}
 	if data.Script != "" {
-		storage.StoreFile(data.Script, eng.ContentType, data.Title, "script"+eng.Extension)
+		storage.StoreFile(data.Script, eng.ContentType, user.Name, data.Title, "script"+eng.Extension, "")
 	}
 	if data.Style != "" {
-		storage.StoreFile(data.Style, "text/css", data.Title, "style.css")
+		storage.StoreFile(data.Style, "text/css", user.Name, data.Title, "style.css", "")
 	}
 
 	if storage.Error != nil {
@@ -85,6 +86,8 @@ func POSTCreations(c *gin.Context) {
 		model.DeleteCreation(creaId)
 		res.Error(ErrServ, "doc, script and style files")
 	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%v", "creations", creaId))
 
 	res.Status = Created
 
