@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"fmt"
 	"wooble/lib"
 	"wooble/model"
 
@@ -33,7 +34,7 @@ func GETCreations(c *gin.Context) {
 		}
 	}
 
-	res.Response(&data)
+	res.Response(data)
 
 	c.JSON(res.HttpStatus(), res)
 }
@@ -85,6 +86,8 @@ func POSTCreations(c *gin.Context) {
 		model.DeleteCreation(creaId)
 		res.Error(ErrServ, "doc, script and style files")
 	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%v", "creations", creaId))
 
 	res.Status = Created
 

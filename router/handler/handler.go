@@ -31,9 +31,9 @@ const (
 )
 
 type JSONRes struct {
-	Data   *interface{} `json:"data"`
-	Errors []ReqError   `json:"errors,omitempty"`
-	Status int          `json:"-"`
+	Data   interface{} `json:"data"`
+	Errors []ReqError  `json:"errors,omitempty"`
+	Status int         `json:"-"`
 }
 
 func NewRes() JSONRes {
@@ -56,7 +56,7 @@ func (j *JSONRes) HttpStatus() int {
 	return j.Status
 }
 
-func (j *JSONRes) Response(data *interface{}) {
+func (j *JSONRes) Response(data interface{}) {
 	j.Data = data
 }
 

@@ -17,7 +17,7 @@ SET row_security = off;
 
 --
 -- TOC entry 1 (class 3079 OID 12361)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
@@ -26,7 +26,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- TOC entry 2184 (class 0 OID 0)
 -- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -104,7 +104,7 @@ ALTER SEQUENCE app_user_id_seq OWNED BY app_user.id;
 
 CREATE TABLE creation (
     id integer NOT NULL,
-    title text DEFAULT 'toto'::bpchar NOT NULL,
+    title text DEFAULT 'unknown'::bpchar NOT NULL,
     creator_id integer NOT NULL,
     version text DEFAULT 1.0 NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE package (
     title text NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
-    domains text[],
+    domains text[] NOT NULL,
     engine text NOT NULL,
     key text NOT NULL
 );
@@ -547,4 +547,3 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
-

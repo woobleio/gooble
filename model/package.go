@@ -21,8 +21,9 @@ type Package struct {
 }
 
 type PackageForm struct {
-	Engine string `json:"engine" binding:"required"`
-	Title  string `json:"title" binding:"required"`
+	Domains lib.StringSlice `json:"domains" binding:"required"`
+	Engine  string          `json:"engine" binding:"required"`
+	Title   string          `json:"title" binding:"required"`
 
 	Key    string
 	UserID uint64
@@ -81,9 +82,8 @@ func PackageByID(id uint64) (*Package, error) {
 }
 
 func NewPackage(data *PackageForm) (pkgId uint64, err error) {
-	// TODO create domains
-	q := `INSERT INTO package(title, engine, user_id, key) VALUES ($1, $2, $3, $4) RETURNING id`
-	err = lib.DB.QueryRow(q, data.Title, data.Engine, data.UserID, data.Key).Scan(&pkgId)
+	q := `INSERT INTO package(title, engine, user_id, domains, key) VALUES ($1, $2, $3, $4, $5) RETURNING id`
+	err = lib.DB.QueryRow(q, data.Title, data.Engine, data.UserID, data.Domains, data.Key).Scan(&pkgId)
 	return pkgId, err
 }
 

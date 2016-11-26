@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"wooble/lib"
 	"wooble/model"
@@ -17,7 +18,7 @@ func POSTPackages(c *gin.Context) {
 
 	res := NewRes()
 
-	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
+	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
 		res.Error(ErrBadForm, "title (string) is required and engine (string) is required")
@@ -29,12 +30,15 @@ func POSTPackages(c *gin.Context) {
 	data.UserID = 1
 	data.Key = lib.GenKey()
 
-	_, err := model.NewPackage(&data)
+	id, err := model.NewPackage(&data)
 	if err != nil {
+		fmt.Print(err)
 		res.Error(ErrDBSave, "- Title should be unique for the creator")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", id))
 
 	res.Status = Created
 
@@ -73,13 +77,18 @@ func PushCreations(c *gin.Context) {
 		}
 	}
 
+	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkgID))
+
 	res.Status = Created
 
 	c.JSON(res.HttpStatus(), res)
 }
 
 func BuildPackage(c *gin.Context) {
-	var data interface{}
+	type Build struct {
+		Source string `json:"source"`
+	}
+	var data Build
 	res := NewRes()
 
 	param := c.Param("id")
@@ -92,7 +101,6 @@ func BuildPackage(c *gin.Context) {
 
 	pkg, err := model.PackageByID(pkgID)
 	if err != nil {
-		fmt.Print(err)
 		res.Error(ErrResNotFound, "package", "")
 		c.JSON(res.HttpStatus(), res)
 		return
@@ -110,7 +118,6 @@ func BuildPackage(c *gin.Context) {
 		storage.Version = creation.Version
 
 		if creation.HasScript {
-			// TODO a creation Title, if two creations has the same name it'll trigger an error
 			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "script"+creation.Engine.Extension, "")
 
 			script, err = wb.Inject(src, creation.Title)
@@ -147,10 +154,14 @@ func BuildPackage(c *gin.Context) {
 		return
 	}
 
-	// TODO toto should be authd user
-	storage.StoreFile(bf.String(), pkg.Engine.ContentType, "toto", pkg.Title, "pkg"+pkg.Engine.Extension, pkg.Key)
+	// TODO slals should be authd user
+	path := storage.StoreFile(bf.String(), pkg.Engine.ContentType, "slals", pkg.Title, "wooble"+pkg.Engine.Extension, pkg.Key)
 
-	res.Response(&data)
+	spltPath := strings.Split(path, "/")
+	spltPath[0] = ""
+	data.Source = "https://pkg.wooble.io" + strings.Join(spltPath, "/")
+
+	res.Response(data)
 
 	res.Status = OK
 

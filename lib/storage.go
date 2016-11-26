@@ -57,17 +57,20 @@ func (s *Storage) GetFileContent(username string, title string, filename string,
 	return bf.String()
 }
 
-func (s *Storage) StoreFile(content string, contentType string, username string, title string, filename string, key string) {
+func (s *Storage) StoreFile(content string, contentType string, username string, title string, filename string, key string) string {
 	svc := s3.New(s.Session)
+
+	path := s.getBucketPath(makeId(username, key, title), filename)
 
 	obj := &s3.PutObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
 
 		Body:        bytes.NewReader([]byte(content)),
-		Key:         aws.String(s.getBucketPath(makeId(username, key, title), filename)),
+		Key:         aws.String(path),
 		ContentType: aws.String(contentType),
 	}
 	_, s.Error = svc.PutObject(obj)
+	return path
 }
 
 func (s *Storage) getBucketPath(key []byte, filename string) string {

@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -96,6 +97,7 @@ func (v *NullTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// see https://gist.github.com/adharris/4163702
 type StringSlice []string
 
 func (s *StringSlice) Scan(src interface{}) error {
@@ -132,4 +134,11 @@ func (s *StringSlice) Scan(src interface{}) error {
 	(*s) = StringSlice(parsed)
 
 	return nil
+}
+
+func (s StringSlice) Value() (driver.Value, error) {
+	for i, elem := range s {
+		s[i] = `"` + strings.Replace(strings.Replace(elem, `\`, `\\\`, -1), `"`, `\"`, -1) + `"`
+	}
+	return "{" + strings.Join(s, ",") + "}", nil
 }
