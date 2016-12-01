@@ -13,12 +13,14 @@ const (
 	badParam        // 103
 	dbSave          // 104
 	servErr         // 105
+	badCreds        // 106
 )
 
 // API errors
 var (
 	ErrDBSave      = ReqError{dbSave, "Database error", "One or many issues encountered while saving the data :\n %s", http.StatusInternalServerError}
 	ErrDBSelect    = ReqError{dbSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError}
+	ErrBadCreds    = ReqError{badCreds, "Wrong credentials", "%s", http.StatusUnauthorized}
 	ErrBadForm     = ReqError{badForm, "Form not valid", "%s", http.StatusBadRequest}
 	ErrBadParam    = ReqError{badParam, "Bad param", "Param should be of type %s", http.StatusBadRequest}
 	ErrResNotFound = ReqError{resNotFound, "Resource not found", "%s %s not found", http.StatusNotFound}

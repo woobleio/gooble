@@ -18,7 +18,10 @@ func Load() {
 			c.String(200, "%s", time.Now())
 		})
 
-		v1.GET("/creations/:title", handler.GETCreations)
+		v1.POST("/signin", handler.SignIn)
+		v1.POST("/signup", handler.SignUp)
+
+		v1.GET("/creations/:title", handler.GETCreations) // TODO /creations/:username/:title
 		v1.GET("/creations", handler.GETCreations)
 		v1.POST("/creations", handler.POSTCreations)
 

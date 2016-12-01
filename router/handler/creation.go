@@ -40,7 +40,7 @@ func GETCreations(c *gin.Context) {
 }
 
 func POSTCreations(c *gin.Context) {
-	var data model.CreationForm
+	var data model.Creation
 
 	res := NewRes()
 
@@ -67,7 +67,12 @@ func POSTCreations(c *gin.Context) {
 		return
 	}
 
-	eng, _ := model.EngineByName(data.Engine)
+	eng, err := model.EngineByName(data.FEngine)
+	if err != nil {
+		res.Error(ErrServ, "engine : "+data.FEngine+" does not exist")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
 
 	storage := lib.NewStorage(lib.SrcCreations, data.Version)
 

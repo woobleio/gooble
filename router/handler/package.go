@@ -14,14 +14,14 @@ import (
 )
 
 func POSTPackages(c *gin.Context) {
-	var data model.PackageForm
+	var data model.Package
 
 	res := NewRes()
 
 	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string) is required and engine (string) is required")
+		res.Error(ErrBadForm, "title (string) and engine (string) are required")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
@@ -145,6 +145,8 @@ func BuildPackage(c *gin.Context) {
 
 	storage.Source = lib.SrcPackages
 	storage.Version = ""
+
+	fmt.Print(pkg.Domains)
 
 	bf, err := wb.SecureAndWrap(pkg.Domains...)
 
