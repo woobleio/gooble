@@ -5,11 +5,11 @@
 -- Dumped from database version 9.5.4
 -- Dumped by pg_dump version 9.5.4
 
--- Started on 2016-11-25 02:58:39 UTC
+-- Started on 2016-11-29 22:06:55 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
-SET client_encoding = 'SQL_ASCII';
+SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
@@ -17,7 +17,7 @@ SET row_security = off;
 
 --
 -- TOC entry 1 (class 3079 OID 12361)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
@@ -26,7 +26,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- TOC entry 2184 (class 0 OID 0)
 -- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -67,7 +67,8 @@ CREATE TABLE app_user (
     created_at date DEFAULT ('now'::text)::date,
     updated_at date,
     is_creator boolean,
-    passwd text NOT NULL
+    passwd text,
+    salt_key text NOT NULL
 );
 
 
@@ -242,7 +243,7 @@ ALTER TABLE ONLY package ALTER COLUMN id SET DEFAULT nextval('package_id_seq'::r
 -- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd) FROM stdin;
+COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key) FROM stdin;
 \.
 
 
@@ -436,7 +437,7 @@ CREATE INDEX fki_package_id_fk ON package_creation USING btree (package_id);
 
 
 --
--- TOC entry 2036 (class 1259 OID 16596)
+-- TOC entry 2036 (class 1259 OID 16454)
 -- Name: fki_pkg_engine_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -444,7 +445,7 @@ CREATE INDEX fki_pkg_engine_fk ON package USING btree (engine);
 
 
 --
--- TOC entry 2053 (class 2620 OID 16454)
+-- TOC entry 2053 (class 2620 OID 16455)
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
@@ -452,7 +453,7 @@ CREATE TRIGGER update_date BEFORE UPDATE OF version ON creation FOR EACH ROW EXE
 
 
 --
--- TOC entry 2052 (class 2620 OID 16455)
+-- TOC entry 2052 (class 2620 OID 16456)
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
@@ -460,7 +461,7 @@ CREATE TRIGGER update_date BEFORE UPDATE OF name, email, is_creator ON app_user 
 
 
 --
--- TOC entry 2054 (class 2620 OID 16456)
+-- TOC entry 2054 (class 2620 OID 16457)
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
@@ -468,7 +469,7 @@ CREATE TRIGGER update_date AFTER UPDATE ON package FOR EACH ROW EXECUTE PROCEDUR
 
 
 --
--- TOC entry 2045 (class 2606 OID 16457)
+-- TOC entry 2045 (class 2606 OID 16458)
 -- Name: app_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -477,7 +478,7 @@ ALTER TABLE ONLY creation
 
 
 --
--- TOC entry 2047 (class 2606 OID 16462)
+-- TOC entry 2047 (class 2606 OID 16463)
 -- Name: app_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -486,7 +487,7 @@ ALTER TABLE ONLY package
 
 
 --
--- TOC entry 2050 (class 2606 OID 16467)
+-- TOC entry 2050 (class 2606 OID 16468)
 -- Name: creation_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -495,7 +496,7 @@ ALTER TABLE ONLY package_creation
 
 
 --
--- TOC entry 2046 (class 2606 OID 16472)
+-- TOC entry 2046 (class 2606 OID 16473)
 -- Name: engine_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -504,7 +505,7 @@ ALTER TABLE ONLY creation
 
 
 --
--- TOC entry 2049 (class 2606 OID 16602)
+-- TOC entry 2048 (class 2606 OID 16478)
 -- Name: engine_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -513,7 +514,7 @@ ALTER TABLE ONLY package
 
 
 --
--- TOC entry 2051 (class 2606 OID 16477)
+-- TOC entry 2051 (class 2606 OID 16483)
 -- Name: package_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -522,7 +523,7 @@ ALTER TABLE ONLY package_creation
 
 
 --
--- TOC entry 2048 (class 2606 OID 16597)
+-- TOC entry 2049 (class 2606 OID 16488)
 -- Name: pkg_engine_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -542,8 +543,9 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2016-11-25 02:58:40 UTC
+-- Completed on 2016-11-29 22:06:56 UTC
 
 --
 -- PostgreSQL database dump complete
 --
+

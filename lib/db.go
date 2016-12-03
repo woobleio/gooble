@@ -128,6 +128,7 @@ func (s *StringSlice) Scan(src interface{}) error {
 		s := match[valueIndex]
 		// the string _might_ be wrapped in quotes, so trim them:
 		s = strings.Trim(s, "\"")
+		s = strings.Trim(s, ",")
 		parsed = append(parsed, s)
 	}
 

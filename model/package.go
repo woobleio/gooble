@@ -7,26 +7,18 @@ import (
 type Package struct {
 	ID uint64 `json:"id" db:"pkg.id"`
 
-	Domains lib.StringSlice `json:"domains" db:"domains"`
-	Engine  Engine          `json:"engine" db:""`
-	Key     string          `json:"-" db:"key"`
-	UserID  uint64          `json:"-" db:"user_id"`
-	User    User            `json:"user" db:""`
-	Title   string          `json:"title" db:"pkg.title"`
+	Domains lib.StringSlice `json:"domains" binding:"required" db:"domains"`
+	FEngine string          `json:"engine" binding:"required" db:"eng.name"`
+	Title   string          `json:"title" binding:"required" db:"pkg.title"`
 
+	Key       string     `json:"-" db:"key"`
+	Engine    Engine     `json:"-" db:""`
+	UserID    uint64     `json:"-" db:"user_id"`
+	User      User       `json:"user" db:""`
 	Creations []Creation `json:"creations" db:""`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"pkg.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
-}
-
-type PackageForm struct {
-	Domains lib.StringSlice `json:"domains" binding:"required"`
-	Engine  string          `json:"engine" binding:"required"`
-	Title   string          `json:"title" binding:"required"`
-
-	Key    string
-	UserID uint64
 }
 
 func (p *Package) PopulateCreations() error {
@@ -58,6 +50,7 @@ func PackageByID(id uint64) (*Package, error) {
 	q := `
 	SELECT
 		pkg.id "pkg.id",
+		pkg.user_id,
 		pkg.title "pkg.title",
 		pkg.domains,
 		pkg.key,
@@ -81,9 +74,9 @@ func PackageByID(id uint64) (*Package, error) {
 	return &pkg, pkg.PopulateCreations()
 }
 
-func NewPackage(data *PackageForm) (pkgId uint64, err error) {
+func NewPackage(data *Package) (pkgId uint64, err error) {
 	q := `INSERT INTO package(title, engine, user_id, domains, key) VALUES ($1, $2, $3, $4, $5) RETURNING id`
-	err = lib.DB.QueryRow(q, data.Title, data.Engine, data.UserID, data.Domains, data.Key).Scan(&pkgId)
+	err = lib.DB.QueryRow(q, data.Title, data.FEngine, data.UserID, data.Domains, data.Key).Scan(&pkgId)
 	return pkgId, err
 }
 

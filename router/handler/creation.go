@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"fmt"
+
 	"wooble/lib"
 	"wooble/model"
 
@@ -40,14 +41,14 @@ func GETCreations(c *gin.Context) {
 }
 
 func POSTCreations(c *gin.Context) {
-	var data model.CreationForm
+	var data model.Creation
 
 	res := NewRes()
 
 	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string) is required")
+		res.Error(ErrBadForm, "title (string), engine (string) are required")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
@@ -56,29 +57,35 @@ func POSTCreations(c *gin.Context) {
 		data.Version = model.BASE_VERSION
 	}
 
-	// TODO Authenticated user and put in CreatorID
-	user, _ := model.UserByID(1)
-	data.CreatorID = 1
+	user, _ := c.Get("user")
+
+	data.CreatorID = user.(*model.User).ID
 
 	creaId, err := model.NewCreation(&data)
 	if err != nil {
+		fmt.Print(err)
 		res.Error(ErrDBSave, "- Title should be unique for the creator\n")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
 
-	eng, _ := model.EngineByName(data.Engine)
+	eng, err := model.EngineByName(data.FEngine)
+	if err != nil {
+		res.Error(ErrServ, "engine : "+data.FEngine+" does not exist")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
 
 	storage := lib.NewStorage(lib.SrcCreations, data.Version)
 
 	if data.Document != "" {
-		storage.StoreFile(data.Document, "text/html", user.Name, data.Title, "doc.html", "")
+		storage.StoreFile(data.Document, "text/html", user.(*model.User).Name, data.Title, "doc.html", "")
 	}
 	if data.Script != "" {
-		storage.StoreFile(data.Script, eng.ContentType, user.Name, data.Title, "script"+eng.Extension, "")
+		storage.StoreFile(data.Script, eng.ContentType, user.(*model.User).Name, data.Title, "script"+eng.Extension, "")
 	}
 	if data.Style != "" {
-		storage.StoreFile(data.Style, "text/css", user.Name, data.Title, "style.css", "")
+		storage.StoreFile(data.Style, "text/css", user.(*model.User).Name, data.Title, "style.css", "")
 	}
 
 	if storage.Error != nil {

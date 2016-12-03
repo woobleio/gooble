@@ -14,25 +14,24 @@ import (
 )
 
 func POSTPackages(c *gin.Context) {
-	var data model.PackageForm
+	var data model.Package
 
 	res := NewRes()
 
 	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string) is required and engine (string) is required")
+		res.Error(ErrBadForm, "title (string) and engine (string) are required")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
 
-	// TODO Authenticated user and put in CreatorID
-	data.UserID = 1
+	user, _ := c.Get("user")
+	data.UserID = user.(*model.User).ID
 	data.Key = lib.GenKey()
 
 	id, err := model.NewPackage(&data)
 	if err != nil {
-		fmt.Print(err)
 		res.Error(ErrDBSave, "- Title should be unique for the creator")
 		c.JSON(res.HttpStatus(), res)
 		return
@@ -67,6 +66,20 @@ func PushCreations(c *gin.Context) {
 	pkgID, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
 		res.Error(ErrBadParam, "int")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
+
+	pkg, err := model.PackageByID(pkgID)
+	if err != nil {
+		res.Error(ErrResNotFound, "package", "")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
+
+	user, _ := c.Get("user")
+	if pkg.UserID != user.(*model.User).ID {
+		res.Error(ErrNotOwner)
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
@@ -106,7 +119,13 @@ func BuildPackage(c *gin.Context) {
 		return
 	}
 
-	// TODO auth user, version choosen
+	user, _ := c.Get("user")
+	if pkg.UserID != user.(*model.User).ID {
+		res.Error(ErrNotOwner)
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
+
 	storage := lib.NewStorage(lib.SrcPackages, "1.0")
 
 	storage.Source = lib.SrcCreations
@@ -154,8 +173,7 @@ func BuildPackage(c *gin.Context) {
 		return
 	}
 
-	// TODO slals should be authd user
-	path := storage.StoreFile(bf.String(), pkg.Engine.ContentType, "slals", pkg.Title, "wooble"+pkg.Engine.Extension, pkg.Key)
+	path := storage.StoreFile(bf.String(), pkg.Engine.ContentType, user.(*model.User).Name, pkg.Title, "wooble"+pkg.Engine.Extension, pkg.Key)
 
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
