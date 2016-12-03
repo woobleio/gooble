@@ -11,8 +11,8 @@ import (
 type User struct {
 	ID uint64 `json:"-" db:"user.id"`
 
-	Email string `json:"email" binding:"required" db:"email"`
-	Name  string `json:"name" binding:"required" db:"name"`
+	Email string `json:"email" db:"email"`
+	Name  string `json:"name" db:"name"`
 
 	IsCreator bool   `json:"isCreator" db:"is_creator"`
 	Passwd    string `json:"secret" db:"passwd"`
@@ -55,13 +55,14 @@ func UserByLogin(login string) (*User, error) {
 	var user User
 	q := `
 		SELECT
+			u.id "user.id",
+			u.name,
 			u.passwd,
 			u.salt_key
 		FROM app_user u
 		WHERE u.name = $1
 		OR u.email = $1
 	`
-
 	return &user, lib.DB.Get(&user, q, login)
 }
 

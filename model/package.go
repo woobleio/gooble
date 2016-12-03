@@ -50,6 +50,7 @@ func PackageByID(id uint64) (*Package, error) {
 	q := `
 	SELECT
 		pkg.id "pkg.id",
+		pkg.user_id,
 		pkg.title "pkg.title",
 		pkg.domains,
 		pkg.key,

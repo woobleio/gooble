@@ -54,7 +54,6 @@ COPY . $GOPATH/src/wooble/
 
 RUN go get github.com/aws/aws-sdk-go/...
 RUN go get github.com/codegangsta/gin
-RUN go get github.com/dgrijalva/jwt-go
 RUN go get github.com/jmoiron/sqlx
 RUN go get github.com/lib/pq
 RUN go get github.com/spf13/viper

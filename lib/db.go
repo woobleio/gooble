@@ -127,7 +127,6 @@ func (s *StringSlice) Scan(src interface{}) error {
 	for _, match := range matches {
 		s := match[valueIndex]
 		// the string _might_ be wrapped in quotes, so trim them:
-		fmt.Printf("Match %s\n", s)
 		s = strings.Trim(s, "\"")
 		s = strings.Trim(s, ",")
 		parsed = append(parsed, s)

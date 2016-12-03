@@ -2,7 +2,6 @@ package handler
 
 import (
 	"database/sql"
-	"fmt"
 
 	"wooble/model"
 
@@ -21,14 +20,13 @@ func SignIn(c *gin.Context) {
 
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&form) != nil {
-		res.Error(ErrBadForm, "title (stri)")
+		res.Error(ErrBadForm, "login (string) is required")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}
 
 	user, err := model.UserByLogin(form.Login)
 	if err != nil {
-		fmt.Print(err)
 		if err == sql.ErrNoRows {
 			res.Error(ErrBadCreds, "Username or email do not exist")
 		} else {
@@ -39,7 +37,7 @@ func SignIn(c *gin.Context) {
 	}
 
 	if user.IsPasswordValid(form.Passwd) {
-		token, err := model.NewToken(user.ID)
+		token, err := model.NewToken(user.ID, user.Name)
 		if err != nil {
 			res.Error(ErrServ, "token generation")
 			c.JSON(res.HttpStatus(), res)
@@ -70,8 +68,9 @@ func SignUp(c *gin.Context) {
 
 	_, err := model.NewUser(&data)
 	if err != nil {
-		fmt.Print(err)
 		res.Error(ErrDBSave, "- Name should be unique")
+	} else {
+		c.Header("Location", "/signin")
 	}
 
 	res.Status = Created
