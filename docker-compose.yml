@@ -1,5 +1,6 @@
 gowooble:
   build: .
+  container_name: gowooble
   dockerfile: Dockerfile.service
   ports:
     - "3000:3000"
@@ -10,6 +11,7 @@ gowooble:
 
 woobledb:
   build: .
+  container_name: woobledb
   dockerfile: Dockerfile.db
   ports:
     - "5432:5432"

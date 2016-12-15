@@ -63,7 +63,6 @@ func POSTCreations(c *gin.Context) {
 
 	creaId, err := model.NewCreation(&data)
 	if err != nil {
-		fmt.Print(err)
 		res.Error(ErrDBSave, "- Title should be unique for the creator\n")
 		c.JSON(res.HttpStatus(), res)
 		return

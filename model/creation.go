@@ -21,7 +21,7 @@ type Creation struct {
 	HasDoc    bool   `json:"-"       db:"has_document"`
 	HasScript bool   `json:"-"       db:"has_script"`
 	HasStyle  bool   `json:"-"       db:"has_style"`
-	Engine    Engine `json:"-"  		 db:""`
+	Engine    Engine `json:"-" db:""`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
@@ -32,7 +32,7 @@ const BASE_VERSION string = "1.0"
 func AllCreations(opt lib.Option) (*[]Creation, error) {
 	var creations []Creation
 	q := lib.Query{`
-	  SELECT
+		SELECT
 	    c.id "crea.id",
 	    c.title,
 	    c.created_at "crea.created_at",
