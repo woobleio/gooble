@@ -17,10 +17,9 @@ func Authenticate() gin.HandlerFunc {
 
 		// TODO Oauth spec
 		if ve, ok := err.(*jwt_lib.ValidationError); ok {
-			if ve.Errors&jwt_lib.ValidationErrorMalformed != 0 {
-				// Not a token
+			if model.IsTokenMalformed(ve) {
 				fmt.Println("That's not even a token")
-			} else if ve.Errors&(jwt_lib.ValidationErrorExpired) != 0 {
+			} else if model.IsTokenExpired(ve) {
 				// Token is either expired
 				fmt.Println("Timing is everything")
 			}

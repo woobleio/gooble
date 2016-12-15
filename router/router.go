@@ -20,8 +20,9 @@ func Load() {
 			c.String(200, "%s", time.Now())
 		})
 
-		v1.POST("/signin", handler.SignIn)
 		v1.POST("/signup", handler.SignUp)
+		v1.POST("/token/generate", handler.GenerateToken)
+		v1.POST("/token/refresh", handler.RefreshToken)
 
 		v1.GET("/creations/:title", handler.GETCreations) // TODO /creations/:username/:title
 		v1.GET("/creations", handler.GETCreations)
@@ -29,7 +30,6 @@ func Load() {
 		v1.Use(middleware.Authenticate())
 		{
 			v1.POST("/creations", handler.POSTCreations)
-			v1.GET("/toto", handler.POSTCreations)
 
 			v1.POST("/packages", handler.POSTPackages)
 

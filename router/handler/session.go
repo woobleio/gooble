@@ -8,13 +8,13 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
-func SignIn(c *gin.Context) {
-	type SigninForm struct {
+func GenerateToken(c *gin.Context) {
+	type CredsForm struct {
 		Login  string `json:"login" binding:"required"`
-		Passwd string `json:"passwd"`
+		Passwd string `json:"secret"`
 	}
 
-	var form SigninForm
+	var form CredsForm
 
 	res := NewRes()
 
@@ -37,7 +37,7 @@ func SignIn(c *gin.Context) {
 	}
 
 	if user.IsPasswordValid(form.Passwd) {
-		token, err := model.NewToken(user.ID, user.Name)
+		token, err := model.NewToken(user, "")
 		if err != nil {
 			res.Error(ErrServ, "token generation")
 			c.JSON(res.HttpStatus(), res)
@@ -47,6 +47,34 @@ func SignIn(c *gin.Context) {
 	} else {
 		res.Error(ErrBadCreds, "Password invalid")
 	}
+
+	res.Status = Created
+
+	c.JSON(res.HttpStatus(), res)
+}
+
+func RefreshToken(c *gin.Context) {
+	type TokenForm struct {
+		Token string `json:"accessToken" binding:"required"`
+	}
+
+	var form TokenForm
+
+	res := NewRes()
+
+	c.Header("Content-Type", gin.MIMEJSON)
+	if c.BindJSON(&form) != nil {
+		res.Error(ErrBadForm, "accessToken (string) is required")
+		c.JSON(res.HttpStatus(), res)
+		return
+	}
+
+	token, err := model.RefreshToken(form.Token)
+	if err != nil {
+		res.Error(ErrServ, "token refresh")
+	}
+
+	res.Response(&token)
 
 	res.Status = Created
 
