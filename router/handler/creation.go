@@ -41,7 +41,7 @@ func GETCreations(c *gin.Context) {
 }
 
 func POSTCreations(c *gin.Context) {
-	var data model.Creation
+	var data model.CreationForm
 
 	res := NewRes()
 
@@ -54,7 +54,7 @@ func POSTCreations(c *gin.Context) {
 	}
 
 	if data.Version == "" {
-		data.Version = model.BASE_VERSION
+		data.Version = model.BaseVersion
 	}
 
 	user, _ := c.Get("user")
@@ -68,9 +68,9 @@ func POSTCreations(c *gin.Context) {
 		return
 	}
 
-	eng, err := model.EngineByName(data.FEngine)
+	eng, err := model.EngineByName(data.Engine)
 	if err != nil {
-		res.Error(ErrServ, "engine : "+data.FEngine+" does not exist")
+		res.Error(ErrServ, "engine : "+data.Engine+" does not exist")
 		c.JSON(res.HttpStatus(), res)
 		return
 	}

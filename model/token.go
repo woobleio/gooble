@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"wooble/lib"
 
 	"golang.org/x/crypto/scrypt"
 
@@ -31,7 +32,7 @@ func NewToken(user *User, refreshToken string) (*Token, error) {
 		user.Name,
 		refreshToken,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Minute * 1).Unix(), // TODO * 30
+			ExpiresAt: time.Now().Add(time.Minute * time.Duration(lib.GetTokenLifetime())).Unix(),
 			IssuedAt:  time.Now().Unix(),
 			Issuer:    "wooble.io", // TODO
 			Subject:   fmt.Sprintf("%v", user.ID),

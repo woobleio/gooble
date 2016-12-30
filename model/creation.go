@@ -7,16 +7,11 @@ import (
 type Creation struct {
 	ID uint64 `json:"id"      db:"crea.id"`
 
-	FEngine string `json:"engine" binding:"required" db:"eng.name"`
-	Title   string `json:"title" binding:"required"  db:"title"`
-
-	Document string `json:"document"`
-	Script   string `json:"script"`
-	Style    string `json:"style"`
-	Version  string `json:"version" db:"version"`
+	Title   string `json:"title"  db:"title"`
+	Creator User   `json:"creator" db:""`
+	Version string `json:"version" db:"version"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
-	Creator   User   `json:"creator" db:""`
 	SourceID  uint64 `json:"-"       db:"source_id"`
 	HasDoc    bool   `json:"-"       db:"has_document"`
 	HasScript bool   `json:"-"       db:"has_script"`
@@ -27,7 +22,20 @@ type Creation struct {
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
 }
 
-const BASE_VERSION string = "1.0"
+type CreationForm struct {
+	CreatorID uint64
+
+	Engine string `json:"engine" binding:"required"`
+	Title  string `json:"title" binding:"required"`
+
+	Document string `json:"document"`
+	Script   string `json:"script"`
+	Style    string `json:"style"`
+
+	Version string
+}
+
+const BaseVersion string = "1.0"
 
 func AllCreations(opt lib.Option) (*[]Creation, error) {
 	var creations []Creation
@@ -93,8 +101,8 @@ func DeleteCreation(id uint64) error {
 	return err
 }
 
-func NewCreation(data *Creation) (creaId uint64, err error) {
+func NewCreation(data *CreationForm) (creaId uint64, err error) {
 	q := `INSERT INTO creation(title, creator_id, version, has_document, has_script, has_style, engine) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
-	err = lib.DB.QueryRow(q, data.Title, data.CreatorID, data.Version, data.Document != "", data.Script != "", data.Style != "", data.FEngine).Scan(&creaId)
+	err = lib.DB.QueryRow(q, data.Title, data.CreatorID, data.Version, data.Document != "", data.Script != "", data.Style != "", data.Engine).Scan(&creaId)
 	return creaId, err
 }

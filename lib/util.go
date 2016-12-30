@@ -14,3 +14,7 @@ func GenKey() string {
 	}
 	return string(b)
 }
+
+func GetTokenLifetime() int {
+	return viper.GetInt("token_lifetime")
+}

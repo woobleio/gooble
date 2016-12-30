@@ -11,11 +11,11 @@ import (
 type User struct {
 	ID uint64 `json:"-" db:"user.id"`
 
-	Email string `json:"email" db:"email"`
-	Name  string `json:"name" db:"name"`
+	Email  string `json:"email" binding:"required" db:"email"`
+	Name   string `json:"name" binding:"required" db:"name"`
+	Passwd string `json:"secret" binding:"required" db:"passwd"`
 
-	IsCreator bool   `json:"isCreator" db:"is_creator"`
-	Passwd    string `json:"secret" db:"passwd"`
+	IsCreator bool `json:"isCreator" db:"is_creator"`
 
 	IsAuth bool   `json:"-" db:"is_auth"`
 	Salt   string `json:"-" db:"salt_key"`
