@@ -18,3 +18,7 @@ func GenKey() string {
 func GetTokenLifetime() int {
 	return viper.GetInt("token_lifetime")
 }
+
+func GetOrigins() []string {
+	return viper.GetStringSlice("allow_origin")
+}

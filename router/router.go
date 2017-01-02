@@ -3,9 +3,11 @@ package router
 import (
 	"time"
 
+	"wooble/lib"
 	"wooble/router/handler"
 	"wooble/router/middleware"
 
+	cors "gopkg.in/gin-contrib/cors.v1"
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
@@ -13,6 +15,11 @@ func Load() {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+
+	config := cors.DefaultConfig()
+	config.AllowOrigins = lib.GetOrigins()
+
+	r.Use(cors.New(config))
 
 	v1 := r.Group("/v1")
 	{
