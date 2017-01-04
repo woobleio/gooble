@@ -3,7 +3,10 @@ package handler
 import (
 	"database/sql"
 
+	jwt "github.com/dgrijalva/jwt-go"
+
 	"wooble/model"
+	"wooble/router/helper"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -37,13 +40,16 @@ func GenerateToken(c *gin.Context) {
 	}
 
 	if user.IsPasswordValid(form.Passwd) {
-		token, err := model.NewToken(user, "")
+		token := model.NewToken(user, "")
+		tokenS, err := token.SignedString(model.TokenKey())
+
 		if err != nil {
 			res.Error(ErrServ, "token generation")
 			c.JSON(res.HttpStatus(), res)
 			return
 		}
-		res.Response(&token)
+
+		res.Response(tokenS)
 	} else {
 		res.Error(ErrBadCreds, "Password invalid")
 	}
@@ -54,54 +60,22 @@ func GenerateToken(c *gin.Context) {
 }
 
 func RefreshToken(c *gin.Context) {
-	type TokenForm struct {
-		Token string `json:"accessToken" binding:"required"`
-	}
-
-	var form TokenForm
-
 	res := NewRes()
 
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&form) != nil {
-		res.Error(ErrBadForm, "accessToken (string) is required")
-		c.JSON(res.HttpStatus(), res)
-		return
-	}
+	token, err := helper.ParseToken(c)
 
-	token, err := model.RefreshToken(form.Token)
-	if err != nil {
+	if ve, ok := err.(*jwt.ValidationError); ok && model.IsTokenExpired(ve) {
+		newToken, err := model.RefreshToken(token)
+		if err != nil {
+			res.Error(ErrServ, "token refresh")
+		}
+
+		res.Response(newToken)
+
+		res.Status = Created
+	} else if ve != nil {
 		res.Error(ErrServ, "token refresh")
 	}
-
-	res.Response(&token)
-
-	res.Status = Created
-
-	c.JSON(res.HttpStatus(), res)
-}
-
-func SignUp(c *gin.Context) {
-	var data model.User
-
-	res := NewRes()
-
-	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "name (string), email (string) and secret (string) are required")
-		c.JSON(res.HttpStatus(), res)
-		return
-	}
-
-	_, err := model.NewUser(&data)
-	if err != nil {
-		res.Error(ErrDBSave, "- Name should be unique")
-	} else {
-		c.Header("Location", "/signin")
-	}
-
-	res.Status = Created
 
 	c.JSON(res.HttpStatus(), res)
 }

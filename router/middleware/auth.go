@@ -1,31 +1,29 @@
 package middleware
 
 import (
-	"fmt"
 	"wooble/model"
+	"wooble/router/helper"
 
 	jwt_lib "github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/request"
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
 func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token, err := request.ParseFromRequest(c.Request, request.OAuth2Extractor, func(token *jwt_lib.Token) (interface{}, error) {
-			return model.TokenKey(), nil
-		})
+		token, err := helper.ParseToken(c)
 
-		// TODO Oauth spec
-		if ve, ok := err.(*jwt_lib.ValidationError); ok {
-			if model.IsTokenMalformed(ve) {
-				fmt.Println("That's not even a token")
-			} else if model.IsTokenExpired(ve) {
-				// Token is either expired
-				fmt.Println("Timing is everything")
+		if ve, ok := err.(*jwt_lib.ValidationError); ok && model.IsTokenExpired(ve) {
+			if newToken, refTokenErr := model.RefreshToken(token); refTokenErr == nil {
+				var tokenRaw string
+				tokenRaw, _ = newToken.SignedString(model.TokenKey())
+				token, err = jwt_lib.Parse(tokenRaw, func(token *jwt_lib.Token) (interface{}, error) {
+					return model.TokenKey(), nil
+				})
+				c.Header("x-access-token", tokenRaw)
 			}
 		}
 
-		if err != nil || !token.Valid {
+		if !token.Valid || err != nil {
 			c.Header("Location", "/signin")
 			c.AbortWithError(401, err)
 			return

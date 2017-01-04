@@ -11,9 +11,9 @@ import (
 type User struct {
 	ID uint64 `json:"-" db:"user.id"`
 
-	Email  string `json:"email" binding:"required" db:"email"`
+	Email  string `json:"email,omitempty" binding:"required" db:"email"`
 	Name   string `json:"name" binding:"required" db:"name"`
-	Passwd string `json:"secret" binding:"required" db:"passwd"`
+	Passwd string `json:"secret,omitempty" binding:"required" db:"passwd"`
 
 	IsCreator bool `json:"isCreator" db:"is_creator"`
 
