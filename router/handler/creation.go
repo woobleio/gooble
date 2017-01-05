@@ -10,6 +10,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
+// GETCreations is a handler that returns one or more creations
 func GETCreations(c *gin.Context) {
 	var data interface{}
 	var err error
@@ -37,9 +38,10 @@ func GETCreations(c *gin.Context) {
 
 	res.Response(data)
 
-	c.JSON(res.HttpStatus(), res)
+	c.JSON(res.HTTPStatus(), res)
 }
 
+// POSTCreations is a handler that retrieve a form and create a creation
 func POSTCreations(c *gin.Context) {
 	var data model.CreationForm
 
@@ -49,7 +51,7 @@ func POSTCreations(c *gin.Context) {
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
 		res.Error(ErrBadForm, "title (string), engine (string) are required")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -61,17 +63,17 @@ func POSTCreations(c *gin.Context) {
 
 	data.CreatorID = user.(*model.User).ID
 
-	creaId, err := model.NewCreation(&data)
+	creaID, err := model.NewCreation(&data)
 	if err != nil {
 		res.Error(ErrDBSave, "- Title should be unique for the creator\n")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	eng, err := model.EngineByName(data.Engine)
 	if err != nil {
 		res.Error(ErrServ, "engine : "+data.Engine+" does not exist")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -89,13 +91,13 @@ func POSTCreations(c *gin.Context) {
 
 	if storage.Error != nil {
 		// Delete the crea since files failed to be save in the cloud
-		model.DeleteCreation(creaId)
+		model.DeleteCreation(creaID)
 		res.Error(ErrServ, "doc, script and style files")
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%v", "creations", creaId))
+	c.Header("Location", fmt.Sprintf("/%s/%v", "creations", creaID))
 
 	res.Status = Created
 
-	c.JSON(res.HttpStatus(), res)
+	c.JSON(res.HTTPStatus(), res)
 }

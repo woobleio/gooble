@@ -29,17 +29,20 @@ var (
 	ErrServ        = ReqError{servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError}
 )
 
+// Http status
 const (
 	Created int = http.StatusCreated
 	OK      int = http.StatusOK
 )
 
+// JSONRes is a standardized JSON response
 type JSONRes struct {
 	Data   interface{} `json:"data"`
 	Errors []ReqError  `json:"errors,omitempty"`
 	Status int         `json:"-"`
 }
 
+// NewRes initializes a reponse
 func NewRes() JSONRes {
 	return JSONRes{
 		nil,
@@ -48,8 +51,8 @@ func NewRes() JSONRes {
 	}
 }
 
-// Lookup all errors found and return the prioritized HTTP status (the greatest value)
-func (j *JSONRes) HttpStatus() int {
+// HTTPStatus lookups all errors found and return the prioritized HTTP status (the greatest value)
+func (j *JSONRes) HTTPStatus() int {
 	cStatus := 0
 	for _, err := range j.Errors {
 		cStatus = err.Status
@@ -60,10 +63,12 @@ func (j *JSONRes) HttpStatus() int {
 	return j.Status
 }
 
+// Response sets the response
 func (j *JSONRes) Response(data interface{}) {
 	j.Data = data
 }
 
+// ReqError is a struct that standardize a Wooble error
 type ReqError struct {
 	Code    interface{} `json:"code"`
 	Title   string      `json:"title"`

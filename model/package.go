@@ -4,6 +4,7 @@ import (
 	"wooble/lib"
 )
 
+// Package is a bundle of creations
 type Package struct {
 	ID uint64 `json:"id" db:"pkg.id"`
 
@@ -21,6 +22,7 @@ type Package struct {
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
 }
 
+// PopulateCreations populates creations in the package
 func (p *Package) PopulateCreations() error {
 	q := `
 	SELECT
@@ -45,6 +47,7 @@ func (p *Package) PopulateCreations() error {
 	return lib.DB.Select(&p.Creations, q, p.ID)
 }
 
+// PackageByID returns package with id "id"
 func PackageByID(id uint64) (*Package, error) {
 	var pkg Package
 	q := `
@@ -74,12 +77,14 @@ func PackageByID(id uint64) (*Package, error) {
 	return &pkg, pkg.PopulateCreations()
 }
 
+// NewPackage created a new package
 func NewPackage(data *Package) (pkgId uint64, err error) {
 	q := `INSERT INTO package(title, engine, user_id, domains, key) VALUES ($1, $2, $3, $4, $5) RETURNING id`
 	err = lib.DB.QueryRow(q, data.Title, data.FEngine, data.UserID, data.Domains, data.Key).Scan(&pkgId)
 	return pkgId, err
 }
 
+// PushCreation pushes a creation in the package
 func PushCreation(pkgID uint64, creaID uint64) error {
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
 	_, err := lib.DB.Exec(q, pkgID, creaID)

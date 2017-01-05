@@ -15,8 +15,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+// DB driver
 var DB *sqlx.DB
 
+// LoadDB initializes the DB
 func LoadDB() {
 	DB = sqlx.MustOpen("postgres", getDBUrl())
 }
@@ -28,26 +30,27 @@ func getDBUrl() string {
 		viper.GetString("db_username"),
 		viper.GetString("db_password")
 
-	var dbUrl = "postgres://"
+	var dbURL = "postgres://"
 
 	if username != "" {
-		dbUrl += username
-		dbUrl += ":" + passwd + "@"
+		dbURL += username
+		dbURL += ":" + passwd + "@"
 	}
 
-	dbUrl += host
+	dbURL += host
 
 	if port != "" {
-		dbUrl += ":" + port
+		dbURL += ":" + port
 	}
 
-	dbUrl += "/" + dbName
+	dbURL += "/" + dbName
 
-	dbUrl += "?sslmode=disable"
+	dbURL += "?sslmode=disable"
 
-	return dbUrl
+	return dbURL
 }
 
+// Query is all all query options
 type Query struct {
 	Q   string
 	Opt *Option
@@ -71,10 +74,12 @@ func (q *Query) build() {
 	q.Q += ";"
 }
 
+// NullTime is psql null for time.Time (go)
 type NullTime struct {
 	pq.NullTime
 }
 
+// MarshalJSON marshals custom NullTime
 func (v NullTime) MarshalJSON() ([]byte, error) {
 	if v.Valid {
 		return json.Marshal(v.Time)
@@ -83,6 +88,7 @@ func (v NullTime) MarshalJSON() ([]byte, error) {
 	}
 }
 
+// UnmarshalJSON unmarshals custom NullTime
 func (v *NullTime) UnmarshalJSON(data []byte) error {
 	var x *time.Time
 	if err := json.Unmarshal(data, &x); err != nil {
@@ -97,9 +103,10 @@ func (v *NullTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// see https://gist.github.com/adharris/4163702
+// StringSlice see https://gist.github.com/adharris/4163702
 type StringSlice []string
 
+// Scan scans StringSlice
 func (s *StringSlice) Scan(src interface{}) error {
 	asBytes, ok := src.([]byte)
 	if !ok {
@@ -137,6 +144,7 @@ func (s *StringSlice) Scan(src interface{}) error {
 	return nil
 }
 
+// Value returns StringSlice as psql value
 func (s StringSlice) Value() (driver.Value, error) {
 	for i, elem := range s {
 		s[i] = `"` + strings.Replace(strings.Replace(elem, `\`, `\\\`, -1), `"`, `\"`, -1) + `"`

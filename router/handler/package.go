@@ -13,6 +13,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
+// POSTPackages is a handler that create am empty Wooble package
 func POSTPackages(c *gin.Context) {
 	var data model.Package
 
@@ -22,7 +23,7 @@ func POSTPackages(c *gin.Context) {
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
 		res.Error(ErrBadForm, "title (string) and engine (string) are required")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -33,7 +34,7 @@ func POSTPackages(c *gin.Context) {
 	id, err := model.NewPackage(&data)
 	if err != nil {
 		res.Error(ErrDBSave, "- Title should be unique for the creator")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -41,9 +42,10 @@ func POSTPackages(c *gin.Context) {
 
 	res.Status = Created
 
-	c.JSON(res.HttpStatus(), res)
+	c.JSON(res.HTTPStatus(), res)
 }
 
+// PushCreations is an handler that pushes one or more creations in a package
 func PushCreations(c *gin.Context) {
 	type PackageCreationForm struct {
 		PackageID  uint64
@@ -58,7 +60,7 @@ func PushCreations(c *gin.Context) {
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
 		res.Error(ErrBadForm, "creations (int[]) is required")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -66,21 +68,21 @@ func PushCreations(c *gin.Context) {
 	pkgID, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
 		res.Error(ErrBadParam, "int")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	pkg, err := model.PackageByID(pkgID)
 	if err != nil {
 		res.Error(ErrResNotFound, "package", "")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	user, _ := c.Get("user")
 	if pkg.UserID != user.(*model.User).ID {
 		res.Error(ErrNotOwner)
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -94,9 +96,12 @@ func PushCreations(c *gin.Context) {
 
 	res.Status = Created
 
-	c.JSON(res.HttpStatus(), res)
+	c.JSON(res.HTTPStatus(), res)
 }
 
+// BuildPackage is a handler action that builds the Wooble lib of a package
+// (a Wooble lib is a file that bundles everything contained in a package,
+// the file is stored in the cloud)
 func BuildPackage(c *gin.Context) {
 	type Build struct {
 		Source string `json:"source"`
@@ -108,21 +113,21 @@ func BuildPackage(c *gin.Context) {
 	pkgID, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
 		res.Error(ErrBadParam, "int")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	pkg, err := model.PackageByID(pkgID)
 	if err != nil {
 		res.Error(ErrResNotFound, "package", "")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	user, _ := c.Get("user")
 	if pkg.UserID != user.(*model.User).ID {
 		res.Error(ErrNotOwner)
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -132,7 +137,6 @@ func BuildPackage(c *gin.Context) {
 	wb := wbzr.New(wbzr.JSES5)
 	for _, creation := range pkg.Creations {
 		var script engine.Script
-		var err error
 
 		storage.Version = creation.Version
 
@@ -169,7 +173,7 @@ func BuildPackage(c *gin.Context) {
 
 	if err != nil || storage.Error != nil {
 		res.Error(ErrServ, "creations packaging")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -183,5 +187,5 @@ func BuildPackage(c *gin.Context) {
 
 	res.Status = OK
 
-	c.JSON(res.HttpStatus(), res)
+	c.JSON(res.HTTPStatus(), res)
 }

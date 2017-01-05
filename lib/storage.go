@@ -11,11 +11,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+// AWS S3 storage locations
 const (
 	SrcCreations string = "creations"
 	SrcPackages  string = "packages"
 )
 
+// Storage is Wooble cloud storage interface
 type Storage struct {
 	Error   error
 	Session *session.Session
@@ -23,6 +25,7 @@ type Storage struct {
 	Version string
 }
 
+// NewStorage initialized a Storage session
 func NewStorage(src string, v string) *Storage {
 	s, err := session.NewSession()
 	if err != nil {
@@ -39,13 +42,14 @@ func NewStorage(src string, v string) *Storage {
 	return stor
 }
 
+// GetFileContent returns requested file from the cloud
 func (s *Storage) GetFileContent(username string, title string, filename string, key string) string {
 	svc := s3.New(s.Session)
 
 	obj := &s3.GetObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
 
-		Key: aws.String(s.getBucketPath(makeId(username, key, title), filename)),
+		Key: aws.String(s.getBucketPath(makeID(username, key, title), filename)),
 	}
 	out, err := svc.GetObject(obj)
 	if err != nil {
@@ -57,10 +61,11 @@ func (s *Storage) GetFileContent(username string, title string, filename string,
 	return bf.String()
 }
 
+// StoreFile stores the file in the cloud
 func (s *Storage) StoreFile(content string, contentType string, username string, title string, filename string, key string) string {
 	svc := s3.New(s.Session)
 
-	path := s.getBucketPath(makeId(username, key, title), filename)
+	path := s.getBucketPath(makeID(username, key, title), filename)
 
 	obj := &s3.PutObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
@@ -84,7 +89,7 @@ func (s *Storage) getBucketPath(key []byte, filename string) string {
 	return path
 }
 
-func makeId(username string, key string, title string) []byte {
+func makeID(username string, key string, title string) []byte {
 	h := sha1.New()
 	h.Write([]byte(username))
 	if key != "" {

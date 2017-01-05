@@ -8,6 +8,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
+// Authenticate is a handler middleware that authorizes a token (header field Authorization)
 func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := helper.ParseToken(c)
@@ -19,7 +20,7 @@ func Authenticate() gin.HandlerFunc {
 				token, err = jwt_lib.Parse(tokenRaw, func(token *jwt_lib.Token) (interface{}, error) {
 					return model.TokenKey(), nil
 				})
-				c.Header("x-access-token", tokenRaw)
+				c.Header("Authorization", tokenRaw)
 			}
 		}
 

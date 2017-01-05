@@ -4,6 +4,7 @@ import (
 	"wooble/lib"
 )
 
+// Engine is the engine used by a creation (JSES5 is the only one available for now)
 type Engine struct {
 	Name string `json:"name"   db:"eng.name"`
 
@@ -11,6 +12,7 @@ type Engine struct {
 	Extension   string `json:"-" db:"extension"`
 }
 
+// EngineByName returns engine with name "name"
 func EngineByName(name string) (*Engine, error) {
 	var eng Engine
 	q := `

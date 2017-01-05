@@ -11,6 +11,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
+// GenerateToken generates a new token
 func GenerateToken(c *gin.Context) {
 	type CredsForm struct {
 		Login  string `json:"login" binding:"required"`
@@ -24,7 +25,7 @@ func GenerateToken(c *gin.Context) {
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&form) != nil {
 		res.Error(ErrBadForm, "login (string) is required")
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -35,7 +36,7 @@ func GenerateToken(c *gin.Context) {
 		} else {
 			res.Error(ErrDBSelect)
 		}
-		c.JSON(res.HttpStatus(), res)
+		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -45,7 +46,7 @@ func GenerateToken(c *gin.Context) {
 
 		if err != nil {
 			res.Error(ErrServ, "token generation")
-			c.JSON(res.HttpStatus(), res)
+			c.JSON(res.HTTPStatus(), res)
 			return
 		}
 
@@ -56,9 +57,10 @@ func GenerateToken(c *gin.Context) {
 
 	res.Status = Created
 
-	c.JSON(res.HttpStatus(), res)
+	c.JSON(res.HTTPStatus(), res)
 }
 
+// RefreshToken refreshes a token (lifetime is given in the server conf file $CONFPATH)
 func RefreshToken(c *gin.Context) {
 	res := NewRes()
 
@@ -77,5 +79,5 @@ func RefreshToken(c *gin.Context) {
 		res.Error(ErrServ, "token refresh")
 	}
 
-	c.JSON(res.HttpStatus(), res)
+	c.JSON(res.HTTPStatus(), res)
 }

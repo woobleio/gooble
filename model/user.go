@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+// User is a Wooble user
 type User struct {
 	ID uint64 `json:"-" db:"user.id"`
 
@@ -24,6 +25,7 @@ type User struct {
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
 }
 
+// UserByID returns user with id "id"
 func UserByID(id uint64) (*User, error) {
 	var user User
 	q := `
@@ -42,17 +44,19 @@ func UserByID(id uint64) (*User, error) {
 	return &user, lib.DB.Get(&user, q, id)
 }
 
-func NewUser(user *User) (uId uint64, err error) {
+// NewUser creates a new user
+func NewUser(user *User) (uID uint64, err error) {
 	salt := lib.GenKey()
 	cp, err := getPassword(user.Passwd, []byte(salt))
 	if err != nil {
 		return 0, err
 	}
 	q := `INSERT INTO app_user(name, email, is_creator, passwd, salt_key) VALUES ($1, $2, $3, $4, $5) RETURNING id`
-	err = lib.DB.QueryRow(q, user.Name, user.Email, user.IsCreator, cp, salt).Scan(&uId)
-	return uId, err
+	err = lib.DB.QueryRow(q, user.Name, user.Email, user.IsCreator, cp, salt).Scan(&uID)
+	return uID, err
 }
 
+// UserByLogin returns user with a specified email or name
 func UserByLogin(login string) (*User, error) {
 	var user User
 	q := `
@@ -68,6 +72,7 @@ func UserByLogin(login string) (*User, error) {
 	return &user, lib.DB.Get(&user, q, login)
 }
 
+// IsPasswordValid checks if a password is valid
 func (u *User) IsPasswordValid(passwd string) bool {
 	cp, err := getPassword(passwd, []byte(u.Salt))
 	if err != nil || cp == "" {

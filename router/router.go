@@ -11,6 +11,7 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
+// Load initializes the router and loads all handlers
 func Load() {
 	r := gin.New()
 	r.Use(gin.Logger())

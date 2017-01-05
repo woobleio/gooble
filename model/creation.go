@@ -4,6 +4,7 @@ import (
 	"wooble/lib"
 )
 
+// Creation is a Wooble creation
 type Creation struct {
 	ID uint64 `json:"id"      db:"crea.id"`
 
@@ -22,6 +23,7 @@ type Creation struct {
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
 }
 
+// CreationForm is a form for creation
 type CreationForm struct {
 	CreatorID uint64
 
@@ -35,12 +37,14 @@ type CreationForm struct {
 	Version string
 }
 
+// BaseVersion is creation default version
 const BaseVersion string = "1.0"
 
+// AllCreations returns all creations
 func AllCreations(opt lib.Option) (*[]Creation, error) {
 	var creations []Creation
-	q := lib.Query{`
-		SELECT
+	q := lib.Query{
+		Q: `SELECT
 	    c.id "crea.id",
 	    c.title,
 	    c.created_at "crea.created_at",
@@ -58,7 +62,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
 		`,
-		&opt,
+		Opt: &opt,
 	}
 
 	query := q.String()
@@ -70,6 +74,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	return &creations, lib.DB.Select(&creations, query)
 }
 
+// CreationByTitle returns a creation with the title "title"
 func CreationByTitle(title string) (*Creation, error) {
 	var crea Creation
 	q := `
@@ -96,13 +101,15 @@ func CreationByTitle(title string) (*Creation, error) {
 	return &crea, lib.DB.Get(&crea, q, title)
 }
 
+// DeleteCreation deletes creation id "id"
 func DeleteCreation(id uint64) error {
 	_, err := lib.DB.Exec(`DELETE FROM creation WHERE id = $1`, id)
 	return err
 }
 
-func NewCreation(data *CreationForm) (creaId uint64, err error) {
+// NewCreation creates a creation
+func NewCreation(data *CreationForm) (creaID uint64, err error) {
 	q := `INSERT INTO creation(title, creator_id, version, has_document, has_script, has_style, engine) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
-	err = lib.DB.QueryRow(q, data.Title, data.CreatorID, data.Version, data.Document != "", data.Script != "", data.Style != "", data.Engine).Scan(&creaId)
-	return creaId, err
+	err = lib.DB.QueryRow(q, data.Title, data.CreatorID, data.Version, data.Document != "", data.Script != "", data.Style != "", data.Engine).Scan(&creaID)
+	return creaID, err
 }
