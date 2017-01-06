@@ -19,6 +19,8 @@ func Load() {
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = lib.GetOrigins()
+	config.AllowHeaders = []string{"Content-Type", "Authorization"}
+	config.ExposeHeaders = []string{"Authorization"}
 
 	r.Use(cors.New(config))
 
@@ -43,6 +45,8 @@ func Load() {
 			// Resouce owner commands
 			v1.POST("/packages/:id/push", handler.PushCreations)
 			v1.GET("/packages/:id/build", handler.BuildPackage)
+
+			v1.GET("/dummy/auth", handler.GETCreations)
 		}
 	}
 

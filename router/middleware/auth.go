@@ -13,6 +13,7 @@ func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := helper.ParseToken(c)
 
+		// If token has expired, refresh it and returns it in the header
 		if ve, ok := err.(*jwt_lib.ValidationError); ok && model.IsTokenExpired(ve) {
 			if newToken, refTokenErr := model.RefreshToken(token); refTokenErr == nil {
 				var tokenRaw string
@@ -24,7 +25,7 @@ func Authenticate() gin.HandlerFunc {
 			}
 		}
 
-		if !token.Valid || err != nil {
+		if err != nil || !token.Valid {
 			c.Header("Location", "/signin")
 			c.AbortWithError(401, err)
 			return
