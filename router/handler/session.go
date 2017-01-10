@@ -50,7 +50,10 @@ func GenerateToken(c *gin.Context) {
 			return
 		}
 
-		res.Response(tokenS)
+		res.Response(struct {
+			Token string `json:"token"`
+		}{Token: tokenS})
+
 	} else {
 		res.Error(ErrBadCreds, "Password invalid")
 	}
