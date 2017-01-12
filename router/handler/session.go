@@ -75,7 +75,10 @@ func RefreshToken(c *gin.Context) {
 			res.Error(ErrServ, "token refresh")
 		}
 
-		res.Response(newToken)
+		tokenRaw, _ := newToken.SignedString(model.TokenKey())
+		res.Response(struct {
+			Token string `json:"token"`
+		}{Token: tokenRaw})
 
 		res.Status = Created
 	} else if ve != nil {
