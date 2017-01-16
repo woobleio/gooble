@@ -41,6 +41,11 @@ func NewToken(user *User, refreshToken string) *jwt.Token {
 	return token
 }
 
+// IsTokenInvalid tells if the token signature is wrong
+func IsTokenInvalid(err *jwt.ValidationError) bool {
+	return err.Errors&jwt.ValidationErrorSignatureInvalid != 0
+}
+
 // IsTokenExpired tells if a token has expired (claim exp)
 func IsTokenExpired(err *jwt.ValidationError) bool {
 	return err.Errors&jwt.ValidationErrorExpired != 0

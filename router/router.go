@@ -20,7 +20,7 @@ func Load() {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = lib.GetOrigins()
 	config.AllowHeaders = []string{"Content-Type", "Authorization"}
-	config.ExposeHeaders = []string{"Authorization"}
+	config.ExposeHeaders = []string{"Authorization", "Location"}
 
 	r.Use(cors.New(config))
 
