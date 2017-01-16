@@ -14,17 +14,17 @@ type Option struct {
 
 // ParseOptions parses query options
 func ParseOptions(c *gin.Context) Option {
-	pPage := c.DefaultQuery("page", "0")
-	pPerPage := c.DefaultQuery("perPage", "0")
+	pPage := c.DefaultQuery("page", "1")
+	pPerPage := c.DefaultQuery("perPage", "15")
 
 	page, errPage := strconv.ParseInt(pPage, 10, 64)
-	if errPage != nil {
+	if errPage != nil || page <= 0 {
 		page = 1
 	}
 
 	perPage, errPerPage := strconv.ParseInt(pPerPage, 10, 64)
-	if errPerPage != nil {
-		perPage = 0
+	if errPerPage != nil || perPage <= 0 {
+		perPage = 15
 	}
 
 	return Option{perPage, ((page - 1) * perPage)}
