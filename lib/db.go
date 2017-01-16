@@ -63,12 +63,12 @@ func (q *Query) String() string {
 
 func (q *Query) build() {
 	var str string
-	if q.Opt.limit > 0 {
-		str = strconv.FormatInt(q.Opt.limit, 10)
+	if q.Opt.Limit > 0 {
+		str = strconv.FormatInt(q.Opt.Limit, 10)
 		q.Q += " LIMIT " + str
 	}
-	if q.Opt.offset > 0 {
-		str = strconv.FormatInt(q.Opt.offset, 10)
+	if q.Opt.Offset > 0 {
+		str = strconv.FormatInt(q.Opt.Offset, 10)
 		q.Q += " OFFSET " + str
 	}
 	q.Q += ";"
