@@ -9,11 +9,9 @@ type Package struct {
 	ID uint64 `json:"id" db:"pkg.id"`
 
 	Domains lib.StringSlice `json:"domains" binding:"required" db:"domains"`
-	FEngine string          `json:"engine" binding:"required" db:"eng.name"`
 	Title   string          `json:"title" binding:"required" db:"pkg.title"`
 
 	Key       string     `json:"-" db:"key"`
-	Engine    Engine     `json:"-" db:""`
 	UserID    uint64     `json:"-" db:"user_id"`
 	User      User       `json:"user" db:""`
 	Creations []Creation `json:"creations" db:""`
@@ -40,7 +38,6 @@ func (p *Package) PopulateCreations() error {
 	FROM package_creation pc
 	INNER JOIN creation c ON (pc.creation_id = c.id)
 	INNER JOIN app_user u ON (c.creator_id = u.id)
-	INNER JOIN engine e ON (c.engine = e.name)
 	WHERE pc.package_id = $1
 	`
 
@@ -66,7 +63,6 @@ func PackageByID(id uint64) (*Package, error) {
 		e.extension
 	FROM package pkg
 	INNER JOIN app_user u ON (pkg.user_id = u.id)
-	INNER JOIN engine e ON (pkg.engine = e.name)
 	WHERE pkg.id = $1
 	`
 
@@ -78,10 +74,10 @@ func PackageByID(id uint64) (*Package, error) {
 }
 
 // NewPackage created a new package
-func NewPackage(data *Package) (pkgId uint64, err error) {
-	q := `INSERT INTO package(title, engine, user_id, domains, key) VALUES ($1, $2, $3, $4, $5) RETURNING id`
-	err = lib.DB.QueryRow(q, data.Title, data.FEngine, data.UserID, data.Domains, data.Key).Scan(&pkgId)
-	return pkgId, err
+func NewPackage(data *Package) (pkgID uint64, err error) {
+	q := `INSERT INTO package(title, user_id, domains, key) VALUES ($1, $2, $3, $4) RETURNING id`
+	err = lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains, data.Key).Scan(&pkgID)
+	return pkgID, err
 }
 
 // PushCreation pushes a creation in the package

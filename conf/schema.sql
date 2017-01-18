@@ -169,7 +169,6 @@ CREATE TABLE package (
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
     domains text[] NOT NULL,
-    engine text NOT NULL,
     key text NOT NULL
 );
 
@@ -292,7 +291,7 @@ JSES5	.js	application/javascript
 -- Data for Name: package; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY package (id, user_id, title, created_at, updated_at, domains, engine, key) FROM stdin;
+COPY package (id, user_id, title, created_at, updated_at, domains, key) FROM stdin;
 \.
 
 
@@ -437,14 +436,6 @@ CREATE INDEX fki_package_id_fk ON package_creation USING btree (package_id);
 
 
 --
--- TOC entry 2036 (class 1259 OID 16454)
--- Name: fki_pkg_engine_fk; Type: INDEX; Schema: public; Owner: wooble
---
-
-CREATE INDEX fki_pkg_engine_fk ON package USING btree (engine);
-
-
---
 -- TOC entry 2053 (class 2620 OID 16455)
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
@@ -505,15 +496,6 @@ ALTER TABLE ONLY creation
 
 
 --
--- TOC entry 2048 (class 2606 OID 16478)
--- Name: engine_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
---
-
-ALTER TABLE ONLY package
-    ADD CONSTRAINT engine_fk FOREIGN KEY (engine) REFERENCES engine(name);
-
-
---
 -- TOC entry 2051 (class 2606 OID 16483)
 -- Name: package_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
@@ -521,14 +503,6 @@ ALTER TABLE ONLY package
 ALTER TABLE ONLY package_creation
     ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES package(id);
 
-
---
--- TOC entry 2049 (class 2606 OID 16488)
--- Name: pkg_engine_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
---
-
-ALTER TABLE ONLY package
-    ADD CONSTRAINT pkg_engine_fk FOREIGN KEY (engine) REFERENCES engine(name);
 
 
 --

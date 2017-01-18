@@ -177,7 +177,8 @@ func BuildPackage(c *gin.Context) {
 		return
 	}
 
-	path := storage.StoreFile(bf.String(), pkg.Engine.ContentType, user.(*model.User).Name, pkg.Title, "wooble"+pkg.Engine.Extension, pkg.Key)
+	// TODO if multitype allowed, package should have an engine too
+	path := storage.StoreFile(bf.String(), "application/javascript", user.(*model.User).Name, pkg.Title, "wooble.js", pkg.Key)
 
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
