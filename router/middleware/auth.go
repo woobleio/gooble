@@ -15,7 +15,7 @@ func Authenticate() gin.HandlerFunc {
 		token, err := helper.ParseToken(c)
 
 		if token == nil {
-			abort(c, errors.New("Token invalid"))
+			abort(c, errors.New("Token invalid or missing"))
 			return
 		}
 

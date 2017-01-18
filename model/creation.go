@@ -1,8 +1,6 @@
 package model
 
-import (
-	"wooble/lib"
-)
+import "wooble/lib"
 
 // Creation is a Wooble creation
 type Creation struct {
@@ -66,10 +64,6 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	}
 
 	query := q.String()
-
-	if err := lib.DB.Select(&creations, query); err != nil {
-		return nil, err
-	}
 
 	return &creations, lib.DB.Select(&creations, query)
 }
