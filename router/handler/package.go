@@ -87,7 +87,7 @@ func PushCreations(c *gin.Context) {
 		}
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkgID))
+	c.Header("Location", fmt.Sprintf("/%s/%s/%s/%v", "users", user.(*model.User).Name, "packages", pkgID))
 
 	res.Status = Created
 
