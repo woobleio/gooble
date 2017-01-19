@@ -120,7 +120,7 @@ Authorization: <refreshed token if expired>
 {}
 ```
 
-### Packages
+### Packages (private)
 
 `POST /v1/packages`
 ```js
@@ -140,7 +140,7 @@ Authorization: <refreshed token if expired>
 {}
 ```
 
-`POST /v1/users/:username/packages/:packageID/push`
+`POST /v1/packages/:packageID/push`
 ```js
 Content-Type: application/json
 Authorization: <user token>
@@ -151,13 +151,13 @@ Authorization: <user token>
 ```
 ```js
 HTTP/1.1 201 Created
-Location: /v1/users/:<name of package owner>/packages/:<id of the package>
+Location: /v1/packages/:<id of the package>
 Authorization: <refreshed token if expired>
 
 {}
 ```
 
-`GET /v1/users/:username/packages/:packageID/build`
+`GET /v1/packages/:packageID/build`
 ```js
 Content-Type: application/json
 Authorization: <user token>

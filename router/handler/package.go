@@ -37,7 +37,7 @@ func POSTPackages(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s/%s/%v", "users", user.(*model.User).Name, "packages", pkgID))
+	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkgID))
 
 	res.Status = Created
 
@@ -64,7 +64,6 @@ func PushCreations(c *gin.Context) {
 	}
 
 	pkgID := c.Param("id")
-	username := c.Param("username")
 
 	pkg, err := model.PackageByID(pkgID)
 	if err != nil {
@@ -75,7 +74,7 @@ func PushCreations(c *gin.Context) {
 
 	user, _ := c.Get("user")
 	// TODO ownership change
-	if pkg.UserID != user.(*model.User).ID || username != user.(*model.User).Name || pkg.User.Name != username {
+	if pkg.UserID != user.(*model.User).ID {
 		res.Error(ErrNotOwner)
 		c.JSON(res.HTTPStatus(), res)
 		return
@@ -87,7 +86,7 @@ func PushCreations(c *gin.Context) {
 		}
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s/%s/%v", "users", user.(*model.User).Name, "packages", pkgID))
+	c.Header("Location", fmt.Sprintf("/%s/%s", "packages", pkgID))
 
 	res.Status = Created
 
@@ -105,7 +104,6 @@ func BuildPackage(c *gin.Context) {
 	res := NewRes()
 
 	pkgID := c.Param("id")
-	username := c.Param("username")
 
 	pkg, err := model.PackageByID(pkgID)
 	if err != nil {
@@ -116,7 +114,7 @@ func BuildPackage(c *gin.Context) {
 
 	user, _ := c.Get("user")
 	// TODO ownership change
-	if pkg.UserID != user.(*model.User).ID || username != user.(*model.User).Name || pkg.User.Name != username {
+	if pkg.UserID != user.(*model.User).ID {
 		res.Error(ErrNotOwner)
 		c.JSON(res.HTTPStatus(), res)
 		return
