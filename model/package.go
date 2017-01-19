@@ -8,16 +8,26 @@ import (
 type Package struct {
 	ID uint64 `json:"id" db:"pkg.id"`
 
-	Domains lib.StringSlice `json:"domains" binding:"required" db:"domains"`
-	Title   string          `json:"title" binding:"required" db:"pkg.title"`
+	Title string `json:"title" binding:"required" db:"pkg.title"`
 
-	Key       string     `json:"-" db:"key"`
-	UserID    uint64     `json:"-" db:"user_id"`
-	User      User       `json:"user" db:""`
-	Creations []Creation `json:"creations" db:""`
+	Domains   lib.StringSlice `json:"domains" db:"domains"`
+	Key       string          `json:"-" db:"key"`
+	UserID    uint64          `json:"-" db:"user_id"`
+	User      User            `json:"user" db:""`
+	Creations []Creation      `json:"creations" db:""`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"pkg.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
+}
+
+// PackageForm is a form standard for package
+type PackageForm struct {
+	UserID uint64
+	Title  string `json:"title" binding:"required"`
+
+	Domains lib.StringSlice `json:"domains"`
+
+	Key string
 }
 
 // PopulateCreations populates creations in the package
@@ -30,9 +40,6 @@ func (p *Package) PopulateCreations() error {
 		c.has_document,
 		c.has_script,
 		c.has_style,
-		e.name "eng.name",
-		e.extension,
-		e.content_type,
 		u.id "user.id",
 		u.name
 	FROM package_creation pc
@@ -45,7 +52,7 @@ func (p *Package) PopulateCreations() error {
 }
 
 // PackageByID returns package with id "id"
-func PackageByID(id uint64) (*Package, error) {
+func PackageByID(id string) (*Package, error) {
 	var pkg Package
 	q := `
 	SELECT
@@ -57,10 +64,7 @@ func PackageByID(id uint64) (*Package, error) {
 		pkg.created_at "pkg.created_at",
 		pkg.updated_at "pkg.updated_at",
 		u.id "user.id",
-    u.name,
-		e.name "eng.name",
-		e.content_type,
-		e.extension
+    u.name
 	FROM package pkg
 	INNER JOIN app_user u ON (pkg.user_id = u.id)
 	WHERE pkg.id = $1
@@ -74,7 +78,7 @@ func PackageByID(id uint64) (*Package, error) {
 }
 
 // NewPackage created a new package
-func NewPackage(data *Package) (pkgID uint64, err error) {
+func NewPackage(data *PackageForm) (pkgID uint64, err error) {
 	q := `INSERT INTO package(title, user_id, domains, key) VALUES ($1, $2, $3, $4) RETURNING id`
 	err = lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains, data.Key).Scan(&pkgID)
 	return pkgID, err

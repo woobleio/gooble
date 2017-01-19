@@ -95,6 +95,33 @@ func CreationByTitle(title string) (*Creation, error) {
 	return &crea, lib.DB.Get(&crea, q, title)
 }
 
+// CreationByID returns a creation with the id "id"
+func CreationByID(id string) (*Creation, error) {
+	var crea Creation
+	q := `
+  SELECT
+    c.id "crea.id",
+    c.title,
+    c.created_at "crea.created_at",
+    c.updated_at "crea.updated_at",
+    c.version,
+		c.has_document,
+		c.has_script,
+		c.has_style,
+		e.name "eng.name",
+		e.extension,
+		e.content_type,
+    u.id "user.id",
+    u.name
+  FROM creation c
+  INNER JOIN app_user u ON (c.creator_id = u.id)
+	INNER JOIN engine e ON (c.engine=e.name)
+  WHERE c.id = $1
+	`
+
+	return &crea, lib.DB.Get(&crea, q, id)
+}
+
 // DeleteCreation deletes creation id "id"
 func DeleteCreation(id uint64) error {
 	_, err := lib.DB.Exec(`DELETE FROM creation WHERE id = $1`, id)

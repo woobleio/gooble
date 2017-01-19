@@ -18,13 +18,14 @@ func GETCreations(c *gin.Context) {
 	res := NewRes()
 
 	opts := lib.ParseOptions(c)
-	title := c.Param("title")
 
-	if title != "" {
-		data, err = model.CreationByTitle(title)
+	creaID := c.Param("id")
+
+	if creaID != "" {
+		data, err = model.CreationByID(creaID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				res.Error(ErrResNotFound, "Creation", title)
+				res.Error(ErrResNotFound, "Creation", creaID)
 			} else {
 				res.Error(ErrDBSelect)
 			}

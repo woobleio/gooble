@@ -31,7 +31,7 @@ func NewToken(user *User, refreshToken string) *jwt.Token {
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Minute * time.Duration(lib.GetTokenLifetime())).Unix(),
 			IssuedAt:  time.Now().Unix(),
-			Issuer:    "wooble.io", // TODO
+			Issuer:    lib.GetOrigins()[0],
 			Subject:   fmt.Sprintf("%v", user.ID),
 		},
 	}

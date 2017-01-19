@@ -33,8 +33,8 @@ func Load() {
 		v1.POST("/token/generate", handler.GenerateToken)
 		v1.POST("/token/refresh", handler.RefreshToken)
 
-		v1.GET("/creations/:title", handler.GETCreations) // TODO /creations/:username/:title
 		v1.GET("/creations", handler.GETCreations)
+		v1.GET("/creations/:id", handler.GETCreations)
 
 		v1.Use(middleware.Authenticate())
 		{
@@ -42,11 +42,9 @@ func Load() {
 
 			v1.POST("/packages", handler.POSTPackages)
 
-			// Resouce owner commands
-			v1.POST("/packages/:id/push", handler.PushCreations)
-			v1.GET("/packages/:id/build", handler.BuildPackage)
-
-			v1.GET("/dummy/auth", handler.GETCreations)
+			// owner resource access TODO make a middleware or anything to check ownership
+			v1.POST("/users/:username/packages/:id/push", handler.PushCreations)
+			v1.GET("/users/:username/packages/:id/build", handler.BuildPackage)
 		}
 	}
 

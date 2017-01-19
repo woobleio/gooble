@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"wooble/lib"
@@ -15,14 +14,14 @@ import (
 
 // POSTPackages is a handler that create am empty Wooble package
 func POSTPackages(c *gin.Context) {
-	var data model.Package
+	var data model.PackageForm
 
 	res := NewRes()
 
 	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string) and engine (string) are required")
+		res.Error(ErrBadForm, "title (string) is required")
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
@@ -31,14 +30,14 @@ func POSTPackages(c *gin.Context) {
 	data.UserID = user.(*model.User).ID
 	data.Key = lib.GenKey()
 
-	id, err := model.NewPackage(&data)
+	pkgID, err := model.NewPackage(&data)
 	if err != nil {
 		res.Error(ErrDBSave, "- Title should be unique for the creator")
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", id))
+	c.Header("Location", fmt.Sprintf("/%s/%s/%s/%v", "users", user.(*model.User).Name, "packages", pkgID))
 
 	res.Status = Created
 
@@ -64,13 +63,8 @@ func PushCreations(c *gin.Context) {
 		return
 	}
 
-	param := c.Param("id")
-	pkgID, err := strconv.ParseUint(param, 10, 64)
-	if err != nil {
-		res.Error(ErrBadParam, "int")
-		c.JSON(res.HTTPStatus(), res)
-		return
-	}
+	pkgID := c.Param("id")
+	username := c.Param("username")
 
 	pkg, err := model.PackageByID(pkgID)
 	if err != nil {
@@ -80,14 +74,15 @@ func PushCreations(c *gin.Context) {
 	}
 
 	user, _ := c.Get("user")
-	if pkg.UserID != user.(*model.User).ID {
+	// TODO ownership change
+	if pkg.UserID != user.(*model.User).ID || username != user.(*model.User).Name || pkg.User.Name != username {
 		res.Error(ErrNotOwner)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	for _, creaID := range data.CreationID {
-		if err := model.PushCreation(pkgID, creaID); err != nil {
+		if err := model.PushCreation(pkg.ID, creaID); err != nil {
 			res.Error(ErrDBSave, fmt.Sprintf("failed to push creation %v in the package", creaID))
 		}
 	}
@@ -109,23 +104,19 @@ func BuildPackage(c *gin.Context) {
 	var data Build
 	res := NewRes()
 
-	param := c.Param("id")
-	pkgID, err := strconv.ParseUint(param, 10, 64)
-	if err != nil {
-		res.Error(ErrBadParam, "int")
-		c.JSON(res.HTTPStatus(), res)
-		return
-	}
+	pkgID := c.Param("id")
+	username := c.Param("username")
 
 	pkg, err := model.PackageByID(pkgID)
 	if err != nil {
-		res.Error(ErrResNotFound, "package", "")
+		res.Error(ErrResNotFound, "package", pkgID)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	user, _ := c.Get("user")
-	if pkg.UserID != user.(*model.User).ID {
+	// TODO ownership change
+	if pkg.UserID != user.(*model.User).ID || username != user.(*model.User).Name || pkg.User.Name != username {
 		res.Error(ErrNotOwner)
 		c.JSON(res.HTTPStatus(), res)
 		return
