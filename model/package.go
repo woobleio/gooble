@@ -13,8 +13,8 @@ type Package struct {
 	Domains   lib.StringSlice `json:"domains" db:"domains"`
 	Key       string          `json:"-" db:"key"`
 	UserID    uint64          `json:"-" db:"user_id"`
-	User      User            `json:"user" db:""`
-	Creations []Creation      `json:"creations" db:""`
+	User      User            `json:"-" db:""`
+	Creations []Creation      `json:"creations,omitempty" db:""`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"pkg.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
@@ -51,8 +51,31 @@ func (p *Package) PopulateCreations() error {
 	return lib.DB.Select(&p.Creations, q, p.ID)
 }
 
+// AllPackages returns all packages
+func AllPackages(opt lib.Option, userID uint64) (*[]Package, error) {
+	var packages []Package
+	q := lib.Query{
+		Q: `SELECT
+  		pkg.id "pkg.id",
+  		pkg.user_id,
+  		pkg.title "pkg.title",
+  		pkg.domains,
+  		pkg.key,
+  		pkg.created_at "pkg.created_at",
+  		pkg.updated_at "pkg.updated_at"
+  	FROM package pkg
+		WHERE pkg.user_id = $1
+    `,
+		Opt: &opt,
+	}
+
+	query := q.String()
+
+	return &packages, lib.DB.Select(&packages, query, userID)
+}
+
 // PackageByID returns package with id "id"
-func PackageByID(id string) (*Package, error) {
+func PackageByID(id string, userID uint64) (*Package, error) {
 	var pkg Package
 	q := `
 	SELECT
@@ -62,15 +85,13 @@ func PackageByID(id string) (*Package, error) {
 		pkg.domains,
 		pkg.key,
 		pkg.created_at "pkg.created_at",
-		pkg.updated_at "pkg.updated_at",
-		u.id "user.id",
-    u.name
+		pkg.updated_at "pkg.updated_at"
 	FROM package pkg
-	INNER JOIN app_user u ON (pkg.user_id = u.id)
 	WHERE pkg.id = $1
+  AND pkg.user_id = $2
 	`
 
-	if err := lib.DB.Get(&pkg, q, id); err != nil {
+	if err := lib.DB.Get(&pkg, q, id, userID); err != nil {
 		return nil, err
 	}
 

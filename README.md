@@ -58,24 +58,6 @@ Authorization: <refreshed token>
 
 ### Creations
 
-`GET /v1/creations/:id`
-```js
-Content-Type: application/json
-
-{
-  "data": {
-    "id": <creation id>
-    "title": <creation title>
-    "creator": {
-      "name": <creator name>
-    }
-    "version": <creation version>
-    "createdAt": <creation date created>
-    "updatedAt": <creation last updated date
-  }
-}
-```
-
 `GET /v1/creations`
 ```js
 Content-Type: application/json
@@ -96,6 +78,24 @@ Content-Type: application/json
       ...
     }
   ]
+}
+```
+
+`GET /v1/creations/:creaID`
+```js
+Content-Type: application/json
+
+{
+  "data": {
+    "id": <creation id>
+    "title": <creation title>
+    "creator": {
+      "name": <creator name>
+    }
+    "version": <creation version>
+    "createdAt": <creation date created>
+    "updatedAt": <creation last updated date
+  }
 }
 ```
 
@@ -120,7 +120,52 @@ Authorization: <refreshed token if expired>
 {}
 ```
 
-### Packages (private)
+### Packages (private resource)
+
+`GET /v1/packages`
+```js
+Content-Type: application/json
+Authorization: <user token>
+```
+```js
+Content-Type: application/json
+Authorization: <refreshed token if expired>
+
+{
+  "data": [
+    {
+      "id": <package id>
+      "title": <package title>
+      "domains":[<domains associated to the package>]
+      "createdAt": <package creation date>
+      "updatedAt": <package last update date>
+    },
+    {
+      ...
+    }
+  ]
+}
+```
+
+`GET /v1/packages/:pkgID`
+```js
+Content-Type: application/json
+Authorization: <user token>
+```
+```js
+Content-Type: application/json
+Authorization: <refreshed token if expired>
+
+{
+  "data": {
+    "id": <package id>
+    "title": <package title>
+    "domains":[<domains associated to the package>]
+    "createdAt": <package creation date>
+    "updatedAt": <package last update date>
+  }
+}
+```
 
 `POST /v1/packages`
 ```js

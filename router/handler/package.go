@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -11,6 +12,42 @@ import (
 	"github.com/woobleio/wooblizer/wbzr/engine"
 	"gopkg.in/gin-gonic/gin.v1"
 )
+
+// GETPackages is a handler that returns one or more packages
+func GETPackages(c *gin.Context) {
+	var data interface{}
+	var err error
+
+	res := NewRes()
+
+	opts := lib.ParseOptions(c)
+
+	user, _ := c.Get("user")
+
+	pkgID := c.Param("id")
+
+	if pkgID != "" {
+		data, err = model.PackageByID(pkgID, user.(*model.User).ID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				res.Error(ErrResNotFound, "Package", pkgID)
+			} else {
+				res.Error(ErrDBSelect)
+			}
+		}
+	} else {
+		data, err = model.AllPackages(opts, user.(*model.User).ID)
+		if err != nil {
+			fmt.Print(err)
+			res.Error(ErrDBSelect)
+		}
+	}
+
+	res.Response(data)
+
+	c.JSON(res.HTTPStatus(), res)
+
+}
 
 // POSTPackages is a handler that create am empty Wooble package
 func POSTPackages(c *gin.Context) {
@@ -65,17 +102,11 @@ func PushCreations(c *gin.Context) {
 
 	pkgID := c.Param("id")
 
-	pkg, err := model.PackageByID(pkgID)
+	user, _ := c.Get("user")
+
+	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
 	if err != nil {
 		res.Error(ErrResNotFound, "package", "")
-		c.JSON(res.HTTPStatus(), res)
-		return
-	}
-
-	user, _ := c.Get("user")
-	// TODO ownership change
-	if pkg.UserID != user.(*model.User).ID {
-		res.Error(ErrNotOwner)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
@@ -105,17 +136,11 @@ func BuildPackage(c *gin.Context) {
 
 	pkgID := c.Param("id")
 
-	pkg, err := model.PackageByID(pkgID)
+	user, _ := c.Get("user")
+
+	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
 	if err != nil {
 		res.Error(ErrResNotFound, "package", pkgID)
-		c.JSON(res.HTTPStatus(), res)
-		return
-	}
-
-	user, _ := c.Get("user")
-	// TODO ownership change
-	if pkg.UserID != user.(*model.User).ID {
-		res.Error(ErrNotOwner)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}

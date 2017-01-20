@@ -40,8 +40,9 @@ func Load() {
 		{
 			v1.POST("/creations", handler.POSTCreations)
 
-			// owner resource access TODO make a middleware or anything to check ownership
 			// packages is private, so those requests are about the authenticated user only
+			v1.GET("/packages", handler.GETPackages)
+			v1.GET("/packages/:id", handler.GETPackages)
 			v1.POST("/packages", handler.POSTPackages)
 			v1.POST("/packages/:id/push", handler.PushCreations)
 			v1.GET("/packages/:id/build", handler.BuildPackage)
