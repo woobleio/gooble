@@ -155,7 +155,7 @@ func BuildPackage(c *gin.Context) {
 		storage.Version = creation.Version
 
 		if creation.HasScript {
-			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "script"+creation.Engine.Extension, "")
+			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "script.js", "")
 
 			script, err = wb.Inject(src, creation.Title)
 		} else {
