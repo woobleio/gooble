@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -74,7 +75,7 @@ func (q *Query) build() {
 	q.Q += ";"
 }
 
-// NullTime is psql null for time.Time (go)
+// NullTime is psql null for time.Time
 type NullTime struct {
 	pq.NullTime
 }
@@ -83,9 +84,8 @@ type NullTime struct {
 func (v NullTime) MarshalJSON() ([]byte, error) {
 	if v.Valid {
 		return json.Marshal(v.Time)
-	} else {
-		return json.Marshal("")
 	}
+	return json.Marshal("")
 }
 
 // UnmarshalJSON unmarshals custom NullTime
@@ -101,6 +101,51 @@ func (v *NullTime) UnmarshalJSON(data []byte) error {
 		v.Valid = false
 	}
 	return nil
+}
+
+// NullString is psql null for string
+type NullString sql.NullString
+
+// MarshalJSON marshals custom NullString
+func (ns NullString) MarshalJSON() ([]byte, error) {
+	if ns.Valid {
+		return json.Marshal(ns.String)
+	}
+	return json.Marshal(nil)
+}
+
+// UnmarshalJSON unmarshals custom NullString
+func (ns *NullString) UnmarshalJSON(data []byte) error {
+	var x string
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != "" {
+		ns.Valid = true
+		ns.String = x
+	} else {
+		ns.Valid = false
+	}
+	return nil
+}
+
+// Scan implements the Scanner interface
+func (ns *NullString) Scan(value interface{}) error {
+	if value == nil {
+		ns.String, ns.Valid = "", false
+	} else {
+		ns.Valid = true
+	}
+	ns.String = value.(string)
+	return nil
+}
+
+// Value implements the driver Valuer interface
+func (ns NullString) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return ns.String, nil
 }
 
 // StringSlice see https://gist.github.com/adharris/4163702

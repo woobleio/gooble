@@ -15,6 +15,7 @@ const (
 	servErr         // 105
 	badCreds        // 106
 	notOwner        // 107
+	dbUpdate        // 108
 )
 
 // API errors
@@ -27,6 +28,7 @@ var (
 	ErrNotOwner    = ReqError{notOwner, "Unauthorized", "Authenticated user is not the owner of the resource", http.StatusUnauthorized}
 	ErrResNotFound = ReqError{resNotFound, "Resource not found", "%s %s not found", http.StatusNotFound}
 	ErrServ        = ReqError{servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError}
+	ErrUpdate      = ReqError{dbUpdate, "Database error", "Failed to update %s %s", http.StatusInternalServerError}
 )
 
 // Http status

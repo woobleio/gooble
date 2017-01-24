@@ -128,10 +128,6 @@ func PushCreations(c *gin.Context) {
 // (a Wooble lib is a file that bundles everything contained in a package,
 // the file is stored in the cloud)
 func BuildPackage(c *gin.Context) {
-	type Build struct {
-		Source string `json:"source"`
-	}
-	var data Build
 	res := NewRes()
 
 	pkgID := c.Param("id")
@@ -196,9 +192,15 @@ func BuildPackage(c *gin.Context) {
 
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
-	data.Source = "https://pkg.wooble.io" + strings.Join(spltPath, "/")
 
-	res.Response(data)
+	pkg.Source = &lib.NullString{String: "https://pkg.wooble.io" + strings.Join(spltPath, "/"), Valid: true}
+
+	if err := model.UpdatePackage(pkg); err != nil {
+		fmt.Print(err)
+		res.Error(ErrUpdate, "package", pkg.ID)
+	}
+
+	res.Response(pkg)
 
 	res.Status = OK
 

@@ -1,8 +1,6 @@
 package model
 
-import (
-	"wooble/lib"
-)
+import "wooble/lib"
 
 // Package is a bundle of creations
 type Package struct {
@@ -15,6 +13,7 @@ type Package struct {
 	UserID    uint64          `json:"-" db:"user_id"`
 	User      User            `json:"-" db:""`
 	Creations []Creation      `json:"creations,omitempty" db:""`
+	Source    *lib.NullString `json:"source,omitempty" db:"source"`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"pkg.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
@@ -61,6 +60,7 @@ func AllPackages(opt lib.Option, userID uint64) (*[]Package, error) {
   		pkg.title "pkg.title",
   		pkg.domains,
   		pkg.key,
+			pkg.source,
   		pkg.created_at "pkg.created_at",
   		pkg.updated_at "pkg.updated_at"
   	FROM package pkg
@@ -84,6 +84,7 @@ func PackageByID(id string, userID uint64) (*Package, error) {
 		pkg.title "pkg.title",
 		pkg.domains,
 		pkg.key,
+		pkg.source,
 		pkg.created_at "pkg.created_at",
 		pkg.updated_at "pkg.updated_at"
 	FROM package pkg
@@ -98,7 +99,7 @@ func PackageByID(id string, userID uint64) (*Package, error) {
 	return &pkg, pkg.PopulateCreations()
 }
 
-// NewPackage created a new package
+// NewPackage creates a new package
 func NewPackage(data *PackageForm) (pkgID uint64, err error) {
 	q := `INSERT INTO package(title, user_id, domains, key) VALUES ($1, $2, $3, $4) RETURNING id`
 	err = lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains, data.Key).Scan(&pkgID)
@@ -109,5 +110,12 @@ func NewPackage(data *PackageForm) (pkgID uint64, err error) {
 func PushCreation(pkgID uint64, creaID uint64) error {
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
 	_, err := lib.DB.Exec(q, pkgID, creaID)
+	return err
+}
+
+// UpdatePackage updated the package
+func UpdatePackage(pkg *Package) error {
+	q := `UPDATE package SET title=$2, domains=$3, source=$4 WHERE id=$1`
+	_, err := lib.DB.Exec(q, pkg.ID, pkg.Title, pkg.Domains, pkg.Source)
 	return err
 }

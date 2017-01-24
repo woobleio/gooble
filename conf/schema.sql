@@ -169,6 +169,7 @@ CREATE TABLE package (
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
     domains text[] NOT NULL,
+    source text,
     key text NOT NULL
 );
 
@@ -291,7 +292,7 @@ JSES5	.js	application/javascript
 -- Data for Name: package; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY package (id, user_id, title, created_at, updated_at, domains, key) FROM stdin;
+COPY package (id, user_id, title, created_at, updated_at, domains, source, key) FROM stdin;
 \.
 
 
