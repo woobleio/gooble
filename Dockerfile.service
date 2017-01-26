@@ -38,6 +38,7 @@ RUN echo "db_host: woobledb" >> $CONFPATH/dev.yml \
       && echo "db_password: w00b" >> $CONFPATH/dev.yml \
       && echo "cloud_repo: wooble-dev" >> $CONFPATH/dev.yml \
       && echo "key_range: abcdefghijklmnopqrstuvwxyz0123456789" >> $CONFPATH/dev.yml \
+      && echo "salt_for_id: hello"  >> $CONFPATH/dev.yml \
       && echo "token_key: abcd1234" >> $CONFPATH/dev.yml \
       && echo "token_lifetime: 30" >> $CONFPATH/dev.yml \
       && echo "allow_origin: http://localhost:3000" >> $CONFPATH/dev.yml
@@ -48,6 +49,7 @@ RUN echo "db_host: woobledb" >> $CONFPATH/test.yml \
       && echo "db_username: user_test" >> $CONFPATH/test.yml \
       && echo "cloud_repo: wooble-dev" >> $CONFPATH/test.yml \
       && echo "key_range: abcdefghijklmnopqrstuvwxyz0123456789" >> $CONFPATH/test.yml \
+      && echo "salt_for_id: hello"  >> $CONFPATH/test.yml \
       && echo "token_key: abcd1234" >> $CONFPATH/test.yml \
       && echo "token_lifetime: 30" >> $CONFPATH/test.yml \
       && echo "allow_origin: http://localhost:3000" >> $CONFPATH/test.yml
@@ -61,6 +63,7 @@ RUN go get github.com/codegangsta/gin
 RUN go get github.com/dgrijalva/jwt-go
 RUN go get github.com/jmoiron/sqlx
 RUN go get github.com/lib/pq
+RUN go get github.com/speps/go-hashids
 RUN go get github.com/spf13/viper
 RUN go get github.com/woobleio/wooblizer
 

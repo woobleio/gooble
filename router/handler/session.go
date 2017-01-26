@@ -14,8 +14,8 @@ import (
 // GenerateToken generates a new token
 func GenerateToken(c *gin.Context) {
 	type CredsForm struct {
-		Login  string `json:"login" binding:"required"`
-		Passwd string `json:"secret"`
+		Email  string `json:"email" binding:"required"`
+		Secret string `json:"secret" binding:"required"`
 	}
 
 	var form CredsForm
@@ -24,12 +24,12 @@ func GenerateToken(c *gin.Context) {
 
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&form) != nil {
-		res.Error(ErrBadForm, "login (string) is required")
+		res.Error(ErrBadForm, "email (string) and secret (string) are required")
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
-	user, err := model.UserByLogin(form.Login)
+	user, err := model.UserByEmail(form.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			res.Error(ErrBadCreds, "Username or email do not exist")
@@ -40,7 +40,7 @@ func GenerateToken(c *gin.Context) {
 		return
 	}
 
-	if user.IsPasswordValid(form.Passwd) {
+	if user.IsPasswordValid(form.Secret) {
 		token := model.NewToken(user, "")
 		tokenS, err := token.SignedString(model.TokenKey())
 
@@ -84,6 +84,32 @@ func RefreshToken(c *gin.Context) {
 	} else if ve != nil {
 		res.Error(ErrServ, "token refresh")
 	}
+
+	c.JSON(res.HTTPStatus(), res)
+}
+
+// SignUp saves a new user in the database
+func SignUp(c *gin.Context) {
+	var data model.UserForm
+
+	res := NewRes()
+
+	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
+	c.Header("Content-Type", gin.MIMEJSON)
+	if c.BindJSON(&data) != nil {
+		res.Error(ErrBadForm, "username (string), email (string) and secret (string) are required")
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	_, err := model.NewUser(&data)
+	if err != nil {
+		res.Error(ErrDBSave, "- Name should be unique\n - Email should be unique")
+	} else {
+		c.Header("Location", "/token/generate")
+	}
+
+	res.Status = Created
 
 	c.JSON(res.HTTPStatus(), res)
 }

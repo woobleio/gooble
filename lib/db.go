@@ -148,6 +148,53 @@ func (ns NullString) Value() (driver.Value, error) {
 	return ns.String, nil
 }
 
+// ID is a custom type for hashed IDs
+type ID struct {
+	ValueEncoded string
+	ValueDecoded int64
+}
+
+// MarshalJSON marshals custom ID
+func (id ID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(id.ValueEncoded)
+}
+
+// UnmarshalJSON unmarshals custom NullString
+func (id *ID) UnmarshalJSON(data []byte) error {
+	var x *string
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != nil {
+		id.ValueEncoded = *x
+		decode, err := DecodeHash(id.ValueEncoded)
+		if err != nil {
+			return err
+		}
+		id.ValueDecoded = decode
+	} else {
+		id.ValueEncoded = ""
+		id.ValueDecoded = 0
+	}
+	return nil
+}
+
+// Scan implements the Scanner interface
+func (id *ID) Scan(value interface{}) error {
+	id.ValueDecoded = value.(int64)
+	encode, err := HashID(id.ValueDecoded)
+	if err != nil {
+		return err
+	}
+	id.ValueEncoded = encode
+	return nil
+}
+
+// Value implements the driver Valuer interface
+func (id ID) Value() (driver.Value, error) {
+	return id.ValueDecoded, nil
+}
+
 // StringSlice see https://gist.github.com/adharris/4163702
 type StringSlice []string
 

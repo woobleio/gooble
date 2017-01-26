@@ -12,17 +12,25 @@ import (
 type User struct {
 	ID uint64 `json:"-" db:"user.id"`
 
-	Email  string `json:"email,omitempty" binding:"required" db:"email"`
-	Name   string `json:"name" binding:"required" db:"name"`
-	Passwd string `json:"secret,omitempty" binding:"required" db:"passwd"`
+	Email string `json:"email,omitempty" db:"email"`
+	Name  string `json:"name" db:"name"`
 
 	IsCreator bool `json:"isCreator" db:"is_creator"`
 
-	IsAuth bool   `json:"-" db:"is_auth"`
+	Secret string `json:"-" db:"passwd"`
 	Salt   string `json:"-" db:"salt_key"`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"user.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
+}
+
+// UserForm is the form for users
+type UserForm struct {
+	Email  string `json:"email" binding:"required"`
+	Name   string `json:"name" binding:"required"`
+	Secret string `json:"secret" binding:"required"`
+
+	IsCreator bool `json:"isCreator"`
 }
 
 // UserByID returns user with id "id"
@@ -45,9 +53,9 @@ func UserByID(id uint64) (*User, error) {
 }
 
 // NewUser creates a new user
-func NewUser(user *User) (uID uint64, err error) {
+func NewUser(user *UserForm) (uID uint64, err error) {
 	salt := lib.GenKey()
-	cp, err := getPassword(user.Passwd, []byte(salt))
+	cp, err := getPassword(user.Secret, []byte(salt))
 	if err != nil {
 		return 0, err
 	}
@@ -56,8 +64,8 @@ func NewUser(user *User) (uID uint64, err error) {
 	return uID, err
 }
 
-// UserByLogin returns user with a specified email or name
-func UserByLogin(login string) (*User, error) {
+// UserByEmail returns user with a specified email or name
+func UserByEmail(email string) (*User, error) {
 	var user User
 	q := `
 		SELECT
@@ -66,10 +74,9 @@ func UserByLogin(login string) (*User, error) {
 			u.passwd,
 			u.salt_key
 		FROM app_user u
-		WHERE u.name = $1
-		OR u.email = $1
+		WHERE u.email = $1
 	`
-	return &user, lib.DB.Get(&user, q, login)
+	return &user, lib.DB.Get(&user, q, email)
 }
 
 // IsPasswordValid checks if a password is valid
@@ -78,7 +85,7 @@ func (u *User) IsPasswordValid(passwd string) bool {
 	if err != nil || cp == "" {
 		return false
 	}
-	return u.Passwd == cp
+	return u.Secret == cp
 }
 
 func getPassword(passwd string, salt []byte) (string, error) {

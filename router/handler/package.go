@@ -85,7 +85,7 @@ func POSTPackages(c *gin.Context) {
 func PushCreations(c *gin.Context) {
 	type PackageCreationForm struct {
 		PackageID  uint64
-		CreationID []uint64 `json:"creations" binding:"required"`
+		CreationID []string `json:"creations" binding:"required"`
 	}
 
 	var data PackageCreationForm
@@ -112,7 +112,7 @@ func PushCreations(c *gin.Context) {
 	}
 
 	for _, creaID := range data.CreationID {
-		if err := model.PushCreation(pkg.ID, creaID); err != nil {
+		if err := model.PushCreation(pkg.ID.ValueDecoded, creaID); err != nil {
 			res.Error(ErrDBSave, fmt.Sprintf("failed to push creation %v in the package", creaID))
 		}
 	}

@@ -30,6 +30,8 @@ func Load() {
 			c.String(200, "%s", time.Now())
 		})
 
+		v1.POST("/users", handler.SignUp)
+
 		v1.POST("/token/generate", handler.GenerateToken)
 		v1.POST("/token/refresh", handler.RefreshToken)
 

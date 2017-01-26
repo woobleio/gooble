@@ -4,7 +4,7 @@ import "wooble/lib"
 
 // Package is a bundle of creations
 type Package struct {
-	ID uint64 `json:"id" db:"pkg.id"`
+	ID lib.ID `json:"id" db:"pkg.id"`
 
 	Title string `json:"title" binding:"required" db:"pkg.title"`
 
@@ -92,7 +92,9 @@ func PackageByID(id string, userID uint64) (*Package, error) {
   AND pkg.user_id = $2
 	`
 
-	if err := lib.DB.Get(&pkg, q, id, userID); err != nil {
+	decodeID, _ := lib.DecodeHash(id)
+
+	if err := lib.DB.Get(&pkg, q, decodeID, userID); err != nil {
 		return nil, err
 	}
 
@@ -100,16 +102,20 @@ func PackageByID(id string, userID uint64) (*Package, error) {
 }
 
 // NewPackage creates a new package
-func NewPackage(data *PackageForm) (pkgID uint64, err error) {
+func NewPackage(data *PackageForm) (string, error) {
+	var pkgID int64
 	q := `INSERT INTO package(title, user_id, domains, key) VALUES ($1, $2, $3, $4) RETURNING id`
-	err = lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains, data.Key).Scan(&pkgID)
-	return pkgID, err
+	if err := lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains, data.Key).Scan(&pkgID); err != nil {
+		return "", err
+	}
+	return lib.HashID(pkgID)
 }
 
 // PushCreation pushes a creation in the package
-func PushCreation(pkgID uint64, creaID uint64) error {
+func PushCreation(pkgID int64, creaID string) error {
+	decodeCreaID, _ := lib.DecodeHash(creaID)
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
-	_, err := lib.DB.Exec(q, pkgID, creaID)
+	_, err := lib.DB.Exec(q, pkgID, decodeCreaID)
 	return err
 }
 
