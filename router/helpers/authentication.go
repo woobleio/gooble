@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"wooble/model"
+	"wooble/models"
 
 	jwt_lib "github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"

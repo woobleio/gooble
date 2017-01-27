@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"wooble/lib"
-	"wooble/router/handler"
-	"wooble/router/middleware"
+	"wooble/router/handlers"
+	"wooble/router/middlewares"
 
 	cors "gopkg.in/gin-contrib/cors.v1"
 	"gopkg.in/gin-gonic/gin.v1"

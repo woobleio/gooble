@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"wooble/lib"
-	"wooble/model"
+	"wooble/models"
 
 	"github.com/woobleio/wooblizer/wbzr"
 	"github.com/woobleio/wooblizer/wbzr/engine"

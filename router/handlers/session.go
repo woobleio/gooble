@@ -5,8 +5,8 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 
-	"wooble/model"
-	"wooble/router/helper"
+	"wooble/models"
+	"wooble/router/helpers"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )

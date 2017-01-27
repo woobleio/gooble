@@ -12,7 +12,6 @@ type Creation struct {
 	Alias   *lib.NullString `json:"alias,omitempty" db:"alias"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
-	SourceID  uint64 `json:"-"       db:"source_id"`
 	HasDoc    bool   `json:"-"       db:"has_document"`
 	HasScript bool   `json:"-"       db:"has_script"`
 	HasStyle  bool   `json:"-"       db:"has_style"`

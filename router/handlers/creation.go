@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"wooble/lib"
-	"wooble/model"
+	"wooble/models"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )

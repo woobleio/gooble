@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"errors"
-	"wooble/model"
-	"wooble/router/helper"
+	"wooble/models"
+	"wooble/router/helpers"
 
 	jwt_lib "github.com/dgrijalva/jwt-go"
 	"gopkg.in/gin-gonic/gin.v1"
