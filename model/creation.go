@@ -6,9 +6,10 @@ import "wooble/lib"
 type Creation struct {
 	ID lib.ID `json:"id"      db:"crea.id"`
 
-	Title   string `json:"title"  db:"title"`
-	Creator User   `json:"creator" db:""`
-	Version string `json:"version" db:"version"`
+	Title   string          `json:"title"  db:"title"`
+	Creator User            `json:"creator" db:""`
+	Version string          `json:"version" db:"version"`
+	Alias   *lib.NullString `json:"alias,omitempty" db:"alias"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	SourceID  uint64 `json:"-"       db:"source_id"`

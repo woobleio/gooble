@@ -81,11 +81,11 @@ func POSTPackages(c *gin.Context) {
 	c.JSON(res.HTTPStatus(), res)
 }
 
-// PushCreations is an handler that pushes one or more creations in a package
-func PushCreations(c *gin.Context) {
+// PushCreation is an handler that pushes one or more creations in a package
+func PushCreation(c *gin.Context) {
 	type PackageCreationForm struct {
 		PackageID  uint64
-		CreationID []string `json:"creations" binding:"required"`
+		CreationID string `json:"creation" binding:"required"`
 	}
 
 	var data PackageCreationForm
@@ -95,7 +95,7 @@ func PushCreations(c *gin.Context) {
 	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "creations (int[]) is required")
+		res.Error(ErrBadForm, "creations (string) is required")
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
@@ -111,10 +111,8 @@ func PushCreations(c *gin.Context) {
 		return
 	}
 
-	for _, creaID := range data.CreationID {
-		if err := model.PushCreation(pkg.ID.ValueDecoded, creaID); err != nil {
-			res.Error(ErrDBSave, fmt.Sprintf("failed to push creation %v in the package", creaID))
-		}
+	if err := model.PushCreation(pkg.ID.ValueDecoded, data.CreationID); err != nil {
+		res.Error(ErrDBSave, fmt.Sprintf("failed to push creation %v in the package", data.CreationID))
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "packages", pkgID))
@@ -193,10 +191,9 @@ func BuildPackage(c *gin.Context) {
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
 
-	pkg.Source = &lib.NullString{String: "https://pkg.wooble.io" + strings.Join(spltPath, "/"), Valid: true}
+	pkg.Source = lib.InitNullString("https://pkg.wooble.io" + strings.Join(spltPath, "/"))
 
 	if err := model.UpdatePackage(pkg); err != nil {
-		fmt.Print(err)
 		res.Error(ErrUpdate, "package", pkg.ID)
 	}
 

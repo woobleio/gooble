@@ -32,7 +32,7 @@ func GenerateToken(c *gin.Context) {
 	user, err := model.UserByEmail(form.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			res.Error(ErrBadCreds, "Username or email do not exist")
+			res.Error(ErrBadCreds, "Email does not exist")
 		} else {
 			res.Error(ErrDBSelect)
 		}
@@ -97,7 +97,7 @@ func SignUp(c *gin.Context) {
 	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "username (string), email (string) and secret (string) are required")
+		res.Error(ErrBadForm, "name (string), email (string) and secret (string) are required")
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}

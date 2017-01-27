@@ -104,14 +104,26 @@ func (v *NullTime) UnmarshalJSON(data []byte) error {
 }
 
 // NullString is psql null for string
-type NullString sql.NullString
+type NullString struct {
+	sql.NullString
+}
+
+// InitNullString returns a NullString with String "str"
+func InitNullString(str string) *NullString {
+	return &NullString{
+		sql.NullString{
+			String: str,
+			Valid:  true,
+		},
+	}
+}
 
 // MarshalJSON marshals custom NullString
 func (ns NullString) MarshalJSON() ([]byte, error) {
 	if ns.Valid {
 		return json.Marshal(ns.String)
 	}
-	return json.Marshal(nil)
+	return json.Marshal("")
 }
 
 // UnmarshalJSON unmarshals custom NullString
@@ -127,25 +139,6 @@ func (ns *NullString) UnmarshalJSON(data []byte) error {
 		ns.Valid = false
 	}
 	return nil
-}
-
-// Scan implements the Scanner interface
-func (ns *NullString) Scan(value interface{}) error {
-	if value == nil {
-		ns.String, ns.Valid = "", false
-	} else {
-		ns.Valid = true
-	}
-	ns.String = value.(string)
-	return nil
-}
-
-// Value implements the driver Valuer interface
-func (ns NullString) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return ns.String, nil
 }
 
 // ID is a custom type for hashed IDs

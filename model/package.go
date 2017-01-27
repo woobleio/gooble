@@ -34,6 +34,7 @@ func (p *Package) PopulateCreations() error {
 	q := `
 	SELECT
 		c.id "crea.id",
+    pc.alias,
 		c.title,
 		c.version,
 		c.has_document,
