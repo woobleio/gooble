@@ -19,6 +19,7 @@ func init() {
 	}
 
 	lib.LoadDB()
+	lib.LoadPayment()
 }
 
 func main() {

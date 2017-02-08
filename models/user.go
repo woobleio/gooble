@@ -10,10 +10,13 @@ import (
 
 // User is a Wooble user
 type User struct {
-	ID uint64 `json:"-" db:"user.id"`
+	ID         uint64 `json:"-" db:"user.id"`
+	CustomerID string `json:"-" db:"customer_id"`
 
 	Email string `json:"email,omitempty" db:"email"`
 	Name  string `json:"name" db:"name"`
+
+	Plan Plan `json:"plan" db:""`
 
 	IsCreator bool `json:"isCreator" db:"is_creator"`
 
@@ -29,6 +32,9 @@ type UserForm struct {
 	Email  string `json:"email" binding:"required"`
 	Name   string `json:"name" binding:"required"`
 	Secret string `json:"secret" binding:"required"`
+	Plan   string `json:"plan" binding:"required"`
+
+	CardToken string `json:"cardToken"`
 
 	IsCreator bool `json:"isCreator"`
 }
@@ -54,13 +60,18 @@ func UserByID(id uint64) (*User, error) {
 
 // NewUser creates a new user
 func NewUser(user *UserForm) (uID uint64, err error) {
+	customer, err := lib.NewCustomer(user.Email, user.Plan, user.CardToken)
+	if err != nil {
+		return 0, err
+	}
+
 	salt := lib.GenKey()
 	cp, err := getPassword(user.Secret, []byte(salt))
 	if err != nil {
 		return 0, err
 	}
-	q := `INSERT INTO app_user(name, email, is_creator, passwd, salt_key) VALUES ($1, $2, $3, $4, $5) RETURNING id`
-	err = lib.DB.QueryRow(q, user.Name, user.Email, user.IsCreator, cp, salt).Scan(&uID)
+	q := `INSERT INTO app_user(name, email, is_creator, passwd, salt_key, customer_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+	err = lib.DB.QueryRow(q, user.Name, user.Email, user.IsCreator, cp, salt, customer.ID).Scan(&uID)
 	return uID, err
 }
 

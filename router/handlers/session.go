@@ -97,14 +97,14 @@ func SignUp(c *gin.Context) {
 	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
 	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "name (string), email (string) and secret (string) are required")
+		res.Error(ErrBadForm, "name (string), email (string), secret (string) and plan(string) are required")
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
 	_, err := model.NewUser(&data)
 	if err != nil {
-		res.Error(ErrDBSave, "- Name should be unique\n - Email should be unique")
+		res.Error(ErrDBSave, "- Name should be unique\n - Email should be unique\n - Wrong billing info")
 	} else {
 		c.Header("Location", "/token/generate")
 	}
