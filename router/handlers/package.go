@@ -191,9 +191,10 @@ func BuildPackage(c *gin.Context) {
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
 
-	pkg.Source = lib.InitNullString("https://pkg.wooble.io" + strings.Join(spltPath, "/"))
+	// FIXME this change could crash
+	// pkg.Source = lib.InitNullString("https://pkg.wooble.io" + strings.Join(spltPath, "/"))
 
-	if err := model.UpdatePackage(pkg); err != nil {
+	if err := model.UpdatePackageSource("https://pkg.wooble.io"+strings.Join(spltPath, "/"), pkg.ID); err != nil {
 		res.Error(ErrUpdate, "package", pkg.ID)
 	}
 

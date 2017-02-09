@@ -120,9 +120,16 @@ func PushCreation(pkgID int64, creaID string) error {
 	return err
 }
 
-// UpdatePackage updated the package
+// UpdatePackage updates package form
 func UpdatePackage(pkg *Package) error {
-	q := `UPDATE package SET title=$2, domains=$3, source=$4 WHERE id=$1`
-	_, err := lib.DB.Exec(q, pkg.ID, pkg.Title, pkg.Domains, pkg.Source)
+	q := `UPDATE package SET title=$2, domains=$3 WHERE id=$1`
+	_, err := lib.DB.Exec(q, pkg.ID, pkg.Title, pkg.Domains)
+	return err
+}
+
+// UpdatePackageSource updates package source
+func UpdatePackageSource(source string, pkgID lib.ID) error {
+	q := `UPDATE package SET source=$2 WHERE id=$1`
+	_, err := lib.DB.Exec(q, pkgID, source)
 	return err
 }

@@ -2,9 +2,12 @@ package handler
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
 
+	"wooble/lib"
 	"wooble/models"
 	"wooble/router/helpers"
 
@@ -102,12 +105,33 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	_, err := model.NewUser(&data)
+	uID, err := model.NewUser(&data)
 	if err != nil {
-		res.Error(ErrDBSave, "- Name should be unique\n - Email should be unique\n - Wrong billing info")
-	} else {
-		c.Header("Location", "/token/generate")
+		res.Error(ErrDBSave, "- Name should be unique\n - Email should be unique")
+		c.JSON(res.HTTPStatus(), res)
+		return
 	}
+
+	// Saves the customer in Stripe
+	customer, errCust := lib.NewCustomer(data.Email, data.Plan, data.CardToken)
+	if errCust != nil {
+		res.Error(ErrDBSave, "- Wrong billing info")
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	data.CustomerID = customer.ID
+
+	// Sets customer id to User
+	model.UpdateCustomerID(customer.ID, uID)
+
+	// Logs customer subscription in the DB
+	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {
+		// TODO logs subscription
+		fmt.Print(err)
+	}
+
+	c.Header("Location", "/token/generate")
 
 	res.Status = Created
 

@@ -37,6 +37,8 @@ type UserForm struct {
 	CardToken string `json:"cardToken"`
 
 	IsCreator bool `json:"isCreator"`
+
+	CustomerID string
 }
 
 // UserByID returns user with id "id"
@@ -60,18 +62,14 @@ func UserByID(id uint64) (*User, error) {
 
 // NewUser creates a new user
 func NewUser(user *UserForm) (uID uint64, err error) {
-	customer, err := lib.NewCustomer(user.Email, user.Plan, user.CardToken)
-	if err != nil {
-		return 0, err
-	}
-
 	salt := lib.GenKey()
-	cp, err := getPassword(user.Secret, []byte(salt))
-	if err != nil {
-		return 0, err
+	cp, errPasswd := getPassword(user.Secret, []byte(salt))
+	if errPasswd != nil {
+		return 0, errPasswd
 	}
 	q := `INSERT INTO app_user(name, email, is_creator, passwd, salt_key, customer_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
-	err = lib.DB.QueryRow(q, user.Name, user.Email, user.IsCreator, cp, salt, customer.ID).Scan(&uID)
+	err = lib.DB.QueryRow(q, user.Name, user.Email, user.IsCreator, cp, salt, user.CustomerID).Scan(&uID)
+
 	return uID, err
 }
 
@@ -88,6 +86,20 @@ func UserByEmail(email string) (*User, error) {
 		WHERE u.email = $1
 	`
 	return &user, lib.DB.Get(&user, q, email)
+}
+
+// UpdateUser updates user form (password not included)
+func UpdateUser(userForm *UserForm, uID uint64) error {
+	q := `UPDATE app_user SET name=$2, email=$3, is_creator=$4 WHERE id=$1`
+	_, err := lib.DB.Exec(q, uID, userForm.Name, userForm.Email, userForm.IsCreator)
+	return err
+}
+
+// UpdateCustomerID updates user's customer ID
+func UpdateCustomerID(customerID string, uID uint64) error {
+	q := `UPDATE app_user SET customer_id=$2 WHERE id=$1`
+	_, err := lib.DB.Exec(q, uID, customerID)
+	return err
 }
 
 // IsPasswordValid checks if a password is valid

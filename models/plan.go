@@ -1,5 +1,10 @@
 package model
 
+import (
+	"time"
+	"wooble/lib"
+)
+
 const (
 	Free string = "free"
 )
@@ -16,4 +21,11 @@ type Plan struct {
 	NbPkg     int `json:"nbPackages" db:"nb_pkg"`
 	NbCrea    int `json:"nbCreations" db:"nb_crea"`
 	NbDomains int `json:"nbDomains" db:"nb_domains"`
+}
+
+// NewPlanUser logs user subscription
+func NewPlanUser(uID uint64, planLabel string, periodEnd int64) (id uint64, err error) {
+	q := `INSERT INTO plan_user(user_id, nb_renew, end_date, plan_label) VALUES ($1, $2, $3, $4) RETURNING id`
+	err = lib.DB.QueryRow(q, uID, 0, time.Unix(periodEnd, 0), planLabel).Scan(&uID)
+	return id, err
 }
