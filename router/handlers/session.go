@@ -115,6 +115,7 @@ func SignUp(c *gin.Context) {
 	// Saves the customer in Stripe
 	customer, errCust := lib.NewCustomer(data.Email, data.Plan, data.CardToken)
 	if errCust != nil {
+		model.DeleteUser(uID)
 		res.Error(ErrDBSave, "- Wrong billing info")
 		c.JSON(res.HTTPStatus(), res)
 		return

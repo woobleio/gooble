@@ -68,12 +68,6 @@ func POSTPackages(c *gin.Context) {
 
 	plan := user.(*model.User).Plan
 
-	// If the current plan has expired it'll use free plan instead
-	if plan.Label.String != model.Free && plan.HasExpired() {
-		res.Error(ErrPlanExpired, plan.Label.String, plan.EndDate.Time.String())
-		plan, _ = model.DefaultPlan()
-	}
-
 	limitNbPkg := plan.NbPkg.Int64
 	limitNbDomains := plan.NbDomains.Int64
 	userNbPkg := model.UserNbPackages(data.UserID)
@@ -85,7 +79,7 @@ func POSTPackages(c *gin.Context) {
 		return
 	}
 
-	if limitNbDomains != 0 && int64(len(data.Domains)) >= limitNbDomains {
+	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
 		res.Error(ErrPlanLimit, "Domains per package", plan.Label.String)
 		c.JSON(res.HTTPStatus(), res)
 		return
@@ -131,6 +125,16 @@ func PushCreation(c *gin.Context) {
 	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
 	if err != nil {
 		res.Error(ErrResNotFound, "package", "")
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	plan := user.(*model.User).Plan
+	limitNbCrea := plan.NbCrea.Int64
+	pkgNbCrea := model.PackageNbCrea(pkg.ID.ValueEncoded)
+
+	if limitNbCrea != 0 && pkgNbCrea >= limitNbCrea {
+		res.Error(ErrPlanLimit, "Creations per package", plan.Label.String)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}

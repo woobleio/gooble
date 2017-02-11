@@ -129,6 +129,13 @@ func UserByEmail(email string) (*User, error) {
 	return &user, lib.DB.Get(&user, q, email)
 }
 
+// DeleteUser deletes the user "uID" from the DB
+func DeleteUser(uID uint64) error {
+	q := `DELETE FROM app_user WHERE id = $1`
+	_, err := lib.DB.Exec(q, uID)
+	return err
+}
+
 // UpdateUser updates user form (password not included)
 func UpdateUser(userForm *UserForm, uID uint64) error {
 	q := `UPDATE app_user SET name=$2, email=$3, is_creator=$4 WHERE id=$1`

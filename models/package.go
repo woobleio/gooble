@@ -102,6 +102,27 @@ func PackageByID(id string, userID uint64) (*Package, error) {
 	return &pkg, pkg.PopulateCreations()
 }
 
+// PackageNbCrea returns the number of creations in the package id "id"
+func PackageNbCrea(id string) int64 {
+	var nbCrea struct {
+		Value int64 `db:"nb_crea"`
+	}
+
+	q := `
+	SELECT
+		COUNT(p.id) nb_crea
+	FROM package p
+	JOIN package_creation pc ON (pc.package_id = p.id)
+	WHERE p.id = $1
+	`
+
+	decodeID, _ := lib.DecodeHash(id)
+
+	lib.DB.Get(&nbCrea, q, decodeID)
+
+	return nbCrea.Value
+}
+
 // NewPackage creates a new package
 func NewPackage(data *PackageForm) (string, error) {
 	var pkgID int64
