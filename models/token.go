@@ -140,6 +140,7 @@ func UserByToken(token interface{}) (*User, error) {
 		EndDate:   lib.InitNullTime(endDate),
 	}
 
+	// TODO warn user of this
 	if plan.Label.String != Free && plan.HasExpired() {
 		plan, _ = DefaultPlan()
 	}

@@ -5,19 +5,19 @@ import (
 	"net/http"
 )
 
+type errCode string
+
 // errors code
 const (
-	resNotFound int = iota + 100
-	dbSelect        // 101
-	badForm         // 102
-	badParam        // 103
-	dbSave          // 104
-	servErr         // 105
-	badCreds        // 106
-	notOwner        // 107
-	dbUpdate        // 108
-	planLimit       // 109
-	planExpire      // 110
+	resNotFound errCode = "res_not_found"
+	dbFail      errCode = "db_failed"
+	badForm     errCode = "bad_form"
+	badParam    errCode = "bad_params"
+	servErr     errCode = "server_error"
+	badCreds    errCode = "bad_credentials"
+	notOwner    errCode = "not_res_owner"
+	planLimit   errCode = "plan_limit"
+	planExpire  errCode = "plan_expired"
 )
 
 // API errors, status to 0 means no HTTP error to trigger
@@ -25,14 +25,14 @@ var (
 	ErrBadCreds    = ReqError{badCreds, "Wrong credentials", "%s", http.StatusUnauthorized}
 	ErrBadForm     = ReqError{badForm, "Form not valid", "%s", http.StatusBadRequest}
 	ErrBadParam    = ReqError{badParam, "Bad param", "Param should be of type %s", http.StatusBadRequest}
-	ErrDBSave      = ReqError{dbSave, "Database error", "One or many issues encountered while saving the data :\n %s", http.StatusConflict}
-	ErrDBSelect    = ReqError{dbSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError}
+	ErrDBSave      = ReqError{dbFail, "Database error", "One or many issues encountered while saving the data :\n %s", http.StatusConflict}
+	ErrDBSelect    = ReqError{dbFail, "Database error", "Failed to select the resources requested", http.StatusInternalServerError}
 	ErrNotOwner    = ReqError{notOwner, "Unauthorized", "Authenticated user is not the owner of the resource", http.StatusUnauthorized}
 	ErrPlanExpired = ReqError{planExpire, "Plan expired", "Current plan \"%s\" has expired, it ended at %s", 0}
 	ErrPlanLimit   = ReqError{planLimit, "Plan limit exceeded", "%s limited by actual plan %s", http.StatusUnauthorized}
 	ErrResNotFound = ReqError{resNotFound, "Resource not found", "%s %s not found", http.StatusNotFound}
 	ErrServ        = ReqError{servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError}
-	ErrUpdate      = ReqError{dbUpdate, "Database error", "Failed to update %s %s", http.StatusInternalServerError}
+	ErrUpdate      = ReqError{dbFail, "Database error", "Failed to update %s %s", http.StatusInternalServerError}
 )
 
 // Http status
@@ -76,10 +76,10 @@ func (j *JSONRes) Response(data interface{}) {
 
 // ReqError is a struct that standardize a Wooble error
 type ReqError struct {
-	Code    interface{} `json:"code"`
-	Title   string      `json:"title"`
-	Details string      `json:"details"`
-	Status  int         `json:"-"`
+	Code    errCode `json:"code"`
+	Title   string  `json:"title"`
+	Details string  `json:"details"`
+	Status  int     `json:"-"`
 }
 
 func (j *JSONRes) Error(err ReqError, args ...interface{}) {
