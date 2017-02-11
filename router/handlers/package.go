@@ -66,13 +66,21 @@ func POSTPackages(c *gin.Context) {
 	data.UserID = user.(*model.User).ID
 	data.Key = lib.GenKey()
 
-	userNbPkg := user.(*model.User).Plan.NbPkg.Int64
-	limitNbPkg := model.UserNbPackages(data.UserID)
+	limitNbPkg := user.(*model.User).Plan.NbPkg.Int64
+	limitNbDomains := user.(*model.User).Plan.NbDomains.Int64
+	userNbPkg := model.UserNbPackages(data.UserID)
+	planLabel := user.(*model.User).Plan.Label.String
 
 	// TODO verify is plan hasn't expired
 	// 0 means unlimited
-	if limitNbPkg != 0 && userNbPkg <= limitNbPkg {
-		res.Error(ErrPlanLimit, "Packages", user.(*model.User).Plan.Label.String)
+	if limitNbPkg != 0 && userNbPkg > limitNbPkg {
+		res.Error(ErrPlanLimit, "Packages", planLabel)
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
+		res.Error(ErrPlanLimit, "Domains per package", planLabel)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}

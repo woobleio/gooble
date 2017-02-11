@@ -127,7 +127,7 @@ func UserByToken(token interface{}) (*User, error) {
 	nbCrea, okCrea := nbCreaSrc.(float64)
 	nbDomains, okDomains := nbDomainsSrc.(float64)
 
-	if !okPkg || !okCrea || okDomains {
+	if !okPkg || !okCrea || !okDomains {
 		return nil, errors.New("Parsing error on nbPkg or nbCrea or nbDomains")
 	}
 
