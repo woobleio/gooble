@@ -152,25 +152,28 @@ func InitNullInt64(val int64) *NullInt64 {
 }
 
 // MarshalJSON marshals custom NullString
-func (ns NullInt64) MarshalJSON() ([]byte, error) {
-	if ns.Valid {
-		return json.Marshal(ns.Int64)
+func (ni NullInt64) MarshalJSON() ([]byte, error) {
+	if ni.Valid {
+		return json.Marshal(ni.Int64)
 	}
 	return json.Marshal("")
 }
 
-// UnmarshalJSON unmarshals custom NullString
-func (ns *NullInt64) UnmarshalJSON(data []byte) error {
-	var x int64
-	if err := json.Unmarshal(data, &x); err != nil {
-		return err
+// UnmarshalJSON unmarshals custom NullInt64
+func (ni *NullInt64) UnmarshalJSON(data []byte) error {
+	s := string(data)
+	if v, err := strconv.Atoi(s); err != nil {
+		ni.Int64 = int64(v)
+		ni.Valid = true
+		return nil
 	}
-
-	// TODO control if it's a number
-	ns.Valid = true
-	ns.Int64 = x
-
-	return nil
+	ni.Int64 = -1
+	if s == "null" {
+		ni.Valid = true
+		return nil
+	}
+	ni.Valid = false
+	return errors.New("Invalid NullINt64: " + s)
 }
 
 // ID is a custom type for hashed IDs
