@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -16,6 +17,7 @@ import (
 // CustomClaims is wooble token claims
 type CustomClaims struct {
 	Name         string `json:"name"`
+	Plan         Plan   `json:"plan"`
 	RefreshToken string `json:"refresh_token"`
 	jwt.StandardClaims
 }
@@ -27,6 +29,7 @@ func NewToken(user *User, refreshToken string) *jwt.Token {
 	}
 	claims := &CustomClaims{
 		user.Name,
+		*user.Plan,
 		refreshToken,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Minute * time.Duration(lib.GetTokenLifetime())).Unix(),
@@ -95,14 +98,53 @@ func UserByToken(token interface{}) (*User, error) {
 	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
 
 	idStr := claims["sub"]
-	id, err := strconv.ParseUint(idStr.(string), 10, 640)
+	id, err := strconv.ParseUint(idStr.(string), 10, 64)
+
+	if err != nil {
+		return nil, err
+	}
 
 	name := claims["name"]
+	planInf := claims["plan"].(map[string]interface{})
+
+	labelSrc := planInf["label"]
+	nbPkgSrc := planInf["nbPkg"]
+	nbCreaSrc := planInf["nbCrea"]
+	nbDomainsSrc := planInf["nbDomains"]
+
+	layout := "2006-01-02T15:04:05Z"
+	startDate, err := time.Parse(layout, planInf["startDate"].(string))
+	if err != nil {
+		return nil, err
+	}
+
+	endDate, err := time.Parse(layout, planInf["endDate"].(string))
+	if err != nil {
+		return nil, err
+	}
+
+	nbPkg, okPkg := nbPkgSrc.(float64)
+	nbCrea, okCrea := nbCreaSrc.(float64)
+	nbDomains, okDomains := nbDomainsSrc.(float64)
+
+	if !okPkg || !okCrea || okDomains {
+		return nil, errors.New("Parsing error on nbPkg or nbCrea or nbDomains")
+	}
+
+	plan := &Plan{
+		Label:     *lib.InitNullString(labelSrc.(string)),
+		NbPkg:     *lib.InitNullInt64(int64(nbPkg)),
+		NbCrea:    *lib.InitNullInt64(int64(nbCrea)),
+		NbDomains: *lib.InitNullInt64(int64(nbDomains)),
+		StartDate: lib.InitNullTime(startDate),
+		EndDate:   lib.InitNullTime(endDate),
+	}
 
 	return &User{
 		ID:   id,
 		Name: name.(string),
-	}, err
+		Plan: plan,
+	}, nil
 }
 
 func genRefreshToken(user *User) string {

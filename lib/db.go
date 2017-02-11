@@ -80,6 +80,16 @@ type NullTime struct {
 	pq.NullTime
 }
 
+// InitNullTime returns a NullTime with Time "date"
+func InitNullTime(date time.Time) *NullTime {
+	return &NullTime{
+		pq.NullTime{
+			Time:  date,
+			Valid: true,
+		},
+	}
+}
+
 // MarshalJSON marshals custom NullTime
 func (v NullTime) MarshalJSON() ([]byte, error) {
 	if v.Valid {
@@ -126,18 +136,40 @@ func (ns NullString) MarshalJSON() ([]byte, error) {
 	return json.Marshal("")
 }
 
+// NullInt64 is psql null for string
+type NullInt64 struct {
+	sql.NullInt64
+}
+
+// InitNullInt64 returns a NullInt64 with int64 "val"
+func InitNullInt64(val int64) *NullInt64 {
+	return &NullInt64{
+		sql.NullInt64{
+			Int64: val,
+			Valid: true,
+		},
+	}
+}
+
+// MarshalJSON marshals custom NullString
+func (ns NullInt64) MarshalJSON() ([]byte, error) {
+	if ns.Valid {
+		return json.Marshal(ns.Int64)
+	}
+	return json.Marshal("")
+}
+
 // UnmarshalJSON unmarshals custom NullString
-func (ns *NullString) UnmarshalJSON(data []byte) error {
-	var x string
+func (ns *NullInt64) UnmarshalJSON(data []byte) error {
+	var x int64
 	if err := json.Unmarshal(data, &x); err != nil {
 		return err
 	}
-	if x != "" {
-		ns.Valid = true
-		ns.String = x
-	} else {
-		ns.Valid = false
-	}
+
+	// TODO control if it's a number
+	ns.Valid = true
+	ns.Int64 = x
+
 	return nil
 }
 

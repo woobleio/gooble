@@ -38,7 +38,6 @@ func GETPackages(c *gin.Context) {
 	} else {
 		data, err = model.AllPackages(opts, user.(*model.User).ID)
 		if err != nil {
-			fmt.Print(err)
 			res.Error(ErrDBSelect)
 		}
 	}
@@ -66,6 +65,17 @@ func POSTPackages(c *gin.Context) {
 	user, _ := c.Get("user")
 	data.UserID = user.(*model.User).ID
 	data.Key = lib.GenKey()
+
+	userNbPkg := user.(*model.User).Plan.NbPkg.Int64
+	limitNbPkg := model.UserNbPackages(data.UserID)
+
+	// TODO verify is plan hasn't expired
+	// 0 means unlimited
+	if limitNbPkg != 0 && userNbPkg <= limitNbPkg {
+		res.Error(ErrPlanLimit, "Packages", user.(*model.User).Plan.Label.String)
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
 
 	pkgID, err := model.NewPackage(&data)
 	if err != nil {

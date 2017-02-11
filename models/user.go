@@ -16,7 +16,7 @@ type User struct {
 	Email string `json:"email,omitempty" db:"email"`
 	Name  string `json:"name" db:"name"`
 
-	Plan Plan `json:"plan" db:""`
+	Plan *Plan `json:"plan" db:""`
 
 	IsCreator bool `json:"isCreator" db:"is_creator"`
 
@@ -45,19 +45,37 @@ type UserForm struct {
 func UserByID(id uint64) (*User, error) {
 	var user User
 	q := `
-		SELECT
+		SELECT DISTINCT ON (u.id)
 			u.id "user.id",
 			u.email,
 			u.name,
 			u.is_creator,
 			u.created_at "user.created_at",
 			u.updated_at "user.updated_at",
-			u.salt_key
-		FROM app_user u
+			u.salt_key,
+      u.customer_id,
+      pu.start_date,
+      pu.end_date,
+      pl.label "plan.label",
+      pl.nb_pkg,
+      pl.nb_crea,
+      pl.nb_domains
+    FROM app_user u
+    LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id)
+    LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
 		WHERE u.id = $1
+    ORDER BY u.id, pu.start_date DESC
 	`
 
-	return &user, lib.DB.Get(&user, q, id)
+	if err := lib.DB.Get(&user, q, id); err != nil {
+		return nil, err
+	}
+
+	if user.Plan == nil {
+		user.Plan, _ = DefaultPlan()
+	}
+
+	return &user, nil
 }
 
 // NewUser creates a new user
@@ -77,14 +95,37 @@ func NewUser(user *UserForm) (uID uint64, err error) {
 func UserByEmail(email string) (*User, error) {
 	var user User
 	q := `
-		SELECT
-			u.id "user.id",
-			u.name,
-			u.passwd,
-			u.salt_key
-		FROM app_user u
-		WHERE u.email = $1
+    SELECT DISTINCT ON (u.id)
+      u.id "user.id",
+      u.email,
+      u.name,
+      u.passwd,
+      u.is_creator,
+      u.created_at "user.created_at",
+      u.updated_at "user.updated_at",
+      u.salt_key,
+      u.customer_id,
+      pu.start_date,
+      pu.end_date,
+      pl.label "plan.label",
+      pl.nb_pkg,
+      pl.nb_crea,
+      pl.nb_domains
+    FROM app_user u
+    LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id)
+    LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
+    WHERE u.email = $1
+    ORDER BY u.id, pu.start_date DESC
 	`
+
+	if err := lib.DB.Get(&user, q, email); err != nil {
+		return nil, err
+	}
+
+	if user.Plan == nil {
+		user.Plan, _ = DefaultPlan()
+	}
+
 	return &user, lib.DB.Get(&user, q, email)
 }
 
@@ -100,6 +141,24 @@ func UpdateCustomerID(customerID string, uID uint64) error {
 	q := `UPDATE app_user SET customer_id=$2 WHERE id=$1`
 	_, err := lib.DB.Exec(q, uID, customerID)
 	return err
+}
+
+// UserNbPackages returns numbers of package the user uID has
+func UserNbPackages(uID uint64) int64 {
+	var nbPackages struct {
+		Value int64 `db:"nb_pkg"`
+	}
+
+	q := `
+		SELECT
+			COUNT(p.user_id) nb_pkg
+		FROM package p
+		WHERE p.user_id = $1
+	`
+
+	lib.DB.Get(&nbPackages, q, uID)
+
+	return nbPackages.Value
 }
 
 // IsPasswordValid checks if a password is valid

@@ -1,5 +1,9 @@
 package lib
 
+// Payment is like a model but since it isn't related to the database
+// it is preferable to put it in 'lib'. It's a third party so it has to be
+// updatable easily.
+
 import (
 	"github.com/spf13/viper"
 	"github.com/stripe/stripe-go"
