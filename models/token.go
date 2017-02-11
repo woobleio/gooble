@@ -80,8 +80,8 @@ func RefreshToken(token *jwt.Token) (*jwt.Token, error) {
 	iatUnix := int64(iat)
 
 	tokenOld := time.Now().Sub(time.Unix(iatUnix, 0))
-	// Lifelong refresh token 1 month
-	if tokenOld.Hours() >= (24 * 30) {
+	// Lifelong refresh token 2 weeks
+	if tokenOld.Hours() >= (24 * 14) {
 		return nil, fmt.Errorf("Token has expired, re-auth required : %s", token.Raw)
 	}
 
@@ -138,6 +138,10 @@ func UserByToken(token interface{}) (*User, error) {
 		NbDomains: *lib.InitNullInt64(int64(nbDomains)),
 		StartDate: lib.InitNullTime(startDate),
 		EndDate:   lib.InitNullTime(endDate),
+	}
+
+	if plan.Label.String != Free && plan.HasExpired() {
+		plan, _ = DefaultPlan()
 	}
 
 	return &User{

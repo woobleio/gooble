@@ -66,21 +66,27 @@ func POSTPackages(c *gin.Context) {
 	data.UserID = user.(*model.User).ID
 	data.Key = lib.GenKey()
 
-	limitNbPkg := user.(*model.User).Plan.NbPkg.Int64
-	limitNbDomains := user.(*model.User).Plan.NbDomains.Int64
-	userNbPkg := model.UserNbPackages(data.UserID)
-	planLabel := user.(*model.User).Plan.Label.String
+	plan := user.(*model.User).Plan
 
-	// TODO verify is plan hasn't expired
+	// If the current plan has expired it'll use free plan instead
+	if plan.Label.String != model.Free && plan.HasExpired() {
+		res.Error(ErrPlanExpired, plan.Label.String, plan.EndDate.Time.String())
+		plan, _ = model.DefaultPlan()
+	}
+
+	limitNbPkg := plan.NbPkg.Int64
+	limitNbDomains := plan.NbDomains.Int64
+	userNbPkg := model.UserNbPackages(data.UserID)
+
 	// 0 means unlimited
-	if limitNbPkg != 0 && userNbPkg > limitNbPkg {
-		res.Error(ErrPlanLimit, "Packages", planLabel)
+	if limitNbPkg != 0 && userNbPkg >= limitNbPkg {
+		res.Error(ErrPlanLimit, "Packages", plan.Label.String)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
-	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
-		res.Error(ErrPlanLimit, "Domains per package", planLabel)
+	if limitNbDomains != 0 && int64(len(data.Domains)) >= limitNbDomains {
+		res.Error(ErrPlanLimit, "Domains per package", plan.Label.String)
 		c.JSON(res.HTTPStatus(), res)
 		return
 	}

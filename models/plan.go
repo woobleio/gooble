@@ -48,3 +48,8 @@ func DefaultPlan() (*Plan, error) {
 
 	return &plan, lib.DB.Get(&plan, q, Free)
 }
+
+// HasExpired returns true if the plan has expired
+func (plan *Plan) HasExpired() bool {
+	return plan.EndDate.Time.Unix() < time.Now().Unix()
+}

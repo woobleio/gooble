@@ -17,9 +17,10 @@ const (
 	notOwner        // 107
 	dbUpdate        // 108
 	planLimit       // 109
+	planExpire      // 110
 )
 
-// API errors
+// API errors, status to 0 means no HTTP error to trigger
 var (
 	ErrBadCreds    = ReqError{badCreds, "Wrong credentials", "%s", http.StatusUnauthorized}
 	ErrBadForm     = ReqError{badForm, "Form not valid", "%s", http.StatusBadRequest}
@@ -27,6 +28,7 @@ var (
 	ErrDBSave      = ReqError{dbSave, "Database error", "One or many issues encountered while saving the data :\n %s", http.StatusConflict}
 	ErrDBSelect    = ReqError{dbSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError}
 	ErrNotOwner    = ReqError{notOwner, "Unauthorized", "Authenticated user is not the owner of the resource", http.StatusUnauthorized}
+	ErrPlanExpired = ReqError{planExpire, "Plan expired", "Current plan \"%s\" has expired, it ended at %s", 0}
 	ErrPlanLimit   = ReqError{planLimit, "Plan limit exceeded", "%s limited by actual plan %s", http.StatusUnauthorized}
 	ErrResNotFound = ReqError{resNotFound, "Resource not found", "%s %s not found", http.StatusNotFound}
 	ErrServ        = ReqError{servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError}
