@@ -80,14 +80,16 @@ func POSTCreations(c *gin.Context) {
 
 	storage := lib.NewStorage(lib.SrcCreations, data.Version)
 
+	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
+
 	if data.Document != "" {
-		storage.StoreFile(data.Document, "text/html", user.(*model.User).Name, data.Title, "doc.html", "")
+		storage.StoreFile(data.Document, "text/html", userIDStr, creaID, "doc.html")
 	}
 	if data.Script != "" {
-		storage.StoreFile(data.Script, eng.ContentType, user.(*model.User).Name, data.Title, "script"+eng.Extension, "")
+		storage.StoreFile(data.Script, eng.ContentType, userIDStr, creaID, "script"+eng.Extension)
 	}
 	if data.Style != "" {
-		storage.StoreFile(data.Style, "text/css", user.(*model.User).Name, data.Title, "style.css", "")
+		storage.StoreFile(data.Style, "text/css", userIDStr, creaID, "style.css")
 	}
 
 	if storage.Error != nil {
@@ -96,7 +98,7 @@ func POSTCreations(c *gin.Context) {
 		res.Error(ErrServ, "doc, script and style files")
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%v", "creations", creaID))
+	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
 	res.Status = Created
 

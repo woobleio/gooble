@@ -9,7 +9,6 @@ type Package struct {
 	Title string `json:"title" binding:"required" db:"pkg.title"`
 
 	Domains   lib.StringSlice `json:"domains" db:"domains"`
-	Key       string          `json:"-" db:"key"`
 	UserID    uint64          `json:"-" db:"user_id"`
 	User      User            `json:"-" db:""`
 	Creations []Creation      `json:"creations,omitempty" db:""`
@@ -25,8 +24,6 @@ type PackageForm struct {
 	Title  string `json:"title" binding:"required"`
 
 	Domains lib.StringSlice `json:"domains"`
-
-	Key string
 }
 
 // PopulateCreations populates creations in the package
@@ -36,6 +33,7 @@ func (p *Package) PopulateCreations() error {
 		c.id "crea.id",
     pc.alias,
 		c.title,
+    c.creator_id,
 		c.version,
 		c.has_document,
 		c.has_script,
@@ -60,7 +58,6 @@ func AllPackages(opt lib.Option, userID uint64) (*[]Package, error) {
   		pkg.user_id,
   		pkg.title "pkg.title",
   		pkg.domains,
-  		pkg.key,
 			pkg.source,
   		pkg.created_at "pkg.created_at",
   		pkg.updated_at "pkg.updated_at"
@@ -84,7 +81,6 @@ func PackageByID(id string, userID uint64) (*Package, error) {
 		pkg.user_id,
 		pkg.title "pkg.title",
 		pkg.domains,
-		pkg.key,
 		pkg.source,
 		pkg.created_at "pkg.created_at",
 		pkg.updated_at "pkg.updated_at"
@@ -126,8 +122,8 @@ func PackageNbCrea(id string) int64 {
 // NewPackage creates a new package
 func NewPackage(data *PackageForm) (string, error) {
 	var pkgID int64
-	q := `INSERT INTO package(title, user_id, domains, key) VALUES ($1, $2, $3, $4) RETURNING id`
-	if err := lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains, data.Key).Scan(&pkgID); err != nil {
+	q := `INSERT INTO package(title, user_id, domains) VALUES ($1, $2, $3) RETURNING id`
+	if err := lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains).Scan(&pkgID); err != nil {
 		return "", err
 	}
 	return lib.HashID(pkgID)

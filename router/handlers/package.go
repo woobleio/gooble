@@ -64,7 +64,6 @@ func POSTPackages(c *gin.Context) {
 
 	user, _ := c.Get("user")
 	data.UserID = user.(*model.User).ID
-	data.Key = lib.GenKey()
 
 	plan := user.(*model.User).Plan
 
@@ -176,8 +175,10 @@ func BuildPackage(c *gin.Context) {
 
 		storage.Version = creation.Version
 
+		creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
+
 		if creation.HasScript {
-			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "script.js", "")
+			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, "script.js")
 
 			script, err = wb.Inject(src, creation.Title)
 		} else {
@@ -189,11 +190,11 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		if creation.HasDoc {
-			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "doc.html", "")
+			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, "doc.html")
 			err = script.IncludeHtml(src)
 		}
 		if creation.HasStyle {
-			src := storage.GetFileContent(creation.Creator.Name, creation.Title, "style.css", "")
+			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, "style.css")
 			err = script.IncludeCss(src)
 		}
 
@@ -214,17 +215,17 @@ func BuildPackage(c *gin.Context) {
 	}
 
 	// TODO if multitype allowed, package should have an engine too
-	path := storage.StoreFile(bf.String(), "application/javascript", user.(*model.User).Name, pkg.Title, "wooble.js", pkg.Key)
+	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), pkg.ID.ValueEncoded, "wooble.js")
 
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
 
-	// FIXME this change could crash
-	// pkg.Source = lib.InitNullString("https://pkg.wooble.io" + strings.Join(spltPath, "/"))
-
-	if err := model.UpdatePackageSource("https://pkg.wooble.io"+strings.Join(spltPath, "/"), pkg.ID); err != nil {
+	source := "https://pkg.wooble.io" + strings.Join(spltPath, "/")
+	if err := model.UpdatePackageSource(source, pkg.ID); err != nil {
 		res.Error(ErrUpdate, "package", pkg.ID)
 	}
+
+	pkg.Source = lib.InitNullString(source)
 
 	res.Response(pkg)
 

@@ -43,13 +43,13 @@ func NewStorage(src string, v string) *Storage {
 }
 
 // GetFileContent returns requested file from the cloud
-func (s *Storage) GetFileContent(username string, title string, filename string, key string) string {
+func (s *Storage) GetFileContent(userID string, objID string, filename string) string {
 	svc := s3.New(s.Session)
 
 	obj := &s3.GetObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
 
-		Key: aws.String(s.getBucketPath(makeID(username, key, title), filename)),
+		Key: aws.String(s.getBucketPath(makeID(userID, objID), filename)),
 	}
 	out, err := svc.GetObject(obj)
 	if err != nil {
@@ -62,10 +62,10 @@ func (s *Storage) GetFileContent(username string, title string, filename string,
 }
 
 // StoreFile stores the file in the cloud
-func (s *Storage) StoreFile(content string, contentType string, username string, title string, filename string, key string) string {
+func (s *Storage) StoreFile(content string, contentType string, userID string, objID string, filename string) string {
 	svc := s3.New(s.Session)
 
-	path := s.getBucketPath(makeID(username, key, title), filename)
+	path := s.getBucketPath(makeID(userID, objID), filename)
 
 	obj := &s3.PutObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
@@ -78,24 +78,20 @@ func (s *Storage) StoreFile(content string, contentType string, username string,
 	return path
 }
 
-func (s *Storage) getBucketPath(key []byte, filename string) string {
+func (s *Storage) getBucketPath(id []byte, filename string) string {
 	var path string
 	switch s.Source {
 	case SrcCreations:
-		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, key, s.Version, filename)
+		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, id, s.Version, filename)
 	case SrcPackages:
-		path = fmt.Sprintf("%s/%x/%s", s.Source, key, filename)
+		path = fmt.Sprintf("%s/%x/%s", s.Source, id, filename)
 	}
 	return path
 }
 
-func makeID(username string, key string, title string) []byte {
+func makeID(userID string, objID string) []byte {
 	h := sha1.New()
-	h.Write([]byte(username))
-	if key != "" {
-		h.Write([]byte(key))
-	}
-	h.Write([]byte(title))
-
+	h.Write([]byte(userID))
+	h.Write([]byte(objID))
 	return h.Sum(nil)
 }
