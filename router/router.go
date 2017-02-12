@@ -47,7 +47,7 @@ func Load() {
 			v1.GET("/packages/:id", handler.GETPackages)
 			v1.POST("/packages", handler.POSTPackages)
 			v1.POST("/packages/:id/push", handler.PushCreation)
-			v1.PUT("/packages/:id/build", handler.BuildPackage)
+			v1.POST("/packages/:id/build", handler.BuildPackage)
 		}
 	}
 
