@@ -107,6 +107,7 @@ func SignUp(c *gin.Context) {
 
 	uID, err := model.NewUser(&data)
 	if err != nil {
+		fmt.Print(err)
 		res.Error(ErrDBSave, "- Name should be unique\n - Email should be unique")
 		c.JSON(res.HTTPStatus(), res)
 		return
@@ -124,7 +125,7 @@ func SignUp(c *gin.Context) {
 	data.CustomerID = customer.ID
 
 	// Sets customer id to User
-	model.UpdateCustomerID(customer.ID, uID)
+	model.UpdateCustomerID(uID, customer.ID)
 
 	// Logs customer subscription in the DB
 	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {

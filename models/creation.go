@@ -41,10 +41,11 @@ type CreationForm struct {
 	Title  string `json:"title" binding:"required"`
 
 	Description string `json:"description"`
-	Price       string `json:"price"`
 	Document    string `json:"document"`
 	Script      string `json:"script"`
 	Style       string `json:"style"`
+
+	Price uint64 `json:"price,omitempty"`
 
 	Version string
 }

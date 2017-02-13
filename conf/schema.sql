@@ -70,7 +70,7 @@ CREATE TABLE app_user (
     passwd text,
     salt_key text NOT NULL,
     customer_id text NOT NULL,
-    total_due integer NOT NULL
+    total_due integer NOT NULL DEFAULT 0
 );
 
 

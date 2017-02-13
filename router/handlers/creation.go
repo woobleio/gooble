@@ -66,6 +66,7 @@ func POSTCreations(c *gin.Context) {
 
 	creaID, err := model.NewCreation(&data)
 	if err != nil {
+		fmt.Print(err)
 		res.Error(ErrDBSave, "")
 		c.JSON(res.HTTPStatus(), res)
 		return
@@ -137,6 +138,12 @@ func BuyCreation(c *gin.Context) {
 	user, _ := c.Get("user")
 	userID := user.(*model.User).ID
 
+	if crea.CreatorID == userID {
+		res.Error(ErrCantBuy, "User is the owner of the creation")
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
 	customerID, err := model.UserCustomerID(userID)
 	if err != nil || customerID == "" {
 		res.Error(ErrDBSelect)
@@ -172,6 +179,12 @@ func BuyCreation(c *gin.Context) {
 
 	if err := model.NewCreationPurchase(&creaPurchase); err != nil {
 		res.Error(ErrDBSave, "- Creation already purchased")
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	if err := model.UpdateUserTotalDue(userID, crea.Price); err != nil {
+		res.Error(ErrDBSave, "- Failed to credit the creator")
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))

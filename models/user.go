@@ -18,7 +18,8 @@ type User struct {
 
 	Plan *Plan `json:"plan" db:""`
 
-	IsCreator bool `json:"isCreator" db:"is_creator"`
+	IsCreator bool   `json:"isCreator" db:"is_creator"`
+	TotalDue  uint64 `json:"totalDue" db:"total_due"`
 
 	Secret string `json:"-" db:"passwd"`
 	Salt   string `json:"-" db:"salt_key"`
@@ -144,14 +145,21 @@ func DeleteUser(uID uint64) error {
 }
 
 // UpdateUser updates user form (password not included)
-func UpdateUser(userForm *UserForm, uID uint64) error {
+func UpdateUser(uID uint64, userForm *UserForm) error {
 	q := `UPDATE app_user SET name=$2, email=$3, is_creator=$4 WHERE id=$1`
 	_, err := lib.DB.Exec(q, uID, userForm.Name, userForm.Email, userForm.IsCreator)
 	return err
 }
 
+// UpdateUserTotalDue adds up to user total due
+func UpdateUserTotalDue(uID uint64, total uint64) error {
+	q := `UPDATE app_user SET total_due=total_due + $2 WHERE id=$1`
+	_, err := lib.DB.Exec(q, uID, total)
+	return err
+}
+
 // UpdateCustomerID updates user's customer ID
-func UpdateCustomerID(customerID string, uID uint64) error {
+func UpdateCustomerID(uID uint64, customerID string) error {
 	q := `UPDATE app_user SET customer_id=$2 WHERE id=$1`
 	_, err := lib.DB.Exec(q, uID, customerID)
 	return err
