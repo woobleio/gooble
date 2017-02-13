@@ -51,30 +51,6 @@ func getDBUrl() string {
 	return dbURL
 }
 
-// Query is all all query options
-type Query struct {
-	Q   string
-	Opt *Option
-}
-
-func (q *Query) String() string {
-	q.build()
-	return fmt.Sprintf("%s", q.Q)
-}
-
-func (q *Query) build() {
-	var str string
-	if q.Opt.Limit > 0 {
-		str = strconv.FormatInt(q.Opt.Limit, 10)
-		q.Q += " LIMIT " + str
-	}
-	if q.Opt.Offset > 0 {
-		str = strconv.FormatInt(q.Opt.Offset, 10)
-		q.Q += " OFFSET " + str
-	}
-	q.Q += ";"
-}
-
 // NullTime is psql null for time.Time
 type NullTime struct {
 	pq.NullTime
@@ -179,7 +155,7 @@ func (ni *NullInt64) UnmarshalJSON(data []byte) error {
 // ID is a custom type for hashed IDs
 type ID struct {
 	ValueEncoded string
-	ValueDecoded int64
+	ValueDecoded uint64
 }
 
 // MarshalJSON marshals custom ID
@@ -199,7 +175,7 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return err
 		}
-		id.ValueDecoded = decode
+		id.ValueDecoded = uint64(decode)
 	} else {
 		id.ValueEncoded = ""
 		id.ValueDecoded = 0
@@ -209,11 +185,11 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 
 // Scan implements the Scanner interface
 func (id *ID) Scan(value interface{}) error {
-	id.ValueDecoded = value.(int64)
-	encode, err := HashID(id.ValueDecoded)
+	encode, err := HashID(value.(int64))
 	if err != nil {
 		return err
 	}
+	id.ValueDecoded = uint64(value.(int64))
 	id.ValueEncoded = encode
 	return nil
 }

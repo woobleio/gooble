@@ -112,7 +112,7 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// Saves the customer in Stripe
+	// Saves the customer in third party (Stripe for now)
 	customer, errCust := lib.NewCustomer(data.Email, data.Plan, data.CardToken)
 	if errCust != nil {
 		model.DeleteUser(uID)
@@ -128,7 +128,7 @@ func SignUp(c *gin.Context) {
 
 	// Logs customer subscription in the DB
 	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {
-		// TODO logs subscription
+		// TODO logs subscription error somewhere to keep track
 		fmt.Print(err)
 	}
 

@@ -18,6 +18,7 @@ const (
 	notOwner    errCode = "not_res_owner"
 	planLimit   errCode = "plan_limit"
 	planExpire  errCode = "plan_expired"
+	chargeErr   errCode = "charge_fail"
 )
 
 // API errors, status to 0 means no HTTP error to trigger
@@ -25,6 +26,7 @@ var (
 	ErrBadCreds    = ReqError{badCreds, "Wrong credentials", "%s", http.StatusUnauthorized}
 	ErrBadForm     = ReqError{badForm, "Form not valid", "%s", http.StatusBadRequest}
 	ErrBadParam    = ReqError{badParam, "Bad param", "Param should be of type %s", http.StatusBadRequest}
+	ErrCharge      = ReqError{chargeErr, "Charge failed", "Couldn't charge for %s, %s", http.StatusBadRequest}
 	ErrDBSave      = ReqError{dbFail, "Database error", "One or many issues encountered while saving the data :\n %s", http.StatusConflict}
 	ErrDBSelect    = ReqError{dbFail, "Database error", "Failed to select the resources requested", http.StatusInternalServerError}
 	ErrNotOwner    = ReqError{notOwner, "Unauthorized", "Authenticated user is not the owner of the resource", http.StatusUnauthorized}

@@ -41,13 +41,14 @@ func Load() {
 		v1.Use(middleware.Authenticate())
 		{
 			v1.POST("/creations", handler.POSTCreations)
+			v1.PUT("/creations/:id/buy", handler.BuyCreation)
 
 			// packages is private, so those requests are about the authenticated user only
 			v1.GET("/packages", handler.GETPackages)
 			v1.GET("/packages/:id", handler.GETPackages)
 			v1.POST("/packages", handler.POSTPackages)
 			v1.POST("/packages/:id/push", handler.PushCreation)
-			v1.POST("/packages/:id/build", handler.BuildPackage)
+			v1.PATCH("/packages/:id/build", handler.BuildPackage)
 		}
 	}
 

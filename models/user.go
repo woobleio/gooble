@@ -129,6 +129,13 @@ func UserByEmail(email string) (*User, error) {
 	return &user, lib.DB.Get(&user, q, email)
 }
 
+// UserCustomerID returns customerID of user "uID"
+func UserCustomerID(uID uint64) (string, error) {
+	var user User
+	q := `SELECT customer_id FROM app_user WHERE app_user.id = $1`
+	return user.CustomerID, lib.DB.Get(&user, q, uID)
+}
+
 // DeleteUser deletes the user "uID" from the DB
 func DeleteUser(uID uint64) error {
 	q := `DELETE FROM app_user WHERE id = $1`

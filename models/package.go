@@ -130,7 +130,7 @@ func NewPackage(data *PackageForm) (string, error) {
 }
 
 // PushCreation pushes a creation in the package
-func PushCreation(pkgID int64, creaID string) error {
+func PushCreation(pkgID uint64, creaID string) error {
 	decodeCreaID, _ := lib.DecodeHash(creaID)
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
 	_, err := lib.DB.Exec(q, pkgID, decodeCreaID)

@@ -104,3 +104,79 @@ func POSTCreations(c *gin.Context) {
 
 	c.JSON(res.HTTPStatus(), res)
 }
+
+// BuyCreation is a handler that purchases a creation
+func BuyCreation(c *gin.Context) {
+	var cardForm struct {
+		CardToken string `json:"cardToken"`
+	}
+
+	res := NewRes()
+
+	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
+	c.Header("Content-Type", gin.MIMEJSON)
+	if c.BindJSON(&cardForm) != nil {
+		res.Error(ErrBadForm, "")
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	creaID := c.Param("id")
+
+	crea, err := model.CreationByID(creaID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			res.Error(ErrResNotFound, "Creation", creaID)
+		} else {
+			res.Error(ErrDBSelect)
+		}
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	user, _ := c.Get("user")
+	userID := user.(*model.User).ID
+
+	customerID, err := model.UserCustomerID(userID)
+	if err != nil || customerID == "" {
+		res.Error(ErrDBSelect)
+		c.JSON(res.HTTPStatus(), res)
+		return
+	}
+
+	var chargeID string
+	if cardForm.CardToken == "" {
+		charge, chargeErr := lib.ChargeCustomerForCreations(customerID, crea.Price, []string{crea.ID.ValueEncoded})
+		if chargeErr != nil {
+			res.Error(ErrCharge, "creations", "customer to charge not found")
+			c.JSON(res.HTTPStatus(), res)
+			return
+		}
+		chargeID = charge.ID
+	} else {
+		charge, chargeErr := lib.ChargeOneTimeForCreations(crea.Price, []string{crea.ID.ValueEncoded}, cardForm.CardToken)
+		if chargeErr != nil {
+			res.Error(ErrCharge, "creations", "wrong billing info")
+			c.JSON(res.HTTPStatus(), res)
+			return
+		}
+		chargeID = charge.ID
+	}
+
+	creaPurchase := model.CreationPurchase{
+		UserID:   userID,
+		CreaID:   crea.ID.ValueDecoded,
+		Total:    crea.Price,
+		ChargeID: chargeID,
+	}
+
+	if err := model.NewCreationPurchase(&creaPurchase); err != nil {
+		res.Error(ErrDBSave, "- Creation already purchased")
+	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
+
+	res.Status = OK
+
+	c.JSON(res.HTTPStatus(), res)
+}

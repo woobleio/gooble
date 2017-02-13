@@ -6,19 +6,31 @@ import "wooble/lib"
 type Creation struct {
 	ID lib.ID `json:"id"      db:"crea.id"`
 
-	Title   string          `json:"title"  db:"title"`
-	Creator User            `json:"creator" db:""`
-	Version string          `json:"version" db:"version"`
-	Alias   *lib.NullString `json:"alias,omitempty" db:"alias"`
+	Title       string          `json:"title"  db:"title"`
+	Description *lib.NullString `json:"description" db:"description"`
+	Creator     User            `json:"creator" db:""`
+	Version     string          `json:"version" db:"version"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	HasDoc    bool   `json:"-"       db:"has_document"`
 	HasScript bool   `json:"-"       db:"has_script"`
 	HasStyle  bool   `json:"-"       db:"has_style"`
 	Engine    Engine `json:"-" db:""`
+	Price     uint64 `json:"price" db:"price"` // in cents euro
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
+}
+
+// CreationPurchase is an history of all creations purchase
+type CreationPurchase struct {
+	UserID uint64 `db:"crea_pur.user_id"`
+	CreaID uint64 `db:"crea_pur.creation_id"`
+
+	Total    uint64 `db:"crea_pur.total"`
+	ChargeID string `db:"charge_id"`
+
+	PurchasedAt *lib.NullTime `db:"purchased_at"`
 }
 
 // CreationForm is a form for creation
@@ -28,9 +40,11 @@ type CreationForm struct {
 	Engine string `json:"engine" binding:"required"`
 	Title  string `json:"title" binding:"required"`
 
-	Document string `json:"document"`
-	Script   string `json:"script"`
-	Style    string `json:"style"`
+	Description string `json:"description"`
+	Price       string `json:"price"`
+	Document    string `json:"document"`
+	Script      string `json:"script"`
+	Style       string `json:"style"`
 
 	Version string
 }
@@ -45,12 +59,14 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 		Q: `SELECT
 	    c.id "crea.id",
 	    c.title,
+			c.description,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    c.version,
 			c.has_document,
 			c.has_script,
 			c.has_style,
+			c.price,
 			e.name "eng.name",
 			e.extension,
 			e.content_type,
@@ -75,9 +91,11 @@ func CreationByID(id string) (*Creation, error) {
   SELECT
     c.id "crea.id",
     c.title,
+		c.description,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
     c.version,
+		c.price,
 		c.has_document,
 		c.has_script,
 		c.has_style,
@@ -107,10 +125,36 @@ func DeleteCreation(id string) error {
 // NewCreation creates a creation
 func NewCreation(data *CreationForm) (string, error) {
 	var creaID int64
-	q := `INSERT INTO creation(title, creator_id, version, has_document, has_script, has_style, engine) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
-	err := lib.DB.QueryRow(q, data.Title, data.CreatorID, data.Version, data.Document != "", data.Script != "", data.Style != "", data.Engine).Scan(&creaID)
+	q := `
+  INSERT INTO creation(
+    title, 
+    description, 
+    creator_id, 
+    version, 
+    price, 
+    has_document, 
+    has_script, 
+    has_style, 
+    engine
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
+  `
+
+	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, data.Version, data.Price, data.Document != "", data.Script != "", data.Style != "", data.Engine).Scan(&creaID)
 	if err != nil {
 		return "", err
 	}
 	return lib.HashID(creaID)
+}
+
+// NewCreationPurchase creates a creation purchase
+func NewCreationPurchase(data *CreationPurchase) error {
+	q := `INSERT INTO creation_purchase(
+		user_id, 
+		creation_id,
+		total,
+		charge_id
+	) VALUES ($1, $2, $3, $4)
+	`
+	_, err := lib.DB.Exec(q, data.UserID, data.CreaID, data.Total, data.ChargeID)
+	return err
 }
