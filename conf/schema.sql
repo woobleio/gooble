@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.5
 -- Dumped by pg_dump version 9.5.5
 
--- Started on 2017-02-11 17:20:22 UTC
+-- Started on 2017-02-13 18:01:03 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -69,7 +69,8 @@ CREATE TABLE app_user (
     is_creator boolean DEFAULT false,
     passwd text,
     salt_key text NOT NULL,
-    customer_id text NOT NULL
+    customer_id text NOT NULL,
+    total_due integer NOT NULL
 );
 
 
@@ -115,7 +116,7 @@ CREATE TABLE creation (
     has_script boolean DEFAULT false NOT NULL,
     has_style boolean DEFAULT false NOT NULL,
     engine text NOT NULL,
-    price numeric DEFAULT 0 NOT NULL,
+    price integer DEFAULT 0 NOT NULL,
     thumb_url text,
     description text,
     is_unlisted boolean DEFAULT false NOT NULL
@@ -165,8 +166,9 @@ ALTER SEQUENCE creation_id_seq OWNED BY creation.id;
 CREATE TABLE creation_purchase (
     user_id integer NOT NULL,
     creation_id integer NOT NULL,
-    price numeric NOT NULL,
-    purchased_at date DEFAULT ('now'::text)::date NOT NULL
+    total integer NOT NULL,
+    purchased_at date DEFAULT ('now'::text)::date NOT NULL,
+    charge_id text NOT NULL
 );
 
 
@@ -198,7 +200,6 @@ CREATE TABLE package (
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
     domains text[] NOT NULL,
-    key text NOT NULL,
     source text
 );
 
@@ -329,7 +330,7 @@ ALTER TABLE ONLY app_user ALTER COLUMN id SET DEFAULT nextval('app_user_id_seq':
 
 
 --
--- TOC entry 2039 (class 2604 OID 16460)
+-- TOC entry 2038 (class 2604 OID 16460)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: wooble
 --
 
@@ -358,7 +359,7 @@ ALTER TABLE ONLY plan_user ALTER COLUMN id SET DEFAULT nextval('plan_user_id_seq
 -- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id) FROM stdin;
+COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, total_due) FROM stdin;
 \.
 
 
@@ -368,7 +369,7 @@ COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt
 -- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('app_user_id_seq', 37, true);
+SELECT pg_catalog.setval('app_user_id_seq', 47, true);
 
 
 --
@@ -387,7 +388,7 @@ COPY creation (id, title, creator_id, version, created_at, updated_at, has_docum
 -- Name: creation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('creation_id_seq', 123, true);
+SELECT pg_catalog.setval('creation_id_seq', 131, true);
 
 
 --
@@ -396,7 +397,7 @@ SELECT pg_catalog.setval('creation_id_seq', 123, true);
 -- Data for Name: creation_purchase; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation_purchase (user_id, creation_id, price, purchased_at) FROM stdin;
+COPY creation_purchase (user_id, creation_id, total, purchased_at, charge_id) FROM stdin;
 \.
 
 
@@ -417,7 +418,7 @@ JSES5	.js	application/javascript
 -- Data for Name: package; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY package (id, user_id, title, created_at, updated_at, domains, key, source) FROM stdin;
+COPY package (id, user_id, title, created_at, updated_at, domains, source) FROM stdin;
 \.
 
 
@@ -437,7 +438,7 @@ COPY package_creation (package_id, creation_id, alias) FROM stdin;
 -- Name: package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('package_id_seq', 36, true);
+SELECT pg_catalog.setval('package_id_seq', 44, true);
 
 
 --
@@ -448,8 +449,8 @@ SELECT pg_catalog.setval('package_id_seq', 36, true);
 
 COPY plan (label, price_per_month, price_per_year, nb_pkg, nb_crea, nb_domains) FROM stdin;
 free	0	0	1	10	1
-pro	100	1100	0	0	0
-premium	20	215.25	2	20	2
+premium	2000	21525	2	20	2
+pro	10000	110000	0	0	0
 \.
 
 
@@ -469,7 +470,7 @@ COPY plan_user (id, user_id, nb_renew, created_at, start_date, end_date, plan_la
 -- Name: plan_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('plan_user_id_seq', 10, true);
+SELECT pg_catalog.setval('plan_user_id_seq', 15, true);
 
 
 --
@@ -760,7 +761,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-02-11 17:20:23 UTC
+-- Completed on 2017-02-13 18:01:04 UTC
 
 --
 -- PostgreSQL database dump complete
