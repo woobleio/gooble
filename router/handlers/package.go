@@ -166,6 +166,15 @@ func BuildPackage(c *gin.Context) {
 		return
 	}
 
+	// Check if at least one creation should be bought to be build in the package
+	for _, creation := range pkg.Creations {
+		if creation.IsToBuy {
+			res.Error(ErrMustBuy)
+			c.JSON(res.HTTPStatus(), res)
+			return
+		}
+	}
+
 	storage := lib.NewStorage(lib.SrcPackages, "1.0")
 
 	storage.Source = lib.SrcCreations
@@ -177,15 +186,25 @@ func BuildPackage(c *gin.Context) {
 
 		creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
 
+		objName := creation.Title
+		if creation.Alias != nil {
+			objName = creation.Alias.String
+		}
+
 		if creation.HasScript {
 			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, "script.js")
 
-			script, err = wb.Inject(src, creation.Title)
+			script, err = wb.Inject(src, objName)
 		} else {
-			script, err = wb.Inject("", creation.Title)
+			script, err = wb.Inject("", objName)
 		}
 
 		if err != nil {
+			if err == wbzr.ErrUniqueName {
+				res.Error(ErrAliasRequired, "Creation name should be unique in package, aliases are required")
+				c.JSON(res.HTTPStatus(), res)
+				return
+			}
 			panic(err)
 		}
 
@@ -222,7 +241,8 @@ func BuildPackage(c *gin.Context) {
 
 	source := "https://pkg.wooble.io" + strings.Join(spltPath, "/")
 	if err := model.UpdatePackageSource(source, pkg.ID); err != nil {
-		res.Error(ErrUpdate, "package", pkg.ID)
+		fmt.Print(err)
+		res.Error(ErrUpdate, "package", pkg.ID.ValueEncoded)
 	}
 
 	pkg.Source = lib.InitNullString(source)

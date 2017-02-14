@@ -7,9 +7,10 @@ type Creation struct {
 	ID lib.ID `json:"id"      db:"crea.id"`
 
 	Title       string          `json:"title"  db:"title"`
-	Description *lib.NullString `json:"description" db:"description"`
+	Description *lib.NullString `json:"description,omitempty" db:"description"`
 	Creator     User            `json:"creator" db:""`
 	Version     string          `json:"version" db:"version"`
+	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	HasDoc    bool   `json:"-"       db:"has_document"`
@@ -17,6 +18,7 @@ type Creation struct {
 	HasStyle  bool   `json:"-"       db:"has_style"`
 	Engine    Engine `json:"-" db:""`
 	Price     uint64 `json:"price" db:"price"` // in cents euro
+	IsToBuy   bool   `json:"isToBuy" db:"is_to_buy"`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`

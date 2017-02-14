@@ -5,6 +5,7 @@ import (
 	"wooble/lib"
 )
 
+// Plans label
 const (
 	Free string = "free"
 )

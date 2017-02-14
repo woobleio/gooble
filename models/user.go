@@ -16,10 +16,10 @@ type User struct {
 	Email string `json:"email,omitempty" db:"email"`
 	Name  string `json:"name" db:"name"`
 
-	Plan *Plan `json:"plan" db:""`
+	Plan *Plan `json:"plan,omitempty" db:""`
 
-	IsCreator bool   `json:"isCreator" db:"is_creator"`
-	TotalDue  uint64 `json:"totalDue" db:"total_due"`
+	IsCreator bool   `json:"isCreator,omitempty" db:"is_creator"`
+	TotalDue  uint64 `json:"totalDue,omitempty" db:"total_due"`
 
 	Secret string `json:"-" db:"passwd"`
 	Salt   string `json:"-" db:"salt_key"`

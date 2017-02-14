@@ -9,7 +9,7 @@ type Package struct {
 	Title string `json:"title" binding:"required" db:"pkg.title"`
 
 	Domains   lib.StringSlice `json:"domains" db:"domains"`
-	UserID    uint64          `json:"-" db:"user_id"`
+	UserID    uint64          `json:"-" db:"pkg.user_id"`
 	User      User            `json:"-" db:""`
 	Creations []Creation      `json:"creations,omitempty" db:""`
 	Source    *lib.NullString `json:"source,omitempty" db:"source"`
@@ -38,15 +38,22 @@ func (p *Package) PopulateCreations() error {
 		c.has_document,
 		c.has_script,
 		c.has_style,
+		c.price,
 		u.id "user.id",
-		u.name
+		u.name,
+    CASE WHEN c.price = 0  THEN 'false'
+         WHEN u.id = $2 THEN 'false'
+         WHEN cp.purchased_at IS NULL THEN 'true'
+         ELSE 'false'
+    END AS is_to_buy
 	FROM package_creation pc
 	INNER JOIN creation c ON (pc.creation_id = c.id)
 	INNER JOIN app_user u ON (c.creator_id = u.id)
+  LEFT OUTER JOIN creation_purchase cp ON (cp.user_id = $2 AND cp.creation_id = c.id)
 	WHERE pc.package_id = $1
 	`
 
-	return lib.DB.Select(&p.Creations, q, p.ID)
+	return lib.DB.Select(&p.Creations, q, p.ID.ValueDecoded, p.UserID)
 }
 
 // AllPackages returns all packages
@@ -55,7 +62,7 @@ func AllPackages(opt lib.Option, userID uint64) (*[]Package, error) {
 	q := lib.Query{
 		Q: `SELECT
   		pkg.id "pkg.id",
-  		pkg.user_id,
+  		pkg.user_id "pkg.user_id",
   		pkg.title "pkg.title",
   		pkg.domains,
 			pkg.source,
@@ -78,7 +85,7 @@ func PackageByID(id string, userID uint64) (*Package, error) {
 	q := `
 	SELECT
 		pkg.id "pkg.id",
-		pkg.user_id,
+		pkg.user_id "pkg.user_id",
 		pkg.title "pkg.title",
 		pkg.domains,
 		pkg.source,
@@ -147,6 +154,6 @@ func UpdatePackage(pkg *Package) error {
 // UpdatePackageSource updates package source
 func UpdatePackageSource(source string, pkgID lib.ID) error {
 	q := `UPDATE package SET source=$2 WHERE id=$1`
-	_, err := lib.DB.Exec(q, pkgID, source)
+	_, err := lib.DB.Exec(q, pkgID.ValueDecoded, source)
 	return err
 }
