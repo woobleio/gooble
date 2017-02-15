@@ -2,7 +2,6 @@ package handler
 
 import (
 	"database/sql"
-	"fmt"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -23,33 +22,29 @@ func GenerateToken(c *gin.Context) {
 
 	var form CredsForm
 
-	res := NewRes()
-
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&form) != nil {
-		res.Error(ErrBadForm, "email (string) and secret (string) are required")
-		c.JSON(res.HTTPStatus(), res)
+	if err := c.BindJSON(&form); err != nil {
+		c.Error(err).SetMeta(ErrBadForm)
 		return
 	}
 
 	user, err := model.UserByEmail(form.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			res.Error(ErrBadCreds, "Email does not exist")
+			c.Error(err).SetMeta(ErrBadCreds)
 		} else {
-			res.Error(ErrDBSelect)
+			c.Error(err).SetMeta(ErrDBSelect)
 		}
-		c.JSON(res.HTTPStatus(), res)
 		return
 	}
+
+	res := NewRes(nil)
 
 	if user.IsPasswordValid(form.Secret) {
 		token := model.NewToken(user, "")
 		tokenS, err := token.SignedString(model.TokenKey())
 
 		if err != nil {
-			res.Error(ErrServ, "token generation")
-			c.JSON(res.HTTPStatus(), res)
+			c.Error(err).SetMeta(ErrServ)
 			return
 		}
 
@@ -58,58 +53,50 @@ func GenerateToken(c *gin.Context) {
 		}{Token: tokenS})
 
 	} else {
-		res.Error(ErrBadCreds, "Password invalid")
+		c.Error(nil).SetMeta(ErrBadCreds)
+		return
 	}
 
-	res.Status = Created
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(Created, res)
 }
 
 // RefreshToken refreshes a token (lifetime is given in the server conf file $CONFPATH)
 func RefreshToken(c *gin.Context) {
-	res := NewRes()
+	res := NewRes(nil)
 
 	token, err := helper.ParseToken(c)
 
 	if ve, ok := err.(*jwt.ValidationError); ok && model.IsTokenExpired(ve) {
 		newToken, err := model.RefreshToken(token)
 		if err != nil {
-			res.Error(ErrServ, "token refresh")
+			c.Error(err).SetMeta(ErrServ)
+			return
 		}
 
 		tokenRaw, _ := newToken.SignedString(model.TokenKey())
 		res.Response(struct {
 			Token string `json:"token"`
 		}{Token: tokenRaw})
-
-		res.Status = Created
 	} else if ve != nil {
-		res.Error(ErrServ, "token refresh")
+		c.Error(ve).SetMeta(ErrServ)
+		return
 	}
 
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(Created, res)
 }
 
 // SignUp saves a new user in the database
 func SignUp(c *gin.Context) {
 	var data model.UserForm
 
-	res := NewRes()
-
-	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "name (string), email (string), secret (string) and plan(string) are required")
-		c.JSON(res.HTTPStatus(), res)
+	if err := c.BindJSON(&data); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
 	uID, err := model.NewUser(&data)
 	if err != nil {
-		fmt.Print(err)
-		res.Error(ErrDBSave, "- Name should be unique\n - Email should be unique")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
 
@@ -117,8 +104,7 @@ func SignUp(c *gin.Context) {
 	customer, errCust := lib.NewCustomer(data.Email, data.Plan, data.CardToken)
 	if errCust != nil {
 		model.DeleteUser(uID)
-		res.Error(ErrDBSave, "- Wrong billing info")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(errCust).SetMeta(ErrDBSave)
 		return
 	}
 
@@ -130,12 +116,10 @@ func SignUp(c *gin.Context) {
 	// Logs customer subscription in the DB
 	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {
 		// TODO logs subscription error somewhere to keep track
-		fmt.Print(err)
+		c.Error(err)
 	}
 
 	c.Header("Location", "/token/generate")
 
-	res.Status = Created
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(Created, nil)
 }

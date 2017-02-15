@@ -18,10 +18,6 @@ func GETPackages(c *gin.Context) {
 	var data interface{}
 	var err error
 
-	res := NewRes()
-
-	opts := lib.ParseOptions(c)
-
 	user, _ := c.Get("user")
 
 	pkgID := c.Param("id")
@@ -30,35 +26,29 @@ func GETPackages(c *gin.Context) {
 		data, err = model.PackageByID(pkgID, user.(*model.User).ID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				res.Error(ErrResNotFound, "Package", pkgID)
+				c.Error(err).SetMeta(ErrResNotFound)
 			} else {
-				res.Error(ErrDBSelect)
+				c.Error(err).SetMeta(ErrDBSelect)
 			}
 		}
 	} else {
+		opts := lib.ParseOptions(c)
 		data, err = model.AllPackages(opts, user.(*model.User).ID)
 		if err != nil {
-			res.Error(ErrDBSelect)
+			c.Error(err).SetMeta(ErrDBSelect)
+			return
 		}
 	}
 
-	res.Response(data)
-
-	c.JSON(res.HTTPStatus(), res)
-
+	c.JSON(OK, NewRes(data))
 }
 
 // POSTPackages is a handler that create am empty Wooble package
 func POSTPackages(c *gin.Context) {
 	var data model.PackageForm
 
-	res := NewRes()
-
-	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string) is required")
-		c.JSON(res.HTTPStatus(), res)
+	if err := c.BindJSON(&data); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
@@ -73,29 +63,24 @@ func POSTPackages(c *gin.Context) {
 
 	// 0 means unlimited
 	if limitNbPkg != 0 && userNbPkg >= limitNbPkg {
-		res.Error(ErrPlanLimit, "Packages", plan.Label.String)
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(nil).SetMeta(ErrPlanLimit)
 		return
 	}
 
 	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
-		res.Error(ErrPlanLimit, "Domains per package", plan.Label.String)
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(nil).SetMeta(ErrPlanLimit)
 		return
 	}
 
 	pkgID, err := model.NewPackage(&data)
 	if err != nil {
-		res.Error(ErrDBSave, "- Title should be unique for the creator")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkgID))
 
-	res.Status = Created
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(Created, nil)
 }
 
 // PushCreation is an handler that pushes one or more creations in a package
@@ -107,13 +92,8 @@ func PushCreation(c *gin.Context) {
 
 	var data PackageCreationForm
 
-	res := NewRes()
-
-	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "creations (string) is required")
-		c.JSON(res.HTTPStatus(), res)
+	if err := c.BindJSON(&data); err != nil {
+		c.Error(err).SetMeta(ErrBadForm)
 		return
 	}
 
@@ -123,8 +103,7 @@ func PushCreation(c *gin.Context) {
 
 	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
 	if err != nil {
-		res.Error(ErrResNotFound, "package", "")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrResNotFound)
 		return
 	}
 
@@ -133,44 +112,38 @@ func PushCreation(c *gin.Context) {
 	pkgNbCrea := model.PackageNbCrea(pkg.ID.ValueEncoded)
 
 	if limitNbCrea != 0 && pkgNbCrea >= limitNbCrea {
-		res.Error(ErrPlanLimit, "Creations per package", plan.Label.String)
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(nil).SetMeta(ErrPlanLimit)
 		return
 	}
 
 	if err := model.PushCreation(pkg.ID.ValueDecoded, data.CreationID); err != nil {
-		res.Error(ErrDBSave, fmt.Sprintf("failed to push creation %v in the package", data.CreationID))
+		c.Error(err).SetMeta(ErrDBSave)
+		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "packages", pkgID))
 
-	res.Status = Created
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(Created, nil)
 }
 
 // BuildPackage is a handler action that builds the Wooble lib of a package
 // (a Wooble lib is a file that bundles everything contained in a package,
 // the file is stored in the cloud)
 func BuildPackage(c *gin.Context) {
-	res := NewRes()
-
 	pkgID := c.Param("id")
 
 	user, _ := c.Get("user")
 
 	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
 	if err != nil {
-		res.Error(ErrResNotFound, "package", pkgID)
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrResNotFound)
 		return
 	}
 
 	// Check if at least one creation should be bought to be build in the package
 	for _, creation := range pkg.Creations {
 		if creation.IsToBuy {
-			res.Error(ErrMustBuy)
-			c.JSON(res.HTTPStatus(), res)
+			c.Error(nil).SetMeta(ErrMustBuy)
 			return
 		}
 	}
@@ -201,8 +174,7 @@ func BuildPackage(c *gin.Context) {
 
 		if err != nil {
 			if err == wbzr.ErrUniqueName {
-				res.Error(ErrAliasRequired, "Creation name should be unique in package, aliases are required")
-				c.JSON(res.HTTPStatus(), res)
+				c.Error(err).SetMeta(ErrAliasRequired)
 				return
 			}
 			panic(err)
@@ -228,8 +200,7 @@ func BuildPackage(c *gin.Context) {
 	bf, err := wb.SecureAndWrap(pkg.Domains...)
 
 	if err != nil || storage.Error != nil {
-		res.Error(ErrServ, "creations packaging")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(storage.Error).SetMeta(ErrServ)
 		return
 	}
 
@@ -241,15 +212,11 @@ func BuildPackage(c *gin.Context) {
 
 	source := "https://pkg.wooble.io" + strings.Join(spltPath, "/")
 	if err := model.UpdatePackageSource(source, pkg.ID); err != nil {
-		fmt.Print(err)
-		res.Error(ErrUpdate, "package", pkg.ID.ValueEncoded)
+		c.Error(err).SetMeta(ErrUpdate)
+		return
 	}
 
 	pkg.Source = lib.InitNullString(source)
 
-	res.Response(pkg)
-
-	res.Status = OK
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(OK, NewRes(pkg))
 }

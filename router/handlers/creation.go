@@ -15,8 +15,6 @@ func GETCreations(c *gin.Context) {
 	var data interface{}
 	var err error
 
-	res := NewRes()
-
 	opts := lib.ParseOptions(c)
 
 	creaID := c.Param("id")
@@ -25,34 +23,29 @@ func GETCreations(c *gin.Context) {
 		data, err = model.CreationByID(creaID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				res.Error(ErrResNotFound, "Creation", creaID)
+				c.Error(err).SetMeta(ErrResNotFound)
 			} else {
-				res.Error(ErrDBSelect)
+				c.Error(err).SetMeta(ErrDBSelect)
 			}
+			return
 		}
 	} else {
 		data, err = model.AllCreations(opts)
 		if err != nil {
-			res.Error(ErrDBSelect)
+			c.Error(err).SetMeta(ErrDBSelect)
+			return
 		}
 	}
 
-	res.Response(data)
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(OK, NewRes(data))
 }
 
 // POSTCreations is a handler that retrieve a form and create a creation
 func POSTCreations(c *gin.Context) {
 	var data model.CreationForm
 
-	res := NewRes()
-
-	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&data) != nil {
-		res.Error(ErrBadForm, "title (string), engine (string) are required")
-		c.JSON(res.HTTPStatus(), res)
+	if err := c.BindJSON(&data); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
@@ -66,16 +59,13 @@ func POSTCreations(c *gin.Context) {
 
 	creaID, err := model.NewCreation(&data)
 	if err != nil {
-		fmt.Print(err)
-		res.Error(ErrDBSave, "")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
 
 	eng, err := model.EngineByName(data.Engine)
 	if err != nil {
-		res.Error(ErrServ, "engine : "+data.Engine+" does not exist")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrServ)
 		return
 	}
 
@@ -96,14 +86,12 @@ func POSTCreations(c *gin.Context) {
 	if storage.Error != nil {
 		// Delete the crea since files failed to be save in the cloud
 		model.DeleteCreation(creaID)
-		res.Error(ErrServ, "doc, script and style files")
+		c.Error(storage.Error).SetMeta(ErrServ)
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
-	res.Status = Created
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(Created, nil)
 }
 
 // BuyCreation is a handler that purchases a creation
@@ -112,13 +100,8 @@ func BuyCreation(c *gin.Context) {
 		CardToken string `json:"cardToken"`
 	}
 
-	res := NewRes()
-
-	// FIXME workaround gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
-	c.Header("Content-Type", gin.MIMEJSON)
-	if c.BindJSON(&cardForm) != nil {
-		res.Error(ErrBadForm, "")
-		c.JSON(res.HTTPStatus(), res)
+	if err := c.BindJSON(&cardForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
@@ -127,11 +110,10 @@ func BuyCreation(c *gin.Context) {
 	crea, err := model.CreationByID(creaID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			res.Error(ErrResNotFound, "Creation", creaID)
+			c.Error(err).SetMeta(ErrResNotFound)
 		} else {
-			res.Error(ErrDBSelect)
+			c.Error(err).SetMeta(ErrDBSelect)
 		}
-		c.JSON(res.HTTPStatus(), res)
 		return
 	}
 
@@ -139,15 +121,13 @@ func BuyCreation(c *gin.Context) {
 	userID := user.(*model.User).ID
 
 	if crea.CreatorID == userID {
-		res.Error(ErrCantBuy, "User is the owner of the creation")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(nil).SetMeta(ErrCantBuy)
 		return
 	}
 
 	customerID, err := model.UserCustomerID(userID)
 	if err != nil || customerID == "" {
-		res.Error(ErrDBSelect)
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrDBSelect)
 		return
 	}
 
@@ -155,16 +135,14 @@ func BuyCreation(c *gin.Context) {
 	if cardForm.CardToken == "" {
 		charge, chargeErr := lib.ChargeCustomerForCreations(customerID, crea.Price, []string{crea.ID.ValueEncoded})
 		if chargeErr != nil {
-			res.Error(ErrCharge, "creations", "customer to charge not found")
-			c.JSON(res.HTTPStatus(), res)
+			c.Error(chargeErr).SetMeta(ErrCharge)
 			return
 		}
 		chargeID = charge.ID
 	} else {
 		charge, chargeErr := lib.ChargeOneTimeForCreations(crea.Price, []string{crea.ID.ValueEncoded}, cardForm.CardToken)
 		if chargeErr != nil {
-			res.Error(ErrCharge, "creations", "wrong billing info")
-			c.JSON(res.HTTPStatus(), res)
+			c.Error(chargeErr).SetMeta(ErrCharge)
 			return
 		}
 		chargeID = charge.ID
@@ -178,18 +156,16 @@ func BuyCreation(c *gin.Context) {
 	}
 
 	if err := model.NewCreationPurchase(&creaPurchase); err != nil {
-		res.Error(ErrDBSave, "- Creation already purchased")
-		c.JSON(res.HTTPStatus(), res)
+		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
 
 	if err := model.UpdateUserTotalDue(userID, crea.Price); err != nil {
-		res.Error(ErrDBSave, "- Failed to credit the creator")
+		c.Error(err).SetMeta(ErrDBSave)
+		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
-	res.Status = OK
-
-	c.JSON(res.HTTPStatus(), res)
+	c.JSON(OK, nil)
 }
