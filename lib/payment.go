@@ -29,27 +29,34 @@ func NewCustomer(custEmail string, plan string, token string) (*stripe.Customer,
 }
 
 // ChargeCustomerForCreations charges the customer "custID" for the given creations "objIDs"
-func ChargeCustomerForCreations(custID string, price uint64, objIDs []string) (*stripe.Charge, error) {
+func ChargeCustomerForCreations(custID string, amount uint64, objIDs []string) (*stripe.Charge, error) {
 	params := &stripe.ChargeParams{
-		Amount:   price,
-		Currency: "eur",
-		Desc:     fmt.Sprintf("Creations:%s", strings.Join(objIDs, " | ")),
-		Customer: custID,
+		Amount:    amount,
+		Currency:  "eur",
+		Desc:      fmt.Sprintf("Creations:%s", strings.Join(objIDs, " | ")),
+		Customer:  custID,
+		NoCapture: true,
 	}
 
 	return charge.New(params)
 }
 
 // ChargeOneTimeForCreations charges an account without recording it
-func ChargeOneTimeForCreations(price uint64, objIDs []string, token string) (*stripe.Charge, error) {
+func ChargeOneTimeForCreations(amount uint64, objIDs []string, token string) (*stripe.Charge, error) {
 	params := &stripe.ChargeParams{
-		Amount:   price,
-		Currency: "eur",
-		Desc:     fmt.Sprintf("Creations:%s", strings.Join(objIDs, " | ")),
+		Amount:    amount,
+		Currency:  "eur",
+		Desc:      fmt.Sprintf("Creations:%s", strings.Join(objIDs, " | ")),
+		NoCapture: true,
 	}
 	params.SetSource(token)
 
 	return charge.New(params)
+}
+
+// CaptureCharge applies the charge
+func CaptureCharge(chargeID string) (*stripe.Charge, error) {
+	return charge.Capture(chargeID, nil)
 }
 
 // LoadPayment loads payment API

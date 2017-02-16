@@ -12,37 +12,34 @@ type errCode string
 
 // errors code
 const (
-	resNotFound   errCode = "res_not_found"
-	dbFail        errCode = "db_failed"
-	badForm       errCode = "bad_form"
-	badParam      errCode = "bad_params"
-	servErr       errCode = "server_error"
-	badCreds      errCode = "bad_credentials"
-	notOwner      errCode = "not_res_owner"
-	planLimit     errCode = "plan_limit"
-	planExpire    errCode = "plan_expired"
-	chargeErr     errCode = "charge_fail"
-	mustBuy       errCode = "must_buy"
-	aliasRequired errCode = "alias_required"
+	aliasRequired    errCode = "alias_required"
+	alreadyCreaOwner errCode = "already_owner"
+	badCreds         errCode = "bad_credentials"
+	badForm          errCode = "bad_form"
+	chargeErr        errCode = "charge_fail"
+	dbFailSave       errCode = "db_failed_save"
+	dbFailSelect     errCode = "db_failed_select"
+	dbFailUpdate     errCode = "db_failed_update"
+	mustBuy          errCode = "must_buy"
+	planLimit        errCode = "plan_limit"
+	resNotFound      errCode = "res_not_found"
+	servErr          errCode = "server_error"
 )
 
-// API errors, status to 0 means no HTTP error to trigger
+// API errors
 var (
-	ErrAliasRequired = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package", http.StatusBadRequest)
-	ErrBadCreds      = NewAPIError(badCreds, "Wrong credentials", "", http.StatusUnauthorized)
+	ErrAliasRequired = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package : creation %s should have an alias", http.StatusBadRequest)
+	ErrBadCreds      = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
 	ErrBadForm       = NewAPIError(badForm, "Form not valid", "", http.StatusBadRequest)
-	ErrBadParam      = NewAPIError(badParam, "Bad param", "Bad params type", http.StatusBadRequest)
-	ErrCantBuy       = NewAPIError(chargeErr, "Purchase failed", "Can't buy the creations", http.StatusBadRequest)
+	ErrCantBuy       = NewAPIError(alreadyCreaOwner, "Purchase failed", "Can't buy the creation %s because you already own it", http.StatusBadRequest)
 	ErrCharge        = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)
-	ErrDBSave        = NewAPIError(dbFail, "Database error", "Failed to save the data", http.StatusConflict)
-	ErrDBSelect      = NewAPIError(dbFail, "Database error", "Failed to select the resources requested", http.StatusInternalServerError)
+	ErrDBSave        = NewAPIError(dbFailSave, "Database error", "Failed to save the data", http.StatusConflict)
+	ErrDBSelect      = NewAPIError(dbFailSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError)
 	ErrMustBuy       = NewAPIError(mustBuy, "Must purchase before doing this", "One or some creations must be purchased to do this", http.StatusUnauthorized)
-	ErrNotOwner      = NewAPIError(notOwner, "Unauthorized", "Authenticated user is not the owner of the resource", http.StatusUnauthorized)
-	ErrPlanExpired   = NewAPIError(planExpire, "Plan expired", "Current plan", 0)
-	ErrPlanLimit     = NewAPIError(planLimit, "Plan limit exceeded", "limited by actual plan", http.StatusUnauthorized)
-	ErrResNotFound   = NewAPIError(resNotFound, "Resource not found", "not found", http.StatusNotFound)
-	ErrServ          = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing", http.StatusInternalServerError)
-	ErrUpdate        = NewAPIError(dbFail, "Database error", "Failed to update", http.StatusInternalServerError)
+	ErrPlanLimit     = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
+	ErrResNotFound   = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)
+	ErrServ          = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError)
+	ErrUpdate        = NewAPIError(dbFailUpdate, "Database error", "Failed to update %s %v", http.StatusInternalServerError)
 )
 
 // APIError is a struct that standardize a Wooble error
@@ -56,7 +53,7 @@ type APIError struct {
 
 // APIErrors wrap all API errors
 type APIErrors struct {
-	Errors []APIError `json:"errors"`
+	Errors []APIError `json:"errors,omitempty"`
 }
 
 // NewAPIError creates an APIError
@@ -123,11 +120,17 @@ func (e *APIErrors) HTTPStatus() int {
 	return status
 }
 
+// Error appends a new API error
 func (e *APIErrors) Error(err APIError) {
 	e.Errors = append(e.Errors, err)
 }
 
-// HandleErrors handle API errors
+// HasErrors tells if the is any error
+func (e *APIErrors) HasErrors() bool {
+	return len(e.Errors) > 0
+}
+
+// HandleErrors handle API errors TODO put warnings
 func HandleErrors(c *gin.Context) {
 	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)
@@ -148,10 +151,11 @@ func HandleErrors(c *gin.Context) {
 					break
 				}
 				apiErrors.Error(*publicError)
-			default:
-
 			}
+			apiErrors.Error(*publicError)
 		}
 	}
-	c.JSON(apiErrors.HTTPStatus(), apiErrors)
+	if apiErrors.HasErrors() {
+		c.JSON(apiErrors.HTTPStatus(), apiErrors)
+	}
 }

@@ -26,7 +26,7 @@ func GETPackages(c *gin.Context) {
 		data, err = model.PackageByID(pkgID, user.(*model.User).ID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				c.Error(err).SetMeta(ErrResNotFound)
+				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
 			} else {
 				c.Error(err).SetMeta(ErrDBSelect)
 			}
@@ -63,12 +63,12 @@ func POSTPackages(c *gin.Context) {
 
 	// 0 means unlimited
 	if limitNbPkg != 0 && userNbPkg >= limitNbPkg {
-		c.Error(nil).SetMeta(ErrPlanLimit)
+		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "package", "plan", plan.Label.String))
 		return
 	}
 
 	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
-		c.Error(nil).SetMeta(ErrPlanLimit)
+		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "domains", "plan", plan.Label.String))
 		return
 	}
 
@@ -103,7 +103,7 @@ func PushCreation(c *gin.Context) {
 
 	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
 	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound)
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
 		return
 	}
 
@@ -112,7 +112,7 @@ func PushCreation(c *gin.Context) {
 	pkgNbCrea := model.PackageNbCrea(pkg.ID.ValueEncoded)
 
 	if limitNbCrea != 0 && pkgNbCrea >= limitNbCrea {
-		c.Error(nil).SetMeta(ErrPlanLimit)
+		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "creation", "plan", plan.Label.String))
 		return
 	}
 
@@ -136,7 +136,7 @@ func BuildPackage(c *gin.Context) {
 
 	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
 	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound)
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
 		return
 	}
 
@@ -174,7 +174,7 @@ func BuildPackage(c *gin.Context) {
 
 		if err != nil {
 			if err == wbzr.ErrUniqueName {
-				c.Error(err).SetMeta(ErrAliasRequired)
+				c.Error(err).SetMeta(ErrAliasRequired.SetParams("name", creation.Title))
 				return
 			}
 			panic(err)
@@ -212,7 +212,7 @@ func BuildPackage(c *gin.Context) {
 
 	source := "https://pkg.wooble.io" + strings.Join(spltPath, "/")
 	if err := model.UpdatePackageSource(source, pkg.ID); err != nil {
-		c.Error(err).SetMeta(ErrUpdate)
+		c.Error(err).SetMeta(ErrUpdate.SetParams("source", "package", "id", pkg.ID.ValueEncoded))
 		return
 	}
 

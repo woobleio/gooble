@@ -23,7 +23,7 @@ func GETCreations(c *gin.Context) {
 		data, err = model.CreationByID(creaID)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				c.Error(err).SetMeta(ErrResNotFound)
+				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
 			} else {
 				c.Error(err).SetMeta(ErrDBSelect)
 			}
@@ -121,7 +121,7 @@ func BuyCreation(c *gin.Context) {
 	userID := user.(*model.User).ID
 
 	if crea.CreatorID == userID {
-		c.Error(nil).SetMeta(ErrCantBuy)
+		c.Error(nil).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
 		return
 	}
 
@@ -156,7 +156,7 @@ func BuyCreation(c *gin.Context) {
 	}
 
 	if err := model.NewCreationPurchase(&creaPurchase); err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
 		return
 	}
 
@@ -164,6 +164,8 @@ func BuyCreation(c *gin.Context) {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
+
+	lib.CaptureCharge(chargeID)
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 

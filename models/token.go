@@ -27,6 +27,9 @@ func NewToken(user *User, refreshToken string) *jwt.Token {
 	if refreshToken == "" {
 		refreshToken = genRefreshToken(user)
 	}
+	if !user.Plan.Label.Valid {
+		user.Plan, _ = DefaultPlan()
+	}
 	claims := &CustomClaims{
 		user.Name,
 		*user.Plan,
@@ -140,7 +143,6 @@ func UserByToken(token interface{}) (*User, error) {
 		EndDate:   lib.InitNullTime(endDate),
 	}
 
-	// TODO warn user of this
 	if plan.Label.String != Free && plan.HasExpired() {
 		plan, _ = DefaultPlan()
 	}

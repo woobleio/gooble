@@ -5,6 +5,7 @@ import (
 
 	"wooble/lib"
 	"wooble/router/handlers"
+	middleware "wooble/router/middlewares"
 
 	cors "gopkg.in/gin-contrib/cors.v1"
 	"gopkg.in/gin-gonic/gin.v1"
@@ -32,24 +33,24 @@ func Load() {
 
 		v1.POST("/users", handler.SignUp)
 
-		// v1.POST("/token/generate", handler.Handle(handler.GenerateToken))
-		// v1.POST("/token/refresh", handler.Handle(handler.RefreshToken))
-		//
-		// v1.GET("/creations", handler.Handle(handler.GETCreations))
-		// v1.GET("/creations/:id", handler.Handle(handler.GETCreations))
-		//
-		// v1.Use(middleware.Authenticate())
-		// {
-		// 	v1.POST("/creations", handler.Handle(handler.POSTCreations))
-		// 	v1.PUT("/creations/:id/buy", handler.Handle(handler.BuyCreation))
-		//
-		// 	// packages is private, so those requests are about the authenticated user only
-		// 	v1.GET("/packages", handler.Handle(handler.GETPackages))
-		// 	v1.GET("/packages/:id", handler.Handle(handler.GETPackages))
-		// 	v1.POST("/packages", handler.Handle(handler.POSTPackages))
-		// 	v1.POST("/packages/:id/push", handler.Handle(handler.PushCreation))
-		// 	v1.PATCH("/packages/:id/build", handler.Handle(handler.BuildPackage))
-		// }
+		v1.POST("/token/generate", handler.GenerateToken)
+		v1.POST("/token/refresh", handler.RefreshToken)
+
+		v1.GET("/creations", handler.GETCreations)
+		v1.GET("/creations/:id", handler.GETCreations)
+
+		v1.Use(middleware.Authenticate())
+		{
+			v1.POST("/creations", handler.POSTCreations)
+			v1.PUT("/creations/:id/buy", handler.BuyCreation)
+
+			// packages is private, so those requests are about the authenticated user only
+			v1.GET("/packages", handler.GETPackages)
+			v1.GET("/packages/:id", handler.GETPackages)
+			v1.POST("/packages", handler.POSTPackages)
+			v1.POST("/packages/:id/push", handler.PushCreation)
+			v1.PATCH("/packages/:id/build", handler.BuildPackage)
+		}
 	}
 
 	r.Run()

@@ -23,7 +23,7 @@ func GenerateToken(c *gin.Context) {
 	var form CredsForm
 
 	if err := c.BindJSON(&form); err != nil {
-		c.Error(err).SetMeta(ErrBadForm)
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
