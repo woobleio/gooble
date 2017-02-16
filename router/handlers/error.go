@@ -84,6 +84,9 @@ func (e *APIError) SetParams(params ...interface{}) *APIError {
 
 	e.Details = fmt.Sprintf(e.Details, detailsParams...)
 
+	// FIXME
+	fmt.Println("-->", detailsParams)
+
 	return e
 }
 

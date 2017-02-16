@@ -94,53 +94,52 @@ func POSTCreations(c *gin.Context) {
 	c.JSON(Created, nil)
 }
 
-// BuyCreation is a handler that purchases a creation
-func BuyCreation(c *gin.Context) {
-	var cardForm struct {
-		CardToken string `json:"cardToken"`
+// BuyCreations is a handler that purchases creations
+func BuyCreations(c *gin.Context) {
+	var buyForm struct {
+		Creations []string `json:"creations,omitempty" binding:"required"`
+		CardToken string   `json:"cardToken"`
 	}
 
-	if err := c.BindJSON(&cardForm); err != nil {
+	if err := c.BindJSON(&buyForm); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
-		return
-	}
-
-	creaID := c.Param("id")
-
-	crea, err := model.CreationByID(creaID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.Error(err).SetMeta(ErrResNotFound)
-		} else {
-			c.Error(err).SetMeta(ErrDBSelect)
-		}
 		return
 	}
 
 	user, _ := c.Get("user")
 	userID := user.(*model.User).ID
-
-	if crea.CreatorID == userID {
-		c.Error(nil).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
-		return
-	}
-
 	customerID, err := model.UserCustomerID(userID)
 	if err != nil || customerID == "" {
 		c.Error(err).SetMeta(ErrDBSelect)
 		return
 	}
 
+	totalAmount := uint64(0)
+	creas := make([]model.Creation, 0)
+	for _, creaID := range buyForm.Creations {
+		crea, err := model.CreationByID(creaID)
+		if err != nil {
+			c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
+			return
+		}
+		if crea.CreatorID == userID {
+			c.Error(nil).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
+			return
+		}
+		totalAmount = totalAmount + crea.Price
+		creas = append(creas, *crea)
+	}
+
 	var chargeID string
-	if cardForm.CardToken == "" {
-		charge, chargeErr := lib.ChargeCustomerForCreations(customerID, crea.Price, []string{crea.ID.ValueEncoded})
+	if buyForm.CardToken == "" {
+		charge, chargeErr := lib.ChargeCustomerForCreations(customerID, totalAmount, buyForm.Creations)
 		if chargeErr != nil {
 			c.Error(chargeErr).SetMeta(ErrCharge)
 			return
 		}
 		chargeID = charge.ID
 	} else {
-		charge, chargeErr := lib.ChargeOneTimeForCreations(crea.Price, []string{crea.ID.ValueEncoded}, cardForm.CardToken)
+		charge, chargeErr := lib.ChargeOneTimeForCreations(totalAmount, buyForm.Creations, buyForm.CardToken)
 		if chargeErr != nil {
 			c.Error(chargeErr).SetMeta(ErrCharge)
 			return
@@ -148,26 +147,28 @@ func BuyCreation(c *gin.Context) {
 		chargeID = charge.ID
 	}
 
-	creaPurchase := model.CreationPurchase{
-		UserID:   userID,
-		CreaID:   crea.ID.ValueDecoded,
-		Total:    crea.Price,
-		ChargeID: chargeID,
+	for _, crea := range creas {
+		creaPurchase := model.CreationPurchase{
+			UserID:   userID,
+			CreaID:   crea.ID.ValueDecoded,
+			Price:    crea.Price,
+			ChargeID: chargeID,
+		}
+		if err := model.NewCreationPurchase(&creaPurchase); err != nil {
+			c.Error(err).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
+			return
+		}
+		if err := model.UpdateUserTotalDue(userID, crea.Price); err != nil {
+			c.Error(err).SetMeta(ErrDBSave)
+			return
+		}
 	}
-
-	if err := model.NewCreationPurchase(&creaPurchase); err != nil {
-		c.Error(err).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
-		return
-	}
-
-	if err := model.UpdateUserTotalDue(userID, crea.Price); err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
-		return
-	}
+	// FIXME purchase failed when same creation in the form (charge but save in DB)
 
 	lib.CaptureCharge(chargeID)
 
-	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
+	// TODO location to mycreations
+	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", buyForm.Creations[0]))
 
 	c.JSON(OK, nil)
 }

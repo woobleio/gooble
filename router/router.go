@@ -42,7 +42,7 @@ func Load() {
 		v1.Use(middleware.Authenticate())
 		{
 			v1.POST("/creations", handler.POSTCreations)
-			v1.PUT("/creations/:id/buy", handler.BuyCreation)
+			v1.POST("/creations/buy", handler.BuyCreations)
 
 			// packages is private, so those requests are about the authenticated user only
 			v1.GET("/packages", handler.GETPackages)

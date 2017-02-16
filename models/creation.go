@@ -29,7 +29,7 @@ type CreationPurchase struct {
 	UserID uint64 `db:"crea_pur.user_id"`
 	CreaID uint64 `db:"crea_pur.creation_id"`
 
-	Total    uint64 `db:"crea_pur.total"`
+	Price    uint64 `db:"crea_pur.price"`
 	ChargeID string `db:"charge_id"`
 
 	PurchasedAt *lib.NullTime `db:"purchased_at"`
@@ -154,10 +154,10 @@ func NewCreationPurchase(data *CreationPurchase) error {
 	q := `INSERT INTO creation_purchase(
 		user_id, 
 		creation_id,
-		total,
+		price,
 		charge_id
 	) VALUES ($1, $2, $3, $4)
 	`
-	_, err := lib.DB.Exec(q, data.UserID, data.CreaID, data.Total, data.ChargeID)
+	_, err := lib.DB.Exec(q, data.UserID, data.CreaID, data.Price, data.ChargeID)
 	return err
 }
