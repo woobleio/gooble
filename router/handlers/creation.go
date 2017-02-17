@@ -147,23 +147,10 @@ func BuyCreations(c *gin.Context) {
 		chargeID = charge.ID
 	}
 
-	for _, crea := range creas {
-		creaPurchase := model.CreationPurchase{
-			UserID:   userID,
-			CreaID:   crea.ID.ValueDecoded,
-			Price:    crea.Price,
-			ChargeID: chargeID,
-		}
-		if err := model.NewCreationPurchase(&creaPurchase); err != nil {
-			c.Error(err).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
-			return
-		}
-		if err := model.UpdateUserTotalDue(userID, crea.Price); err != nil {
-			c.Error(err).SetMeta(ErrDBSave)
-			return
-		}
+	if err := model.NewCreationPurchases(userID, chargeID, &creas); err != nil {
+		c.Error(err).SetMeta(ErrDBSave)
+		return
 	}
-	// FIXME purchase failed when same creation in the form (charge but save in DB)
 
 	lib.CaptureCharge(chargeID)
 

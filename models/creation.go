@@ -149,15 +149,19 @@ func NewCreation(data *CreationForm) (string, error) {
 	return lib.HashID(creaID)
 }
 
-// NewCreationPurchase creates a creation purchase
-func NewCreationPurchase(data *CreationPurchase) error {
-	q := `INSERT INTO creation_purchase(
-		user_id, 
-		creation_id,
-		price,
-		charge_id
-	) VALUES ($1, $2, $3, $4)
-	`
-	_, err := lib.DB.Exec(q, data.UserID, data.CreaID, data.Price, data.ChargeID)
-	return err
+// NewCreationPurchases creates a creation purchase
+func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation) error {
+	qPurchase := `INSERT INTO creation_purchase(user_id, creation_id,	price, charge_id) VALUES ($1, $2, $3, $4)`
+
+	qSellerDue := `UPDATE app_user SET total_due=total_due + $2 WHERE id=$1`
+
+	tx := lib.DB.MustBegin()
+	for _, crea := range *creations {
+		tx.Exec(qPurchase, buyerID, crea.ID.ValueDecoded, crea.Price, chargeID)
+
+		// Credit the seller
+		tx.Exec(qSellerDue, crea.Creator.ID, crea.Price)
+	}
+
+	return tx.Commit()
 }

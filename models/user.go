@@ -151,13 +151,6 @@ func UpdateUser(uID uint64, userForm *UserForm) error {
 	return err
 }
 
-// UpdateUserTotalDue adds up to user total due
-func UpdateUserTotalDue(uID uint64, total uint64) error {
-	q := `UPDATE app_user SET total_due=total_due + $2 WHERE id=$1`
-	_, err := lib.DB.Exec(q, uID, total)
-	return err
-}
-
 // UpdateCustomerID updates user's customer ID
 func UpdateCustomerID(uID uint64, customerID string) error {
 	q := `UPDATE app_user SET customer_id=$2 WHERE id=$1`

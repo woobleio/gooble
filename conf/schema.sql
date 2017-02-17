@@ -166,7 +166,7 @@ ALTER SEQUENCE creation_id_seq OWNED BY creation.id;
 CREATE TABLE creation_purchase (
     user_id integer NOT NULL,
     creation_id integer NOT NULL,
-    total integer NOT NULL,
+    price integer NOT NULL,
     purchased_at date DEFAULT ('now'::text)::date NOT NULL,
     charge_id text NOT NULL
 );
@@ -397,7 +397,7 @@ SELECT pg_catalog.setval('creation_id_seq', 131, true);
 -- Data for Name: creation_purchase; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation_purchase (user_id, creation_id, total, purchased_at, charge_id) FROM stdin;
+COPY creation_purchase (user_id, creation_id, price, purchased_at, charge_id) FROM stdin;
 \.
 
 
