@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strings"
 	"wooble/lib"
 	model "wooble/models"
@@ -45,4 +46,33 @@ func POSTUsers(c *gin.Context) {
 	c.Header("Location", "/token/generate")
 
 	c.JSON(Created, nil)
+}
+
+// UpdatePassword update authenticated user's password
+func UpdatePassword(c *gin.Context) {
+	var passwordForm struct {
+		OldSecret string `json:"oldSecret" binding:"required"`
+		NewSecret string `json:"newSecret" binding:"required"`
+	}
+
+	if err := c.BindJSON(&passwordForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	user, _ := c.Get("user")
+
+	if !user.(*model.User).IsPasswordValid(passwordForm.OldSecret) {
+		fmt.Println("invalid")
+		return
+	}
+
+	if err := model.UpdateUserPassword(user.(*model.User).ID, passwordForm.NewSecret); err != nil {
+		c.Error(err).SetMeta(ErrUpdate.SetParams("source", "user", "name", user.(*model.User).Name))
+		return
+	}
+
+	c.Header("Location", "/users/me")
+
+	c.JSON(OK, nil)
 }

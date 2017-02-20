@@ -151,6 +151,18 @@ func UpdateUser(uID uint64, userForm *UserForm) error {
 	return err
 }
 
+// UpdateUserPassword updates user "uID" passwd and its salt key
+func UpdateUserPassword(uID uint64, newSecret string) error {
+	salt := lib.GenKey()
+	cp, errPasswd := getPassword(newSecret, []byte(salt))
+	if errPasswd != nil {
+		return errPasswd
+	}
+	q := `UPDATE app_user SET passwd=$2, salt_key=$3 WHERE id=$1`
+	_, err := lib.DB.Exec(q, uID, cp, salt)
+	return err
+}
+
 // UpdateCustomerID updates user's customer ID
 func UpdateCustomerID(uID uint64, customerID string) error {
 	q := `UPDATE app_user SET customer_id=$2 WHERE id=$1`
@@ -178,6 +190,16 @@ func UserNbPackages(uID uint64) int64 {
 
 // IsPasswordValid checks if a password is valid
 func (u *User) IsPasswordValid(passwd string) bool {
+	if u.Secret == "" && u.Salt == "" {
+		var userCreds struct {
+			Salt   string `db:"salt_key"`
+			Secret string `db:"passwd"`
+		}
+		q := `SELECT salt_key, passwd FROM app_user WHERE id=$1`
+		lib.DB.Get(&userCreds, q, u.ID)
+		u.Salt = userCreds.Salt
+		u.Secret = userCreds.Secret
+	}
 	cp, err := getPassword(passwd, []byte(u.Salt))
 	if err != nil || cp == "" {
 		return false

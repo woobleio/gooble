@@ -44,6 +44,8 @@ func Load() {
 			v1.POST("/creations", handler.POSTCreations)
 			v1.POST("/creations/buy", handler.BuyCreations)
 
+			v1.POST("/users/password", handler.UpdatePassword)
+
 			// packages is private, so those requests are about the authenticated user only
 			v1.GET("/packages", handler.GETPackages)
 			v1.GET("/packages/:id", handler.GETPackages)

@@ -88,23 +88,26 @@ func (e APIError) SetParams(params ...interface{}) APIError {
 }
 
 // ValidationError builds and sets validation errors
-func (e *APIError) ValidationError(ve *validator.FieldError) {
+func (e *APIError) ValidationError(ve *validator.FieldError) APIError {
+	var apiError APIError
 	switch ve.Tag {
 	case "required":
 		e.Details = "%s is required"
-		e.SetParams("field", ve.Field)
+		apiError = e.SetParams("field", ve.Field)
 	case "max":
 		e.Details = "%s cannot be longer than %s"
-		e.SetParams("field", ve.Field, "param", ve.Param)
+		apiError = e.SetParams("field", ve.Field, "param", ve.Param)
 	case "min":
 		e.Details = "%s must be longer than %s"
-		e.SetParams("field", ve.Field, "param", ve.Param)
+		apiError = e.SetParams("field", ve.Field, "param", ve.Param)
 	case "email":
 		e.Details = "Invalid email format"
 	case "len":
 		e.Details = "%s must be %s characters long"
-		e.SetParams("field", ve.Field, "param", ve.Param)
+		apiError = e.SetParams("field", ve.Field, "param", ve.Param)
 	}
+
+	return apiError
 }
 
 // HTTPStatus returns the HTTP status of errors
@@ -147,12 +150,12 @@ func HandleErrors(c *gin.Context) {
 			case gin.ErrorTypeBind:
 				valErrors := err.Err.(validator.ValidationErrors)
 				for _, valErr := range valErrors {
-					publicError.ValidationError(valErr)
-					break
+					publicError = publicError.ValidationError(valErr)
+					apiErrors.Error(publicError)
 				}
+			default:
 				apiErrors.Error(publicError)
 			}
-			apiErrors.Error(publicError)
 		}
 	}
 	if apiErrors.HasErrors() {
