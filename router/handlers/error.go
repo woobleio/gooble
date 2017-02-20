@@ -57,8 +57,8 @@ type APIErrors struct {
 }
 
 // NewAPIError creates an APIError
-func NewAPIError(code errCode, title string, details string, status int) *APIError {
-	return &APIError{
+func NewAPIError(code errCode, title string, details string, status int) APIError {
+	return APIError{
 		code,
 		title,
 		details,
@@ -68,7 +68,7 @@ func NewAPIError(code errCode, title string, details string, status int) *APIErr
 }
 
 // SetParams adds params to APIError, parameters must be in as the following : key(string), value(interface) ...
-func (e *APIError) SetParams(params ...interface{}) *APIError {
+func (e APIError) SetParams(params ...interface{}) APIError {
 	lenParams := len(params)
 	if lenParams%2 > 0 {
 		panic("Params in APIErrors should be even such as key:value")
@@ -76,16 +76,13 @@ func (e *APIError) SetParams(params ...interface{}) *APIError {
 
 	detailsParams := make([]interface{}, 0)
 
-	for i := 1; i < lenParams; i++ {
+	for i := 1; i < lenParams; i = i + 2 {
 		index := fmt.Sprintf("%v", params[i-1])
 		e.Params[index] = params[i]
 		detailsParams = append(detailsParams, params[i])
 	}
 
 	e.Details = fmt.Sprintf(e.Details, detailsParams...)
-
-	// FIXME
-	fmt.Println("-->", detailsParams)
 
 	return e
 }
@@ -145,7 +142,7 @@ func HandleErrors(c *gin.Context) {
 	}
 	for _, err := range c.Errors {
 		if err.Meta != nil {
-			publicError := err.Meta.(*APIError)
+			publicError := err.Meta.(APIError)
 			switch err.Type {
 			case gin.ErrorTypeBind:
 				valErrors := err.Err.(validator.ValidationErrors)
@@ -153,9 +150,9 @@ func HandleErrors(c *gin.Context) {
 					publicError.ValidationError(valErr)
 					break
 				}
-				apiErrors.Error(*publicError)
+				apiErrors.Error(publicError)
 			}
-			apiErrors.Error(*publicError)
+			apiErrors.Error(publicError)
 		}
 	}
 	if apiErrors.HasErrors() {
