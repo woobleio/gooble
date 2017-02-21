@@ -22,11 +22,10 @@ type Storage struct {
 	Error   error
 	Session *session.Session
 	Source  string
-	Version string
 }
 
 // NewStorage initialized a Storage session
-func NewStorage(src string, v string) *Storage {
+func NewStorage(src string) *Storage {
 	s, err := session.NewSession()
 	if err != nil {
 		panic(err)
@@ -36,20 +35,21 @@ func NewStorage(src string, v string) *Storage {
 		nil,
 		s,
 		src,
-		v,
 	}
 
 	return stor
 }
 
 // GetFileContent returns requested file from the cloud
-func (s *Storage) GetFileContent(userID string, objID string, filename string) string {
+func (s *Storage) GetFileContent(userID string, objID string, version string, filename string) string {
 	svc := s3.New(s.Session)
+
+	path := s.getBucketPath(makeID(userID, objID), version, filename)
 
 	obj := &s3.GetObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
 
-		Key: aws.String(s.getBucketPath(makeID(userID, objID), filename)),
+		Key: aws.String(path),
 	}
 	out, err := svc.GetObject(obj)
 	if err != nil {
@@ -62,10 +62,10 @@ func (s *Storage) GetFileContent(userID string, objID string, filename string) s
 }
 
 // StoreFile stores the file in the cloud
-func (s *Storage) StoreFile(content string, contentType string, userID string, objID string, filename string) string {
+func (s *Storage) StoreFile(content string, contentType string, userID string, objID string, version string, filename string) string {
 	svc := s3.New(s.Session)
 
-	path := s.getBucketPath(makeID(userID, objID), filename)
+	path := s.getBucketPath(makeID(userID, objID), version, filename)
 
 	obj := &s3.PutObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
@@ -78,11 +78,11 @@ func (s *Storage) StoreFile(content string, contentType string, userID string, o
 	return path
 }
 
-func (s *Storage) getBucketPath(id []byte, filename string) string {
+func (s *Storage) getBucketPath(id []byte, version string, filename string) string {
 	var path string
 	switch s.Source {
 	case SrcCreations:
-		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, id, s.Version, filename)
+		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, id, version, filename)
 	case SrcPackages:
 		path = fmt.Sprintf("%s/%x/%s", s.Source, id, filename)
 	}

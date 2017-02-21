@@ -20,7 +20,7 @@ func GETPackages(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	pkgID := c.Param("id")
+	pkgID := c.Param("encid")
 
 	if pkgID != "" {
 		data, err = model.PackageByID(pkgID, user.(*model.User).ID)
@@ -97,7 +97,7 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	pkgID := c.Param("id")
+	pkgID := c.Param("encid")
 
 	user, _ := c.Get("user")
 
@@ -130,7 +130,7 @@ func PushCreation(c *gin.Context) {
 // (a Wooble lib is a file that bundles everything contained in a package,
 // the file is stored in the cloud)
 func BuildPackage(c *gin.Context) {
-	pkgID := c.Param("id")
+	pkgID := c.Param("encid")
 
 	user, _ := c.Get("user")
 
@@ -148,14 +148,12 @@ func BuildPackage(c *gin.Context) {
 		}
 	}
 
-	storage := lib.NewStorage(lib.SrcPackages, "1.0")
+	storage := lib.NewStorage(lib.SrcPackages)
 
 	storage.Source = lib.SrcCreations
 	wb := wbzr.New(wbzr.JSES5)
 	for _, creation := range pkg.Creations {
 		var script engine.Script
-
-		storage.Version = creation.Version
 
 		creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
 
@@ -165,7 +163,7 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		if creation.HasScript {
-			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, "script.js")
+			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "script.js")
 
 			script, err = wb.Inject(src, objName)
 		} else {
@@ -181,11 +179,11 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		if creation.HasDoc {
-			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, "doc.html")
+			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "doc.html")
 			err = script.IncludeHtml(src)
 		}
 		if creation.HasStyle {
-			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, "style.css")
+			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "style.css")
 			err = script.IncludeCss(src)
 		}
 
@@ -195,7 +193,6 @@ func BuildPackage(c *gin.Context) {
 	}
 
 	storage.Source = lib.SrcPackages
-	storage.Version = ""
 
 	bf, err := wb.SecureAndWrap(pkg.Domains...)
 
@@ -205,7 +202,7 @@ func BuildPackage(c *gin.Context) {
 	}
 
 	// TODO if multitype allowed, package should have an engine too
-	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), pkg.ID.ValueEncoded, "wooble.js")
+	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), pkg.ID.ValueEncoded, "", "wooble.js")
 
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""

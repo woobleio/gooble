@@ -118,6 +118,35 @@ func CreationByID(id string) (*Creation, error) {
 	return &crea, lib.DB.Get(&crea, q, encodedID)
 }
 
+// CreationEditByID returns a creation with private infos
+func CreationEditByID(id string, uID uint64) (*Creation, error) {
+	var crea Creation
+	q := `
+  SELECT
+    c.id "crea.id",
+    c.creator_id,
+    c.title,
+    c.description,
+    c.created_at "crea.created_at",
+    c.updated_at "crea.updated_at",
+    c.version,
+    c.price,
+    c.has_document,
+		c.has_script,
+		c.has_style,
+		e.name "eng.name",
+		e.extension,
+		e.content_type
+  FROM creation c
+  INNER JOIN engine e ON (c.engine=e.name)
+  WHERE c.id = $1 AND c.creator_id = $2
+  `
+
+	encodedID, _ := lib.DecodeHash(id)
+
+	return &crea, lib.DB.Get(&crea, q, encodedID, uID)
+}
+
 // DeleteCreation deletes creation id "id"
 func DeleteCreation(id string) error {
 	encodedID, _ := lib.DecodeHash(id)

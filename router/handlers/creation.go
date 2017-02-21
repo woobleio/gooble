@@ -17,7 +17,7 @@ func GETCreations(c *gin.Context) {
 
 	opts := lib.ParseOptions(c)
 
-	creaID := c.Param("id")
+	creaID := c.Param("encid")
 
 	if creaID != "" {
 		data, err = model.CreationByID(creaID)
@@ -69,18 +69,18 @@ func POSTCreations(c *gin.Context) {
 		return
 	}
 
-	storage := lib.NewStorage(lib.SrcCreations, data.Version)
+	storage := lib.NewStorage(lib.SrcCreations)
 
 	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
 
 	if data.Document != "" {
-		storage.StoreFile(data.Document, "text/html", userIDStr, creaID, "doc.html")
+		storage.StoreFile(data.Document, "text/html", userIDStr, creaID, data.Version, "doc.html")
 	}
 	if data.Script != "" {
-		storage.StoreFile(data.Script, eng.ContentType, userIDStr, creaID, "script"+eng.Extension)
+		storage.StoreFile(data.Script, eng.ContentType, userIDStr, creaID, data.Version, "script"+eng.Extension)
 	}
 	if data.Style != "" {
-		storage.StoreFile(data.Style, "text/css", userIDStr, creaID, "style.css")
+		storage.StoreFile(data.Style, "text/css", userIDStr, creaID, data.Version, "style.css")
 	}
 
 	if storage.Error != nil {
@@ -158,4 +158,46 @@ func BuyCreations(c *gin.Context) {
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", buyForm.Creations[0]))
 
 	c.JSON(OK, nil)
+}
+
+// EditCreation return private creation view
+func EditCreation(c *gin.Context) {
+	var data model.CreationForm
+
+	creaID := c.Param("encid")
+
+	user, _ := c.Get("user")
+
+	userID := user.(*model.User).ID
+
+	crea, err := model.CreationEditByID(creaID, userID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
+		return
+	}
+
+	storage := lib.NewStorage(lib.SrcCreations)
+
+	if crea.HasDoc {
+		data.Document = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, crea.Version, "doc.html")
+	}
+	if crea.HasScript {
+		data.Script = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, crea.Version, "script.js")
+	}
+	if crea.HasStyle {
+		data.Style = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, crea.Version, "style.css")
+	}
+
+	if storage.Error != nil {
+		c.Error(storage.Error).SetMeta(ErrServ)
+		return
+	}
+
+	data.CreatorID = crea.CreatorID
+	data.Description = crea.Description.String
+	data.Engine = crea.Engine.Name
+	data.Version = crea.Version
+	data.Price = crea.Price
+
+	c.JSON(OK, data)
 }
