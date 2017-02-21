@@ -16,8 +16,8 @@ const (
 // NbDomains is the number of domains per package (0 means infinite)
 type Plan struct {
 	Label      lib.NullString `json:"label" db:"plan.label"`
-	PriceMonth uint64         `json:"pricePerMonth" db:"price_per_month"`
-	PriceYear  uint64         `json:"pricePerYear" db:"price_per_year"`
+	PriceMonth uint64         `json:"pricePerMonth,omitempty" db:"price_per_month"`
+	PriceYear  uint64         `json:"pricePerYear,omitempty" db:"price_per_year"`
 
 	NbPkg     lib.NullInt64 `json:"nbPkg" db:"nb_pkg"`
 	NbCrea    lib.NullInt64 `json:"nbCrea" db:"nb_crea"`

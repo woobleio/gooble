@@ -5,9 +5,35 @@ import (
 	"strings"
 	"wooble/lib"
 	model "wooble/models"
+	helper "wooble/router/helpers"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
+
+// GETUsers returns one users with private infos if authenticated, with public infos if not
+func GETUsers(c *gin.Context) {
+	var err error
+	data := new(model.User)
+
+	token, _ := helper.ParseToken(c)
+
+	tokenUser, _ := model.UserByToken(token)
+
+	username := c.Param("username")
+
+	if tokenUser != nil && username == tokenUser.Name {
+		data, err = model.UserPrivateByID(tokenUser.ID)
+	} else {
+		data, err = model.UserPublicByName(c.Param("username"))
+	}
+
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "user", "name", c.Param("username")))
+		return
+	}
+
+	c.JSON(OK, data)
+}
 
 // POSTUsers saves a new user in the database
 func POSTUsers(c *gin.Context) {

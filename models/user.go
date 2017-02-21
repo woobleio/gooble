@@ -42,8 +42,22 @@ type UserForm struct {
 	CustomerID string
 }
 
-// UserByID returns user with id "id"
-func UserByID(id uint64) (*User, error) {
+// UserPublicByName returns user public profile with the name "username"
+func UserPublicByName(username string) (*User, error) {
+	var user User
+	q := `
+		SELECT
+			u.name,
+			u.is_creator,
+			u.created_at "user.created_at"
+    FROM app_user u
+		WHERE u.name = $1
+	`
+	return &user, lib.DB.Get(&user, q, username)
+}
+
+// UserPrivateByID returns user with id "id"
+func UserPrivateByID(id uint64) (*User, error) {
 	var user User
 	q := `
 		SELECT DISTINCT ON (u.id)
