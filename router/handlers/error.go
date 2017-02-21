@@ -24,6 +24,7 @@ const (
 	planLimit        errCode = "plan_limit"
 	resNotFound      errCode = "res_not_found"
 	servErr          errCode = "server_error"
+	servIntErr       errCode = "server_internal_error"
 )
 
 // API errors
@@ -35,6 +36,7 @@ var (
 	ErrCharge        = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)
 	ErrDBSave        = NewAPIError(dbFailSave, "Database error", "Failed to save the data", http.StatusConflict)
 	ErrDBSelect      = NewAPIError(dbFailSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError)
+	ErrIntServ       = NewAPIError(servIntErr, "Internal server error", "Something wrong happened", http.StatusInternalServerError)
 	ErrMustBuy       = NewAPIError(mustBuy, "Must purchase before doing this", "One or some creations must be purchased to do this", http.StatusUnauthorized)
 	ErrPlanLimit     = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
 	ErrResNotFound   = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)

@@ -42,7 +42,7 @@ func GenerateToken(c *gin.Context) {
 		tokenS, err := token.SignedString(model.TokenKey())
 
 		if err != nil {
-			c.Error(err).SetMeta(ErrServ)
+			c.Error(err).SetMeta(ErrIntServ)
 			return
 		}
 
@@ -67,7 +67,7 @@ func RefreshToken(c *gin.Context) {
 	if ve, ok := err.(*jwt.ValidationError); ok && model.IsTokenExpired(ve) {
 		newToken, err := model.RefreshToken(token)
 		if err != nil {
-			c.Error(err).SetMeta(ErrServ)
+			c.Error(err).SetMeta(ErrServ.SetParams("source", "token"))
 			return
 		}
 
@@ -76,7 +76,7 @@ func RefreshToken(c *gin.Context) {
 			Token string `json:"token"`
 		}{Token: tokenRaw})
 	} else if ve != nil {
-		c.Error(ve).SetMeta(ErrServ)
+		c.Error(ve).SetMeta(ErrServ.SetParams("source", "token"))
 		return
 	}
 

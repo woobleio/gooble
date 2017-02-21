@@ -197,7 +197,7 @@ func BuildPackage(c *gin.Context) {
 	bf, err := wb.SecureAndWrap(pkg.Domains...)
 
 	if err != nil || storage.Error != nil {
-		c.Error(storage.Error).SetMeta(ErrServ)
+		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "package"))
 		return
 	}
 

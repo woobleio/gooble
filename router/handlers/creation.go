@@ -65,7 +65,7 @@ func POSTCreations(c *gin.Context) {
 
 	eng, err := model.EngineByName(data.Engine)
 	if err != nil {
-		c.Error(err).SetMeta(ErrServ)
+		c.Error(err).SetMeta(ErrServ.SetParams("source", "script"))
 		return
 	}
 
@@ -86,7 +86,8 @@ func POSTCreations(c *gin.Context) {
 	if storage.Error != nil {
 		// Delete the crea since files failed to be save in the cloud
 		model.DeleteCreation(creaID)
-		c.Error(storage.Error).SetMeta(ErrServ)
+		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "files"))
+		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
@@ -189,7 +190,7 @@ func EditCreation(c *gin.Context) {
 	}
 
 	if storage.Error != nil {
-		c.Error(storage.Error).SetMeta(ErrServ)
+		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "files"))
 		return
 	}
 
