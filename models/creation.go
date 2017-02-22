@@ -11,6 +11,7 @@ type Creation struct {
 	Creator     User            `json:"creator" db:""`
 	Version     string          `json:"version" db:"version"`
 	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
+	State       string          `json:"state" db:"state"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	HasDoc    bool   `json:"-"       db:"has_document"`
@@ -70,6 +71,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 			c.has_script,
 			c.has_style,
 			c.price,
+			c.state,
 			e.name "eng.name",
 			e.extension,
 			e.content_type,
@@ -78,6 +80,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
+		WHERE c.state = 'public' OR c.state = 'delete'
 		`,
 		Opt: &opt,
 	}
@@ -99,6 +102,7 @@ func CreationByID(id string) (*Creation, error) {
     c.updated_at "crea.updated_at",
     c.version,
 		c.price,
+		c.state,
 		c.has_document,
 		c.has_script,
 		c.has_style,
@@ -110,7 +114,7 @@ func CreationByID(id string) (*Creation, error) {
   FROM creation c
   INNER JOIN app_user u ON (c.creator_id = u.id)
 	INNER JOIN engine e ON (c.engine=e.name)
-  WHERE c.id = $1
+  WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete')
 	`
 
 	encodedID, _ := lib.DecodeHash(id)
@@ -167,11 +171,12 @@ func NewCreation(data *CreationForm) (string, error) {
     has_document, 
     has_script, 
     has_style, 
-    engine
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
+    engine,
+		state
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
   `
 
-	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, data.Version, data.Price, data.Document != "", data.Script != "", data.Style != "", data.Engine).Scan(&creaID)
+	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, data.Version, data.Price, data.Document != "", data.Script != "", data.Style != "", data.Engine, "public").Scan(&creaID)
 	if err != nil {
 		return "", err
 	}

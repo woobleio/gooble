@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.5
 -- Dumped by pg_dump version 9.5.5
 
--- Started on 2017-02-13 17:57:07 UTC
+-- Started on 2017-02-13 18:01:03 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -69,7 +69,8 @@ CREATE TABLE app_user (
     is_creator boolean DEFAULT false,
     passwd text,
     salt_key text NOT NULL,
-    customer_id text NOT NULL
+    customer_id text NOT NULL,
+    total_due integer NOT NULL DEFAULT 0
 );
 
 
@@ -165,7 +166,7 @@ ALTER SEQUENCE creation_id_seq OWNED BY creation.id;
 CREATE TABLE creation_purchase (
     user_id integer NOT NULL,
     creation_id integer NOT NULL,
-    total integer NOT NULL,
+    price integer NOT NULL,
     purchased_at date DEFAULT ('now'::text)::date NOT NULL,
     charge_id text NOT NULL
 );
@@ -358,7 +359,7 @@ ALTER TABLE ONLY plan_user ALTER COLUMN id SET DEFAULT nextval('plan_user_id_seq
 -- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id) FROM stdin;
+COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, total_due) FROM stdin;
 \.
 
 
@@ -396,7 +397,7 @@ SELECT pg_catalog.setval('creation_id_seq', 131, true);
 -- Data for Name: creation_purchase; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation_purchase (user_id, creation_id, total, purchased_at, charge_id) FROM stdin;
+COPY creation_purchase (user_id, creation_id, price, purchased_at, charge_id) FROM stdin;
 \.
 
 
@@ -760,7 +761,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-02-13 17:57:08 UTC
+-- Completed on 2017-02-13 18:01:04 UTC
 
 --
 -- PostgreSQL database dump complete
