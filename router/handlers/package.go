@@ -85,15 +85,15 @@ func POSTPackages(c *gin.Context) {
 
 // PushCreation is an handler that pushes one or more creations in a package
 func PushCreation(c *gin.Context) {
-	type PackageCreationForm struct {
-		PackageID  uint64
-		CreationID string `json:"creation" binding:"required"`
+	var packageCreationForm model.PackageCreationForm
+
+	if err := c.BindJSON(&packageCreationForm); err != nil {
+		c.Error(err).SetMeta(ErrBadForm)
+		return
 	}
 
-	var data PackageCreationForm
-
-	if err := c.BindJSON(&data); err != nil {
-		c.Error(err).SetMeta(ErrBadForm)
+	if err := model.CreationVersionExists(packageCreationForm.CreationID, packageCreationForm.Version); err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", packageCreationForm.CreationID))
 		return
 	}
 
@@ -116,7 +116,7 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if err := model.PushCreation(pkg.ID.ValueDecoded, data.CreationID); err != nil {
+	if err := model.PushCreation(pkg.ID.ValueDecoded, &packageCreationForm); err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}

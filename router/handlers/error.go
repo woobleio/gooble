@@ -135,7 +135,7 @@ func (e *APIErrors) HasErrors() bool {
 	return len(e.Errors) > 0
 }
 
-// HandleErrors handle API errors TODO put warnings
+// HandleErrors handle API errors
 func HandleErrors(c *gin.Context) {
 	// FIXME workaroun gin issue with Bind (https://github.com/gin-gonic/gin/issues/633)
 	c.Header("Content-Type", gin.MIMEJSON)

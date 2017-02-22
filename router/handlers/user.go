@@ -65,8 +65,9 @@ func POSTUsers(c *gin.Context) {
 
 	// Logs customer subscription in the DB
 	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {
-		// TODO logs subscription error somewhere to keep track
-		c.Error(err)
+		// TODO when fail stripe should't charge
+		c.Error(err).SetMeta(ErrIntServ)
+		return
 	}
 
 	c.Header("Location", "/token/generate")

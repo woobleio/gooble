@@ -9,7 +9,8 @@ type Creation struct {
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
 	Creator     User            `json:"creator" db:""`
-	Version     string          `json:"version" db:"version"`
+	Versions    lib.StringSlice `json:"versions" db:"versions"`
+	Version     string          `json:"version,omitempty" db:"version"`
 	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state" db:"state"`
 
@@ -42,6 +43,7 @@ type CreationForm struct {
 
 	Engine string `json:"engine" binding:"required"`
 	Title  string `json:"title" binding:"required"`
+	State  string `json:"state"`
 
 	Description string `json:"description"`
 	Document    string `json:"document"`
@@ -66,7 +68,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 			c.description,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
-	    c.version,
+	    c.versions,
 			c.has_document,
 			c.has_script,
 			c.has_style,
@@ -100,7 +102,7 @@ func CreationByID(id string) (*Creation, error) {
 		c.description,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
-    c.version,
+    c.versions,
 		c.price,
 		c.state,
 		c.has_document,
@@ -122,6 +124,22 @@ func CreationByID(id string) (*Creation, error) {
 	return &crea, lib.DB.Get(&crea, q, encodedID)
 }
 
+// CreationVersionExists returns an error if the creation "creaID" version "version" doesn't exsists
+func CreationVersionExists(creaID string, version string) error {
+	var crea Creation
+	decodedID, _ := lib.DecodeHash(creaID)
+	if version == "" {
+		version = BaseVersion
+	}
+	q := `
+  SELECT id "crea.id", versions, state 
+  FROM creation WHERE id = $1 
+  AND $2 = ANY (versions) 
+  AND (state = 'public' OR state = 'delete')
+  `
+	return lib.DB.Get(&crea, q, decodedID, version)
+}
+
 // CreationEditByID returns a creation with private infos
 func CreationEditByID(id string, uID uint64) (*Creation, error) {
 	var crea Creation
@@ -133,7 +151,7 @@ func CreationEditByID(id string, uID uint64) (*Creation, error) {
     c.description,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
-    c.version,
+    c.versions,
     c.price,
     c.has_document,
 		c.has_script,
@@ -166,7 +184,7 @@ func NewCreation(data *CreationForm) (string, error) {
     title, 
     description, 
     creator_id, 
-    version, 
+    versions, 
     price, 
     has_document, 
     has_script, 
@@ -176,7 +194,13 @@ func NewCreation(data *CreationForm) (string, error) {
   ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
   `
 
-	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, data.Version, data.Price, data.Document != "", data.Script != "", data.Style != "", data.Engine, "public").Scan(&creaID)
+	stringSliceVersions := make(lib.StringSlice, 0, 1)
+
+	if data.Version == "" {
+		data.Version = BaseVersion
+	}
+
+	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, append(stringSliceVersions, data.Version), data.Price, data.Document != "", data.Script != "", data.Style != "", data.Engine, "public").Scan(&creaID)
 	if err != nil {
 		return "", err
 	}
@@ -187,6 +211,7 @@ func NewCreation(data *CreationForm) (string, error) {
 func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation) error {
 	qPurchase := `INSERT INTO creation_purchase(user_id, creation_id,	price, charge_id) VALUES ($1, $2, $3, $4)`
 
+	// TODO should substract a percentage (what wooble takes from the transaction)
 	qSellerDue := `UPDATE app_user SET total_due=total_due + $2 WHERE id=$1`
 
 	tx := lib.DB.MustBegin()

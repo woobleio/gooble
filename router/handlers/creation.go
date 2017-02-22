@@ -49,10 +49,6 @@ func POSTCreations(c *gin.Context) {
 		return
 	}
 
-	if data.Version == "" {
-		data.Version = model.BaseVersion
-	}
-
 	user, _ := c.Get("user")
 
 	data.CreatorID = user.(*model.User).ID
@@ -179,14 +175,16 @@ func EditCreation(c *gin.Context) {
 
 	storage := lib.NewStorage(lib.SrcCreations)
 
+	latestVersion := crea.Versions[len(crea.Versions)-1]
+
 	if crea.HasDoc {
-		data.Document = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, crea.Version, "doc.html")
+		data.Document = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "doc.html")
 	}
 	if crea.HasScript {
-		data.Script = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, crea.Version, "script.js")
+		data.Script = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "script.js")
 	}
 	if crea.HasStyle {
-		data.Style = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, crea.Version, "style.css")
+		data.Style = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "style.css")
 	}
 
 	if storage.Error != nil {
@@ -197,7 +195,7 @@ func EditCreation(c *gin.Context) {
 	data.CreatorID = crea.CreatorID
 	data.Description = crea.Description.String
 	data.Engine = crea.Engine.Name
-	data.Version = crea.Version
+	data.Version = latestVersion
 	data.Price = crea.Price
 
 	c.JSON(OK, data)

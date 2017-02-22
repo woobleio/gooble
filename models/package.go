@@ -26,15 +26,23 @@ type PackageForm struct {
 	Domains lib.StringSlice `json:"domains"`
 }
 
+// PackageCreationForm if a form standard for pushing creation in a package
+type PackageCreationForm struct {
+	PackageID  uint64
+	CreationID string `json:"creation" binding:"required"`
+	Version    string `json:"version"`
+}
+
 // PopulateCreations populates creations in the package
 func (p *Package) PopulateCreations() error {
 	q := `
 	SELECT
 		c.id "crea.id",
     pc.alias,
+		pc.version,
 		c.title,
     c.creator_id,
-		c.version,
+		c.versions,
 		c.has_document,
 		c.has_script,
 		c.has_style,
@@ -137,8 +145,8 @@ func NewPackage(data *PackageForm) (string, error) {
 }
 
 // PushCreation pushes a creation in the package
-func PushCreation(pkgID uint64, creaID string) error {
-	decodeCreaID, _ := lib.DecodeHash(creaID)
+func PushCreation(pkgID uint64, form *PackageCreationForm) error {
+	decodeCreaID, _ := lib.DecodeHash(form.CreationID)
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
 	_, err := lib.DB.Exec(q, pkgID, decodeCreaID)
 	return err
