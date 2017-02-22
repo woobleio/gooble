@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.5
 -- Dumped by pg_dump version 9.5.5
 
--- Started on 2017-02-22 12:40:55 UTC
+-- Started on 2017-02-22 13:58:28 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -124,7 +124,6 @@ CREATE TABLE creation (
     id integer NOT NULL,
     title text DEFAULT 'unknown'::bpchar NOT NULL,
     creator_id integer NOT NULL,
-    version text DEFAULT 1.0 NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
     has_document boolean DEFAULT false NOT NULL,
@@ -134,12 +133,12 @@ CREATE TABLE creation (
     price integer DEFAULT 0 NOT NULL,
     thumb_url text,
     description text,
-    state enum_creation_states DEFAULT 'draft'::enum_creation_states NOT NULL
+    state enum_creation_states DEFAULT 'draft'::enum_creation_states NOT NULL,
+    versions text[] DEFAULT '{1.0}'::text[]
 );
 
 
 ALTER TABLE creation OWNER TO wooble;
-
 
 --
 -- TOC entry 184 (class 1259 OID 16412)
@@ -157,7 +156,7 @@ CREATE SEQUENCE creation_id_seq
 ALTER TABLE creation_id_seq OWNER TO wooble;
 
 --
--- TOC entry 2235 (class 0 OID 0)
+-- TOC entry 2234 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: creation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
@@ -243,7 +242,7 @@ CREATE SEQUENCE package_id_seq
 ALTER TABLE package_id_seq OWNER TO wooble;
 
 --
--- TOC entry 2236 (class 0 OID 0)
+-- TOC entry 2235 (class 0 OID 0)
 -- Dependencies: 189
 -- Name: package_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
@@ -287,7 +286,7 @@ CREATE TABLE plan_user (
 ALTER TABLE plan_user OWNER TO wooble;
 
 --
--- TOC entry 2237 (class 0 OID 0)
+-- TOC entry 2236 (class 0 OID 0)
 -- Dependencies: 191
 -- Name: TABLE plan_user; Type: COMMENT; Schema: public; Owner: wooble
 --
@@ -296,7 +295,7 @@ COMMENT ON TABLE plan_user IS 'History of user plans';
 
 
 --
--- TOC entry 2238 (class 0 OID 0)
+-- TOC entry 2237 (class 0 OID 0)
 -- Dependencies: 191
 -- Name: COLUMN plan_user.nb_renew; Type: COMMENT; Schema: public; Owner: wooble
 --
@@ -320,7 +319,7 @@ CREATE SEQUENCE plan_user_id_seq
 ALTER TABLE plan_user_id_seq OWNER TO wooble;
 
 --
--- TOC entry 2239 (class 0 OID 0)
+-- TOC entry 2238 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: plan_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
@@ -337,7 +336,7 @@ ALTER TABLE ONLY app_user ALTER COLUMN id SET DEFAULT nextval('app_user_id_seq':
 
 
 --
--- TOC entry 2042 (class 2604 OID 16460)
+-- TOC entry 2041 (class 2604 OID 16460)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: wooble
 --
 
@@ -371,7 +370,7 @@ COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt
 
 
 --
--- TOC entry 2240 (class 0 OID 0)
+-- TOC entry 2239 (class 0 OID 0)
 -- Dependencies: 182
 -- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
@@ -385,12 +384,12 @@ SELECT pg_catalog.setval('app_user_id_seq', 57, true);
 -- Data for Name: creation; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation (id, title, creator_id, version, created_at, updated_at, has_document, has_script, has_style, engine, price, thumb_url, description, state) FROM stdin;
+COPY creation (id, title, creator_id, created_at, updated_at, has_document, has_script, has_style, engine, price, thumb_url, description, state, versions) FROM stdin;
 \.
 
 
 --
--- TOC entry 2241 (class 0 OID 0)
+-- TOC entry 2240 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: creation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
@@ -440,7 +439,7 @@ COPY package_creation (package_id, creation_id, alias) FROM stdin;
 
 
 --
--- TOC entry 2242 (class 0 OID 0)
+-- TOC entry 2241 (class 0 OID 0)
 -- Dependencies: 189
 -- Name: package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
@@ -472,7 +471,7 @@ COPY plan_user (id, user_id, nb_renew, created_at, start_date, end_date, plan_la
 
 
 --
--- TOC entry 2243 (class 0 OID 0)
+-- TOC entry 2242 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: plan_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
@@ -656,7 +655,7 @@ CREATE INDEX fki_purchase_user_id_fk ON creation_purchase USING btree (user_id);
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
-CREATE TRIGGER update_date AFTER UPDATE OF version ON creation FOR EACH ROW EXECUTE PROCEDURE update_date();
+CREATE TRIGGER update_date AFTER UPDATE OF versions ON creation FOR EACH ROW EXECUTE PROCEDURE update_date();
 
 
 --
@@ -768,7 +767,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-02-22 12:40:55 UTC
+-- Completed on 2017-02-22 13:58:29 UTC
 
 --
 -- PostgreSQL database dump complete
