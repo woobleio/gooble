@@ -46,13 +46,15 @@ type CreationForm struct {
 	State  string `json:"state"`
 
 	Description string `json:"description"`
-	Document    string `json:"document"`
-	Script      string `json:"script"`
-	Style       string `json:"style"`
 
 	Price uint64 `json:"price,omitempty"`
+}
 
-	Version string
+// CreationCodeForm is a form for creation code
+type CreationCodeForm struct {
+	Script   string `json:"script" binding:"required"`
+	Style    string `json:"style"`
+	Document string `json:"document"`
 }
 
 // BaseVersion is creation default version
@@ -119,13 +121,26 @@ func CreationByID(id string) (*Creation, error) {
   WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete')
 	`
 
-	encodedID, _ := lib.DecodeHash(id)
+	decodedID, _ := lib.DecodeHash(id)
 
-	return &crea, lib.DB.Get(&crea, q, encodedID)
+	return &crea, lib.DB.Get(&crea, q, decodedID)
 }
 
-// CreationVersionExists returns an error if the creation "creaID" version "version" doesn't exsists
-func CreationVersionExists(creaID string, version string) error {
+// UpdateCreation update creation's information
+func UpdateCreation(creaID string, crea *CreationForm) error {
+	q := `
+  UPDATE creation
+  SET title = $3, description = $4, price = $5
+  WHERE id = $1
+  AND creator_id = $2 
+  `
+	decodedID, _ := lib.DecodeHash(creaID)
+	_, err := lib.DB.Exec(q, decodedID, crea.CreatorID, crea.Title, crea.Description, crea.Price)
+	return err
+}
+
+// CreationByIDAndVersion returns the creation "creaID" and check if the version "version" exists
+func CreationByIDAndVersion(creaID string, version string) (*Creation, error) {
 	var crea Creation
 	decodedID, _ := lib.DecodeHash(creaID)
 	if version == "" {
@@ -135,9 +150,8 @@ func CreationVersionExists(creaID string, version string) error {
   SELECT id "crea.id", versions, state 
   FROM creation WHERE id = $1 
   AND $2 = ANY (versions) 
-  AND (state = 'public' OR state = 'delete')
   `
-	return lib.DB.Get(&crea, q, decodedID, version)
+	return &crea, lib.DB.Get(&crea, q, decodedID, version)
 }
 
 // CreationEditByID returns a creation with private infos
@@ -186,21 +200,14 @@ func NewCreation(data *CreationForm) (string, error) {
     creator_id, 
     versions, 
     price, 
-    has_document, 
-    has_script, 
-    has_style, 
     engine,
 		state
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
   `
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	if data.Version == "" {
-		data.Version = BaseVersion
-	}
-
-	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, append(stringSliceVersions, data.Version), data.Price, data.Document != "", data.Script != "", data.Style != "", data.Engine, "public").Scan(&creaID)
+	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, append(stringSliceVersions, BaseVersion), data.Price, data.Engine, "draft").Scan(&creaID)
 	if err != nil {
 		return "", err
 	}
@@ -223,4 +230,16 @@ func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation
 	}
 
 	return tx.Commit()
+}
+
+// UpdateCreationCode updates creation information
+func UpdateCreationCode(crea *Creation) error {
+	q := `
+  UPDATE creation SET has_script = $2, has_document = $3, has_style = $4
+  WHERE id = $1
+  AND state = 'draft'
+  AND versions[array_length(versions, 1)] = $5
+  `
+	_, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.HasScript, crea.HasDoc, crea.HasStyle, crea.Version)
+	return err
 }

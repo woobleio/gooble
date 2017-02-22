@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"wooble/lib"
 	"wooble/models"
@@ -40,7 +41,7 @@ func GETCreations(c *gin.Context) {
 	c.JSON(OK, NewRes(data))
 }
 
-// POSTCreations is a handler that retrieve a form and create a creation
+// POSTCreations creates a new creation
 func POSTCreations(c *gin.Context) {
 	var data model.CreationForm
 
@@ -56,33 +57,6 @@ func POSTCreations(c *gin.Context) {
 	creaID, err := model.NewCreation(&data)
 	if err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
-		return
-	}
-
-	eng, err := model.EngineByName(data.Engine)
-	if err != nil {
-		c.Error(err).SetMeta(ErrServ.SetParams("source", "script"))
-		return
-	}
-
-	storage := lib.NewStorage(lib.SrcCreations)
-
-	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
-
-	if data.Document != "" {
-		storage.StoreFile(data.Document, "text/html", userIDStr, creaID, data.Version, "doc.html")
-	}
-	if data.Script != "" {
-		storage.StoreFile(data.Script, eng.ContentType, userIDStr, creaID, data.Version, "script"+eng.Extension)
-	}
-	if data.Style != "" {
-		storage.StoreFile(data.Style, "text/css", userIDStr, creaID, data.Version, "style.css")
-	}
-
-	if storage.Error != nil {
-		// Delete the crea since files failed to be save in the cloud
-		model.DeleteCreation(creaID)
-		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "files"))
 		return
 	}
 
@@ -157,9 +131,9 @@ func BuyCreations(c *gin.Context) {
 	c.JSON(OK, nil)
 }
 
-// EditCreation return private creation view
-func EditCreation(c *gin.Context) {
-	var data model.CreationForm
+// GETCodeCreation return private creation view
+func GETCodeCreation(c *gin.Context) {
+	var data model.CreationCodeForm
 
 	creaID := c.Param("encid")
 
@@ -192,11 +166,82 @@ func EditCreation(c *gin.Context) {
 		return
 	}
 
-	data.CreatorID = crea.CreatorID
-	data.Description = crea.Description.String
-	data.Engine = crea.Engine.Name
-	data.Version = latestVersion
-	data.Price = crea.Price
-
 	c.JSON(OK, data)
+}
+
+// PUTCreations edits creation information
+func PUTCreations(c *gin.Context) {
+	var creaForm model.CreationForm
+
+	if err := c.Bind(&creaForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	creaID := c.Param("encid")
+
+	user, _ := c.Get("user")
+
+	creaForm.CreatorID = user.(*model.User).ID
+
+	if err := model.UpdateCreation(creaID, &creaForm); err != nil {
+		c.Error(err).SetMeta(ErrDBSave.SetParams("source", "creation", "id", creaID))
+		return
+	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
+
+	c.JSON(OK, nil)
+}
+
+// PUTCreationVersion create new version
+func SaveVersion(c *gin.Context) {
+	var codeForm model.CreationCodeForm
+
+	version := c.Param("version")
+	creaID := c.Param("encid")
+
+	if err := c.BindJSON(&codeForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	user, _ := c.Get("user")
+
+	storage := lib.NewStorage(lib.SrcCreations)
+
+	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
+
+	version = strings.Replace(version, "_", ".", -1)
+
+	var crea model.Creation
+	crea.ID = lib.InitID(creaID)
+	crea.HasDoc = codeForm.Document != ""
+	crea.HasStyle = codeForm.Style != ""
+	crea.HasScript = codeForm.Script != ""
+	crea.Version = version
+
+	if err := model.UpdateCreationCode(&crea); err != nil {
+		c.Error(err).SetMeta(ErrDBSave)
+		return
+	}
+
+	if codeForm.Document != "" {
+		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaID, version, "doc.html")
+	}
+	if codeForm.Script != "" {
+		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaID, version, "script.js") // TODO Engine extension instead of .js
+	}
+	if codeForm.Style != "" {
+		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaID, version, "style.css")
+	}
+
+	if storage.Error != nil {
+		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "files"))
+		return
+	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
+
+	c.JSON(Created, nil)
 }

@@ -158,6 +158,30 @@ type ID struct {
 	ValueDecoded uint64
 }
 
+// InitID returns an ID
+func InitID(data interface{}) ID {
+	switch data.(type) {
+	case string:
+		encV := data.(string)
+		decV, _ := DecodeHash(encV)
+		return ID{
+			ValueEncoded: encV,
+			ValueDecoded: uint64(decV),
+		}
+	case uint64:
+		decV := data.(uint64)
+		encV, _ := HashID(int64(decV))
+		return ID{
+			ValueEncoded: encV,
+			ValueDecoded: decV,
+		}
+	}
+	return ID{
+		ValueEncoded: "",
+		ValueDecoded: 0,
+	}
+}
+
 // MarshalJSON marshals custom ID
 func (id ID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(id.ValueEncoded)

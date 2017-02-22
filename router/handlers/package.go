@@ -7,6 +7,7 @@ import (
 
 	"wooble/lib"
 	"wooble/models"
+	enum "wooble/models/enums"
 
 	"github.com/woobleio/wooblizer/wbzr"
 	"github.com/woobleio/wooblizer/wbzr/engine"
@@ -92,8 +93,18 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if err := model.CreationVersionExists(packageCreationForm.CreationID, packageCreationForm.Version); err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", packageCreationForm.CreationID))
+	if packageCreationForm.Version == "" {
+		packageCreationForm.Version = model.BaseVersion
+	}
+
+	crea, err := model.CreationByIDAndVersion(packageCreationForm.CreationID, packageCreationForm.Version)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", packageCreationForm.CreationID+"/"+packageCreationForm.Version))
+		return
+	}
+
+	if crea.State == enum.Draft && crea.Versions[len(crea.Versions)-1] == packageCreationForm.Version {
+		c.Error(err).SetMeta(ErrCreationNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+packageCreationForm.Version))
 		return
 	}
 

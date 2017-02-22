@@ -17,6 +17,7 @@ const (
 	badCreds         errCode = "bad_credentials"
 	badForm          errCode = "bad_form"
 	chargeErr        errCode = "charge_fail"
+	creaNotAvail     errCode = "creation_not_available"
 	dbFailSave       errCode = "db_failed_save"
 	dbFailSelect     errCode = "db_failed_select"
 	dbFailUpdate     errCode = "db_failed_update"
@@ -29,19 +30,20 @@ const (
 
 // API errors
 var (
-	ErrAliasRequired = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package : creation %s should have an alias", http.StatusBadRequest)
-	ErrBadCreds      = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
-	ErrBadForm       = NewAPIError(badForm, "Form not valid", "", http.StatusBadRequest)
-	ErrCantBuy       = NewAPIError(alreadyCreaOwner, "Purchase failed", "Can't buy the creation %s because you already own it", http.StatusBadRequest)
-	ErrCharge        = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)
-	ErrDBSave        = NewAPIError(dbFailSave, "Database error", "Failed to save the data", http.StatusConflict)
-	ErrDBSelect      = NewAPIError(dbFailSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError)
-	ErrIntServ       = NewAPIError(servIntErr, "Internal server error", "Something wrong happened", http.StatusInternalServerError)
-	ErrMustBuy       = NewAPIError(mustBuy, "Must purchase before doing this", "One or some creations must be purchased to do this", http.StatusUnauthorized)
-	ErrPlanLimit     = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
-	ErrResNotFound   = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)
-	ErrServ          = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError)
-	ErrUpdate        = NewAPIError(dbFailUpdate, "Database error", "Failed to update %s %v", http.StatusInternalServerError)
+	ErrAliasRequired    = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package : creation %s should have an alias", http.StatusBadRequest)
+	ErrBadCreds         = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
+	ErrBadForm          = NewAPIError(badForm, "Form not valid", "", http.StatusBadRequest)
+	ErrCantBuy          = NewAPIError(alreadyCreaOwner, "Purchase failed", "Can't buy the creation %s because you already own it", http.StatusBadRequest)
+	ErrCharge           = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)
+	ErrCreationNotAvail = NewAPIError(creaNotAvail, "Creation not available", "The creation %s is not available", http.StatusConflict)
+	ErrDBSave           = NewAPIError(dbFailSave, "Database error", "Failed to save the data", http.StatusConflict)
+	ErrDBSelect         = NewAPIError(dbFailSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError)
+	ErrIntServ          = NewAPIError(servIntErr, "Internal server error", "Something wrong happened", http.StatusInternalServerError)
+	ErrMustBuy          = NewAPIError(mustBuy, "Must purchase before doing this", "One or some creations must be purchased to do this", http.StatusUnauthorized)
+	ErrPlanLimit        = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
+	ErrResNotFound      = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)
+	ErrServ             = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError)
+	ErrUpdate           = NewAPIError(dbFailUpdate, "Database error", "Failed to update %s %v", http.StatusInternalServerError)
 )
 
 // APIError is a struct that standardize a Wooble error

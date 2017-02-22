@@ -44,7 +44,9 @@ func Load() {
 		{
 			v1.POST("/creations", handler.POSTCreations)
 			v1.POST("/creations/buy", handler.BuyCreations)
-			v1.GET("/creations/:encid/edit", handler.EditCreation)
+			v1.PUT("/creations/:encid", handler.PUTCreations)
+			v1.GET("/creations/:encid/code", handler.GETCodeCreation)
+			v1.PUT("/creations/:encid/version/:version", handler.SaveVersion)
 
 			v1.POST("/users/password", handler.UpdatePassword)
 
