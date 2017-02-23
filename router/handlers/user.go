@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	form "wooble/forms"
-	"wooble/lib"
 	model "wooble/models"
 	helper "wooble/router/helpers"
 
@@ -58,7 +57,7 @@ func POSTUsers(c *gin.Context) {
 	}
 
 	// Saves the customer in third party (Stripe for now)
-	customer, errCust := lib.NewCustomer(data.Email, data.Plan, data.CardToken)
+	customer, errCust := model.NewCustomer(data.Email, data.Plan, data.CardToken)
 	if errCust != nil {
 		model.DeleteUser(uID)
 		c.Error(errCust).SetMeta(ErrDBSave)

@@ -1,4 +1,4 @@
-package lib
+package model
 
 // Payment is like a model but since it isn't related to the database
 // it is preferable to put it in 'lib'. It's a third party so it has to be
@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/viper"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/charge"
 	"github.com/stripe/stripe-go/customer"
@@ -57,9 +56,4 @@ func ChargeOneTimeForCreations(amount uint64, objIDs []string, token string) (*s
 // CaptureCharge applies the charge
 func CaptureCharge(chargeID string) (*stripe.Charge, error) {
 	return charge.Capture(chargeID, nil)
-}
-
-// LoadPayment loads payment API
-func LoadPayment() {
-	stripe.Key = viper.GetString("stripe_key")
 }

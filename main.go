@@ -7,6 +7,7 @@ import (
 	"wooble/router"
 
 	"github.com/spf13/viper"
+	stripe "github.com/stripe/stripe-go"
 )
 
 func init() {
@@ -19,7 +20,8 @@ func init() {
 	}
 
 	lib.LoadDB()
-	lib.LoadPayment()
+
+	stripe.Key = viper.GetString("stripe_key")
 }
 
 func main() {

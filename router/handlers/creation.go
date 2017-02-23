@@ -112,14 +112,14 @@ func BuyCreations(c *gin.Context) {
 
 	var chargeID string
 	if buyForm.CardToken == "" {
-		charge, chargeErr := lib.ChargeCustomerForCreations(customerID, totalAmount, buyForm.Creations)
+		charge, chargeErr := model.ChargeCustomerForCreations(customerID, totalAmount, buyForm.Creations)
 		if chargeErr != nil {
 			c.Error(chargeErr).SetMeta(ErrCharge)
 			return
 		}
 		chargeID = charge.ID
 	} else {
-		charge, chargeErr := lib.ChargeOneTimeForCreations(totalAmount, buyForm.Creations, buyForm.CardToken)
+		charge, chargeErr := model.ChargeOneTimeForCreations(totalAmount, buyForm.Creations, buyForm.CardToken)
 		if chargeErr != nil {
 			c.Error(chargeErr).SetMeta(ErrCharge)
 			return
@@ -132,7 +132,7 @@ func BuyCreations(c *gin.Context) {
 		return
 	}
 
-	lib.CaptureCharge(chargeID)
+	model.CaptureCharge(chargeID)
 
 	// TODO location to mycreations
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", buyForm.Creations[0]))
