@@ -3,17 +3,31 @@ package router
 import (
 	"time"
 
+	"github.com/gin-gonic/gin/binding"
+
 	"wooble/lib"
 	"wooble/router/handlers"
 	middleware "wooble/router/middlewares"
 
 	cors "gopkg.in/gin-contrib/cors.v1"
 	"gopkg.in/gin-gonic/gin.v1"
+	validator "gopkg.in/go-playground/validator.v9"
 )
+
+type Validator struct {
+	*validator.Validate
+}
+
+func (v *Validator) ValidateStruct(i interface{}) error {
+	return v.Struct(i)
+}
 
 // Load initializes the router and loads all handlers
 func Load() {
 	r := gin.New()
+
+	binding.Validator = &Validator{validator.New()}
+
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(handler.HandleErrors)
@@ -47,6 +61,7 @@ func Load() {
 			v1.PUT("/creations/:encid", handler.PUTCreations)
 			v1.GET("/creations/:encid/code", handler.GETCodeCreation)
 			v1.PUT("/creations/:encid/version/:version", handler.SaveVersion)
+			v1.PATCH("/creations/:encid/publish", handler.PublishCreation)
 
 			v1.POST("/users/password", handler.UpdatePassword)
 

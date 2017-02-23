@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"gopkg.in/gin-gonic/gin.v1"
-	validator "gopkg.in/go-playground/validator.v8"
+	validator "gopkg.in/go-playground/validator.v9"
 )
 
 type errCode string
@@ -92,26 +92,28 @@ func (e APIError) SetParams(params ...interface{}) APIError {
 }
 
 // ValidationError builds and sets validation errors
-func (e *APIError) ValidationError(ve *validator.FieldError) APIError {
-	var apiError APIError
-	switch ve.Tag {
+func (e APIError) ValidationError(ve validator.FieldError) APIError {
+	switch ve.Tag() {
 	case "required":
 		e.Details = "%s is required"
-		apiError = e.SetParams("field", ve.Field)
+		e = e.SetParams("field", ve.Field())
 	case "max":
 		e.Details = "%s cannot be longer than %s"
-		apiError = e.SetParams("field", ve.Field, "param", ve.Param)
+		e = e.SetParams("field", ve.Field(), "param", ve.Param())
 	case "min":
 		e.Details = "%s must be longer than %s"
-		apiError = e.SetParams("field", ve.Field, "param", ve.Param)
+		e = e.SetParams("field", ve.Field(), "param", ve.Param())
 	case "email":
 		e.Details = "Invalid email format"
 	case "len":
 		e.Details = "%s must be %s characters long"
-		apiError = e.SetParams("field", ve.Field, "param", ve.Param)
+		e = e.SetParams("field", ve.Field(), "param", ve.Param())
+	case "alpha":
+		e.Details = "%s must be one word"
+		e = e.SetParams("field", ve.Field())
 	}
 
-	return apiError
+	return e
 }
 
 // HTTPStatus returns the HTTP status of errors

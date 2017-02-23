@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -25,7 +26,10 @@ func GETPackages(c *gin.Context) {
 	pkgID := c.Param("encid")
 
 	if pkgID != "" {
-		data, err = model.PackageByID(pkgID, user.(*model.User).ID)
+		var pkg model.Package
+		pkg.ID = lib.InitID(pkgID)
+		pkg.UserID = user.(*model.User).ID
+		data, err = model.PackageByID(&pkg)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
@@ -103,14 +107,19 @@ func PushCreation(c *gin.Context) {
 		pkgCreaForm.Version = model.BaseVersion
 	}
 
-	crea, err := model.CreationByIDAndVersion(pkgCreaForm.CreationID, pkgCreaForm.Version)
-	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/"+pkgCreaForm.Version))
+	var errCrea error
+	crea := new(model.Creation)
+	crea.ID = lib.InitID(pkgCreaForm.CreationID)
+	crea.Version = pkgCreaForm.Version
+
+	crea, errCrea = model.CreationByIDAndVersion(crea)
+	if errCrea != nil {
+		c.Error(errCrea).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/"+pkgCreaForm.Version))
 		return
 	}
 
 	if crea.State == enum.Draft && crea.Versions[len(crea.Versions)-1] == pkgCreaForm.Version {
-		c.Error(err).SetMeta(ErrCreationNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+pkgCreaForm.Version))
+		c.Error(errors.New("Creation not available")).SetMeta(ErrCreationNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+pkgCreaForm.Version))
 		return
 	}
 
@@ -118,22 +127,27 @@ func PushCreation(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
-	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
+	var pkgErr error
+	pkg := new(model.Package)
+	pkg.ID = lib.InitID(pkgID)
+	pkg.UserID = user.(*model.User).ID
+
+	pkg, pkgErr = model.PackageByID(pkg)
+	if pkgErr != nil {
+		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
 		return
 	}
 
 	plan := user.(*model.User).Plan
-	limitNbCrea := plan.NbCrea.Int64
-	pkgNbCrea := model.PackageNbCrea(pkg.ID.ValueEncoded)
+	limitNbCrea := uint64(plan.NbCrea.Int64)
+	pkgNbCrea := model.PackageNbCrea(pkg)
 
 	if limitNbCrea != 0 && pkgNbCrea >= limitNbCrea {
 		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "creation", "plan", plan.Label.String))
 		return
 	}
 
-	if err := model.PushCreation(pkg.ID.ValueDecoded, pkgCreaForm.CreationID); err != nil {
+	if err := model.PushCreation(pkg, crea); err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
@@ -151,9 +165,14 @@ func BuildPackage(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	pkg, err := model.PackageByID(pkgID, user.(*model.User).ID)
-	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
+	var pkgErr error
+	pkg := new(model.Package)
+	pkg.ID = lib.InitID(pkgID)
+	pkg.UserID = user.(*model.User).ID
+
+	pkg, pkgErr = model.PackageByID(pkg)
+	if pkgErr != nil {
+		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
 		return
 	}
 
@@ -170,6 +189,7 @@ func BuildPackage(c *gin.Context) {
 	storage.Source = lib.SrcCreations
 	wb := wbzr.New(wbzr.JSES5)
 	for _, creation := range pkg.Creations {
+		var err error
 		var script engine.Script
 
 		creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
@@ -224,13 +244,11 @@ func BuildPackage(c *gin.Context) {
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
 
-	source := "https://pkg.wooble.io" + strings.Join(spltPath, "/")
-	if err := model.UpdatePackageSource(source, pkg.ID); err != nil {
+	pkg.Source = lib.InitNullString("https://pkg.wooble.io" + strings.Join(spltPath, "/"))
+	if err := model.UpdatePackageSource(pkg); err != nil {
 		c.Error(err).SetMeta(ErrUpdate.SetParams("source", "package", "id", pkg.ID.ValueEncoded))
 		return
 	}
-
-	pkg.Source = lib.InitNullString(source)
 
 	c.JSON(OK, NewRes(pkg))
 }

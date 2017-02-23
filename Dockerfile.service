@@ -74,6 +74,7 @@ RUN go get github.com/woobleio/wooblizer
 RUN go get golang.org/x/crypto/scrypt
 RUN go get gopkg.in/gin-gonic/gin.v1
 RUN go get gopkg.in/gin-contrib/cors.v1
+RUN go get gopkg.in/go-playground/validator.v9
 
 EXPOSE 3000
 

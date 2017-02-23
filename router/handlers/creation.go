@@ -8,6 +8,7 @@ import (
 	"wooble/forms"
 	"wooble/lib"
 	"wooble/models"
+	enum "wooble/models/enums"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -45,6 +46,7 @@ func GETCreations(c *gin.Context) {
 // POSTCreations creates a new creation
 func POSTCreations(c *gin.Context) {
 	var data form.CreationForm
+	data.State = enum.Draft
 
 	if err := c.BindJSON(&data); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
@@ -55,6 +57,7 @@ func POSTCreations(c *gin.Context) {
 
 	var crea model.Creation
 	crea.CreatorID = user.(*model.User).ID
+	crea.State = data.State
 	crea.Title = data.Title
 	crea.Description = lib.InitNullString(data.Description)
 	crea.Price = data.Price
@@ -145,11 +148,14 @@ func GETCodeCreation(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	userID := user.(*model.User).ID
+	var errCrea error
+	crea := new(model.Creation)
+	crea.ID = lib.InitID(creaID)
+	crea.CreatorID = user.(*model.User).ID
 
-	crea, err := model.CreationEditByID(creaID, userID)
-	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
+	crea, errCrea = model.CreationEditByID(crea)
+	if errCrea != nil {
+		c.Error(errCrea).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
 		return
 	}
 
@@ -179,7 +185,7 @@ func GETCodeCreation(c *gin.Context) {
 func PUTCreations(c *gin.Context) {
 	var creaForm form.CreationForm
 
-	if err := c.Bind(&creaForm); err != nil {
+	if err := c.BindJSON(&creaForm); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
@@ -189,12 +195,13 @@ func PUTCreations(c *gin.Context) {
 	user, _ := c.Get("user")
 
 	var crea model.Creation
+	crea.ID = lib.InitID(creaID)
 	crea.CreatorID = user.(*model.User).ID
 	crea.Title = creaForm.Title
 	crea.Description = lib.InitNullString(creaForm.Description)
 	crea.Price = creaForm.Price
 
-	if err := model.UpdateCreation(creaID, &crea); err != nil {
+	if err := model.UpdateCreation(&crea); err != nil {
 		c.Error(err).SetMeta(ErrDBSave.SetParams("source", "creation", "id", creaID))
 		return
 	}
@@ -254,4 +261,22 @@ func SaveVersion(c *gin.Context) {
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
 	c.JSON(Created, nil)
+}
+
+// PublishCreation make a creation public
+func PublishCreation(c *gin.Context) {
+	user, _ := c.Get("user")
+
+	creaID := c.Param("encid")
+
+	var crea model.Creation
+	crea.ID = lib.InitID(creaID)
+	crea.CreatorID = user.(*model.User).ID
+
+	if err := model.PublishCreation(&crea); err != nil {
+		c.Error(err).SetMeta(ErrDBSave)
+		return
+	}
+
+	c.JSON(OK, nil)
 }

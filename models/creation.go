@@ -107,36 +107,32 @@ func CreationByID(id string) (*Creation, error) {
 }
 
 // UpdateCreation update creation's information
-func UpdateCreation(creaID string, crea *Creation) error {
+func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
   SET title = $3, description = $4, price = $5
   WHERE id = $1
   AND creator_id = $2 
   `
-	decodedID, _ := lib.DecodeHash(creaID)
-	_, err := lib.DB.Exec(q, decodedID, crea.CreatorID, crea.Title, crea.Description, crea.Price)
+	_, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.CreatorID, crea.Title, crea.Description, crea.Price)
 	return err
 }
 
 // CreationByIDAndVersion returns the creation "creaID" and check if the version "version" exists
-func CreationByIDAndVersion(creaID string, version string) (*Creation, error) {
-	var crea Creation
-	decodedID, _ := lib.DecodeHash(creaID)
-	if version == "" {
-		version = BaseVersion
+func CreationByIDAndVersion(crea *Creation) (*Creation, error) {
+	if crea.Version == "" {
+		crea.Version = BaseVersion
 	}
 	q := `
   SELECT id "crea.id", versions, state 
   FROM creation WHERE id = $1 
   AND $2 = ANY (versions) 
   `
-	return &crea, lib.DB.Get(&crea, q, decodedID, version)
+	return crea, lib.DB.Get(crea, q, crea.ID.ValueDecoded, crea.Version)
 }
 
 // CreationEditByID returns a creation with private infos
-func CreationEditByID(id string, uID uint64) (*Creation, error) {
-	var crea Creation
+func CreationEditByID(crea *Creation) (*Creation, error) {
 	q := `
   SELECT
     c.id "crea.id",
@@ -158,16 +154,7 @@ func CreationEditByID(id string, uID uint64) (*Creation, error) {
   WHERE c.id = $1 AND c.creator_id = $2
   `
 
-	encodedID, _ := lib.DecodeHash(id)
-
-	return &crea, lib.DB.Get(&crea, q, encodedID, uID)
-}
-
-// DeleteCreation deletes creation id "id"
-func DeleteCreation(id string) error {
-	encodedID, _ := lib.DecodeHash(id)
-	_, err := lib.DB.Exec(`DELETE FROM creation WHERE id = $1`, encodedID)
-	return err
+	return crea, lib.DB.Get(crea, q, crea.ID.ValueDecoded, crea.CreatorID)
 }
 
 // NewCreation creates a creation
@@ -187,7 +174,7 @@ func NewCreation(crea *Creation) (string, error) {
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	err := lib.DB.QueryRow(q, crea.Title, crea.Description, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Price, crea.Engine.Name, "draft").Scan(&creaID)
+	err := lib.DB.QueryRow(q, crea.Title, crea.Description, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Price, crea.Engine.Name, crea.State).Scan(&creaID)
 	if err != nil {
 		return "", err
 	}
@@ -221,5 +208,17 @@ func UpdateCreationCode(crea *Creation) error {
   AND versions[array_length(versions, 1)] = $5
   `
 	_, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.HasScript, crea.HasDoc, crea.HasStyle, crea.Version)
+	return err
+}
+
+// PublishCreation switches creation "creaID" state to "public"
+func PublishCreation(crea *Creation) error {
+	q := `
+  UPDATE creation SET state = 'public'
+  WHERE creator_id = $1
+  AND state = 'draft'
+  AND id = $2
+  `
+	_, err := lib.DB.Exec(q, crea.CreatorID, crea.ID.ValueDecoded)
 	return err
 }

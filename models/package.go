@@ -73,8 +73,7 @@ func AllPackages(opt lib.Option, userID uint64) (*[]Package, error) {
 }
 
 // PackageByID returns package with id "id"
-func PackageByID(id string, userID uint64) (*Package, error) {
-	var pkg Package
+func PackageByID(pkg *Package) (*Package, error) {
 	q := `
 	SELECT
 		pkg.id "pkg.id",
@@ -89,19 +88,17 @@ func PackageByID(id string, userID uint64) (*Package, error) {
   AND pkg.user_id = $2
 	`
 
-	decodeID, _ := lib.DecodeHash(id)
-
-	if err := lib.DB.Get(&pkg, q, decodeID, userID); err != nil {
+	if err := lib.DB.Get(pkg, q, pkg.ID.ValueDecoded, pkg.UserID); err != nil {
 		return nil, err
 	}
 
-	return &pkg, pkg.PopulateCreations()
+	return pkg, pkg.PopulateCreations()
 }
 
 // PackageNbCrea returns the number of creations in the package id "id"
-func PackageNbCrea(id string) int64 {
+func PackageNbCrea(pkg *Package) uint64 {
 	var nbCrea struct {
-		Value int64 `db:"nb_crea"`
+		Value uint64 `db:"nb_crea"`
 	}
 
 	q := `
@@ -112,28 +109,25 @@ func PackageNbCrea(id string) int64 {
 	WHERE p.id = $1
 	`
 
-	decodeID, _ := lib.DecodeHash(id)
-
-	lib.DB.Get(&nbCrea, q, decodeID)
+	lib.DB.Get(&nbCrea, q, pkg.ID.ValueDecoded)
 
 	return nbCrea.Value
 }
 
 // NewPackage creates a new package
-func NewPackage(data *Package) (string, error) {
+func NewPackage(pkg *Package) (string, error) {
 	var pkgID int64
 	q := `INSERT INTO package(title, user_id, domains) VALUES ($1, $2, $3) RETURNING id`
-	if err := lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains).Scan(&pkgID); err != nil {
+	if err := lib.DB.QueryRow(q, pkg.Title, pkg.UserID, pkg.Domains).Scan(&pkgID); err != nil {
 		return "", err
 	}
 	return lib.HashID(pkgID)
 }
 
 // PushCreation pushes a creation in the package
-func PushCreation(pkgID uint64, creaID string) error {
-	decodeCreaID, _ := lib.DecodeHash(creaID)
+func PushCreation(pkg *Package, crea *Creation) error {
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
-	_, err := lib.DB.Exec(q, pkgID, decodeCreaID)
+	_, err := lib.DB.Exec(q, pkg.ID.ValueDecoded, crea.ID.ValueDecoded)
 	return err
 }
 
@@ -145,8 +139,8 @@ func UpdatePackage(pkg *Package) error {
 }
 
 // UpdatePackageSource updates package source
-func UpdatePackageSource(source string, pkgID lib.ID) error {
+func UpdatePackageSource(pkg *Package) error {
 	q := `UPDATE package SET source=$2 WHERE id=$1`
-	_, err := lib.DB.Exec(q, pkgID.ValueDecoded, source)
+	_, err := lib.DB.Exec(q, pkg.ID.ValueDecoded, pkg.Source.String)
 	return err
 }
