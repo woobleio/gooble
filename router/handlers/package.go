@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	form "wooble/forms"
 	"wooble/lib"
 	"wooble/models"
 	enum "wooble/models/enums"
@@ -46,7 +47,7 @@ func GETPackages(c *gin.Context) {
 
 // POSTPackages is a handler that create am empty Wooble package
 func POSTPackages(c *gin.Context) {
-	var data model.PackageForm
+	var data form.PackageForm
 
 	if err := c.BindJSON(&data); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
@@ -54,13 +55,15 @@ func POSTPackages(c *gin.Context) {
 	}
 
 	user, _ := c.Get("user")
-	data.UserID = user.(*model.User).ID
+
+	var pkg model.Package
+	pkg.UserID = user.(*model.User).ID
 
 	plan := user.(*model.User).Plan
 
 	limitNbPkg := plan.NbPkg.Int64
 	limitNbDomains := plan.NbDomains.Int64
-	userNbPkg := model.UserNbPackages(data.UserID)
+	userNbPkg := model.UserNbPackages(pkg.UserID)
 
 	// 0 means unlimited
 	if limitNbPkg != 0 && userNbPkg >= limitNbPkg {
@@ -73,7 +76,10 @@ func POSTPackages(c *gin.Context) {
 		return
 	}
 
-	pkgID, err := model.NewPackage(&data)
+	pkg.Title = data.Title
+	pkg.Domains = data.Domains
+
+	pkgID, err := model.NewPackage(&pkg)
 	if err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
@@ -86,25 +92,25 @@ func POSTPackages(c *gin.Context) {
 
 // PushCreation is an handler that pushes one or more creations in a package
 func PushCreation(c *gin.Context) {
-	var packageCreationForm model.PackageCreationForm
+	var pkgCreaForm form.PackageCreationForm
 
-	if err := c.BindJSON(&packageCreationForm); err != nil {
+	if err := c.BindJSON(&pkgCreaForm); err != nil {
 		c.Error(err).SetMeta(ErrBadForm)
 		return
 	}
 
-	if packageCreationForm.Version == "" {
-		packageCreationForm.Version = model.BaseVersion
+	if pkgCreaForm.Version == "" {
+		pkgCreaForm.Version = model.BaseVersion
 	}
 
-	crea, err := model.CreationByIDAndVersion(packageCreationForm.CreationID, packageCreationForm.Version)
+	crea, err := model.CreationByIDAndVersion(pkgCreaForm.CreationID, pkgCreaForm.Version)
 	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", packageCreationForm.CreationID+"/"+packageCreationForm.Version))
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/"+pkgCreaForm.Version))
 		return
 	}
 
-	if crea.State == enum.Draft && crea.Versions[len(crea.Versions)-1] == packageCreationForm.Version {
-		c.Error(err).SetMeta(ErrCreationNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+packageCreationForm.Version))
+	if crea.State == enum.Draft && crea.Versions[len(crea.Versions)-1] == pkgCreaForm.Version {
+		c.Error(err).SetMeta(ErrCreationNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+pkgCreaForm.Version))
 		return
 	}
 
@@ -127,7 +133,7 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if err := model.PushCreation(pkg.ID.ValueDecoded, &packageCreationForm); err != nil {
+	if err := model.PushCreation(pkg.ID.ValueDecoded, pkgCreaForm.CreationID); err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}

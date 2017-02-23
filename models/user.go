@@ -28,20 +28,6 @@ type User struct {
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
 }
 
-// UserForm is the form for users
-type UserForm struct {
-	Email  string `json:"email" binding:"required"`
-	Name   string `json:"name" binding:"required"`
-	Secret string `json:"secret" binding:"required"`
-	Plan   string `json:"plan" binding:"required"`
-
-	CardToken string `json:"cardToken"`
-
-	IsCreator bool `json:"isCreator"`
-
-	CustomerID string
-}
-
 // UserPublicByName returns user public profile with the name "username"
 func UserPublicByName(username string) (*User, error) {
 	var user User
@@ -94,7 +80,7 @@ func UserPrivateByID(id uint64) (*User, error) {
 }
 
 // NewUser creates a new user
-func NewUser(user *UserForm) (uID uint64, err error) {
+func NewUser(user *User) (uID uint64, err error) {
 	salt := lib.GenKey()
 	cp, errPasswd := getPassword(user.Secret, []byte(salt))
 	if errPasswd != nil {
@@ -159,9 +145,9 @@ func DeleteUser(uID uint64) error {
 }
 
 // UpdateUser updates user form (password not included)
-func UpdateUser(uID uint64, userForm *UserForm) error {
+func UpdateUser(uID uint64, user *User) error {
 	q := `UPDATE app_user SET name=$2, email=$3, is_creator=$4 WHERE id=$1`
-	_, err := lib.DB.Exec(q, uID, userForm.Name, userForm.Email, userForm.IsCreator)
+	_, err := lib.DB.Exec(q, uID, user.Name, user.Email, user.IsCreator)
 	return err
 }
 

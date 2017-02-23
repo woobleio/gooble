@@ -37,26 +37,6 @@ type CreationPurchase struct {
 	PurchasedAt *lib.NullTime `db:"purchased_at"`
 }
 
-// CreationForm is a form for creation
-type CreationForm struct {
-	CreatorID uint64
-
-	Engine string `json:"engine" binding:"required"`
-	Title  string `json:"title" binding:"required"`
-	State  string `json:"state"`
-
-	Description string `json:"description"`
-
-	Price uint64 `json:"price,omitempty"`
-}
-
-// CreationCodeForm is a form for creation code
-type CreationCodeForm struct {
-	Script   string `json:"script" binding:"required"`
-	Style    string `json:"style"`
-	Document string `json:"document"`
-}
-
 // BaseVersion is creation default version
 const BaseVersion string = "1.0"
 
@@ -127,7 +107,7 @@ func CreationByID(id string) (*Creation, error) {
 }
 
 // UpdateCreation update creation's information
-func UpdateCreation(creaID string, crea *CreationForm) error {
+func UpdateCreation(creaID string, crea *Creation) error {
 	q := `
   UPDATE creation
   SET title = $3, description = $4, price = $5
@@ -191,7 +171,7 @@ func DeleteCreation(id string) error {
 }
 
 // NewCreation creates a creation
-func NewCreation(data *CreationForm) (string, error) {
+func NewCreation(crea *Creation) (string, error) {
 	var creaID int64
 	q := `
   INSERT INTO creation(
@@ -207,7 +187,7 @@ func NewCreation(data *CreationForm) (string, error) {
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	err := lib.DB.QueryRow(q, data.Title, data.Description, data.CreatorID, append(stringSliceVersions, BaseVersion), data.Price, data.Engine, "draft").Scan(&creaID)
+	err := lib.DB.QueryRow(q, crea.Title, crea.Description, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Price, crea.Engine.Name, "draft").Scan(&creaID)
 	if err != nil {
 		return "", err
 	}

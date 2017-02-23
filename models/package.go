@@ -18,21 +18,6 @@ type Package struct {
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
 }
 
-// PackageForm is a form standard for package
-type PackageForm struct {
-	UserID uint64
-	Title  string `json:"title" binding:"required"`
-
-	Domains lib.StringSlice `json:"domains"`
-}
-
-// PackageCreationForm if a form standard for pushing creation in a package
-type PackageCreationForm struct {
-	PackageID  uint64
-	CreationID string `json:"creation" binding:"required"`
-	Version    string `json:"version"`
-}
-
 // PopulateCreations populates creations in the package
 func (p *Package) PopulateCreations() error {
 	q := `
@@ -135,7 +120,7 @@ func PackageNbCrea(id string) int64 {
 }
 
 // NewPackage creates a new package
-func NewPackage(data *PackageForm) (string, error) {
+func NewPackage(data *Package) (string, error) {
 	var pkgID int64
 	q := `INSERT INTO package(title, user_id, domains) VALUES ($1, $2, $3) RETURNING id`
 	if err := lib.DB.QueryRow(q, data.Title, data.UserID, data.Domains).Scan(&pkgID); err != nil {
@@ -145,8 +130,8 @@ func NewPackage(data *PackageForm) (string, error) {
 }
 
 // PushCreation pushes a creation in the package
-func PushCreation(pkgID uint64, form *PackageCreationForm) error {
-	decodeCreaID, _ := lib.DecodeHash(form.CreationID)
+func PushCreation(pkgID uint64, creaID string) error {
+	decodeCreaID, _ := lib.DecodeHash(creaID)
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
 	_, err := lib.DB.Exec(q, pkgID, decodeCreaID)
 	return err

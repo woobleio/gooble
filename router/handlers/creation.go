@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"wooble/forms"
 	"wooble/lib"
 	"wooble/models"
 
@@ -43,7 +44,7 @@ func GETCreations(c *gin.Context) {
 
 // POSTCreations creates a new creation
 func POSTCreations(c *gin.Context) {
-	var data model.CreationForm
+	var data form.CreationForm
 
 	if err := c.BindJSON(&data); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
@@ -52,9 +53,14 @@ func POSTCreations(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	data.CreatorID = user.(*model.User).ID
+	var crea model.Creation
+	crea.CreatorID = user.(*model.User).ID
+	crea.Title = data.Title
+	crea.Description = lib.InitNullString(data.Description)
+	crea.Price = data.Price
+	crea.Engine = model.Engine{Name: data.Engine}
 
-	creaID, err := model.NewCreation(&data)
+	creaID, err := model.NewCreation(&crea)
 	if err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
@@ -133,7 +139,7 @@ func BuyCreations(c *gin.Context) {
 
 // GETCodeCreation return private creation view
 func GETCodeCreation(c *gin.Context) {
-	var data model.CreationCodeForm
+	var data form.CreationCodeForm
 
 	creaID := c.Param("encid")
 
@@ -171,7 +177,7 @@ func GETCodeCreation(c *gin.Context) {
 
 // PUTCreations edits creation information
 func PUTCreations(c *gin.Context) {
-	var creaForm model.CreationForm
+	var creaForm form.CreationForm
 
 	if err := c.Bind(&creaForm); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
@@ -182,9 +188,13 @@ func PUTCreations(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	creaForm.CreatorID = user.(*model.User).ID
+	var crea model.Creation
+	crea.CreatorID = user.(*model.User).ID
+	crea.Title = creaForm.Title
+	crea.Description = lib.InitNullString(creaForm.Description)
+	crea.Price = creaForm.Price
 
-	if err := model.UpdateCreation(creaID, &creaForm); err != nil {
+	if err := model.UpdateCreation(creaID, &crea); err != nil {
 		c.Error(err).SetMeta(ErrDBSave.SetParams("source", "creation", "id", creaID))
 		return
 	}
@@ -194,9 +204,9 @@ func PUTCreations(c *gin.Context) {
 	c.JSON(OK, nil)
 }
 
-// PUTCreationVersion create new version
+// SaveVersion save the current code for a version (must be in draft state)
 func SaveVersion(c *gin.Context) {
-	var codeForm model.CreationCodeForm
+	var codeForm form.CreationCodeForm
 
 	version := c.Param("version")
 	creaID := c.Param("encid")

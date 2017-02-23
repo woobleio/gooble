@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"strings"
+	form "wooble/forms"
 	"wooble/lib"
 	model "wooble/models"
 	helper "wooble/router/helpers"
@@ -37,14 +38,20 @@ func GETUsers(c *gin.Context) {
 
 // POSTUsers saves a new user in the database
 func POSTUsers(c *gin.Context) {
-	var data model.UserForm
+	var data form.UserForm
 
 	if err := c.BindJSON(&data); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
-	uID, err := model.NewUser(&data)
+	var user model.User
+	user.Name = data.Name
+	user.Email = data.Email
+	user.IsCreator = data.IsCreator
+	user.Secret = data.Secret
+
+	uID, err := model.NewUser(&user)
 	if err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
@@ -58,7 +65,7 @@ func POSTUsers(c *gin.Context) {
 		return
 	}
 
-	data.CustomerID = customer.ID
+	user.CustomerID = customer.ID
 
 	// Sets customer id to User
 	model.UpdateCustomerID(uID, customer.ID)
