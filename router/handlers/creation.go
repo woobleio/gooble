@@ -2,8 +2,11 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
+
+	version "github.com/mcuadros/go-version"
 
 	"wooble/forms"
 	"wooble/lib"
@@ -43,8 +46,8 @@ func GETCreations(c *gin.Context) {
 	c.JSON(OK, NewRes(data))
 }
 
-// POSTCreations creates a new creation
-func POSTCreations(c *gin.Context) {
+// POSTCreation creates a new creation
+func POSTCreation(c *gin.Context) {
 	var data form.CreationForm
 	data.State = enum.Draft
 
@@ -55,7 +58,7 @@ func POSTCreations(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	var crea model.Creation
+	crea := new(model.Creation)
 	crea.CreatorID = user.(*model.User).ID
 	crea.State = data.State
 	crea.Title = data.Title
@@ -63,13 +66,14 @@ func POSTCreations(c *gin.Context) {
 	crea.Price = data.Price
 	crea.Engine = model.Engine{Name: data.Engine}
 
-	creaID, err := model.NewCreation(&crea)
-	if err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+	var errCrea error
+	crea, errCrea = model.NewCreation(crea)
+	if errCrea != nil {
+		c.Error(errCrea).SetMeta(ErrDBSave)
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
+	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", crea.ID.ValueEncoded))
 
 	c.JSON(Created, nil)
 }
@@ -135,7 +139,7 @@ func BuyCreations(c *gin.Context) {
 	model.CaptureCharge(chargeID)
 
 	// TODO location to mycreations
-	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", buyForm.Creations[0]))
+	c.Header("Location", fmt.Sprintf("/%s/%s/%s", "creations", buyForm.Creations[0], "code"))
 
 	c.JSON(OK, nil)
 }
@@ -181,8 +185,8 @@ func GETCodeCreation(c *gin.Context) {
 	c.JSON(OK, data)
 }
 
-// PUTCreations edits creation information
-func PUTCreations(c *gin.Context) {
+// PUTCreation edits creation information
+func PUTCreation(c *gin.Context) {
 	var creaForm form.CreationForm
 
 	if err := c.BindJSON(&creaForm); err != nil {
@@ -225,8 +229,6 @@ func SaveVersion(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	storage := lib.NewStorage(lib.SrcCreations)
-
 	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
 
 	version = strings.Replace(version, "_", ".", -1)
@@ -238,16 +240,19 @@ func SaveVersion(c *gin.Context) {
 	crea.HasScript = codeForm.Script != ""
 	crea.Version = version
 
-	if err := model.UpdateCreationCode(&crea); err != nil {
+	fmt.Print(version)
+
+	if nbRowAffected, err := model.UpdateCreationCode(&crea); err != nil || nbRowAffected == 0 {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
 
+	storage := lib.NewStorage(lib.SrcCreations)
 	if codeForm.Document != "" {
 		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaID, version, "doc.html")
 	}
 	if codeForm.Script != "" {
-		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaID, version, "script.js") // TODO Engine extension instead of .js
+		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaID, version, "script.js")
 	}
 	if codeForm.Style != "" {
 		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaID, version, "style.css")
@@ -267,16 +272,71 @@ func SaveVersion(c *gin.Context) {
 func PublishCreation(c *gin.Context) {
 	user, _ := c.Get("user")
 
-	creaID := c.Param("encid")
-
 	var crea model.Creation
-	crea.ID = lib.InitID(creaID)
+	crea.ID = lib.InitID(c.Param("encid"))
 	crea.CreatorID = user.(*model.User).ID
 
 	if err := model.PublishCreation(&crea); err != nil {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
+
+	c.JSON(OK, nil)
+}
+
+// POSTCreationVersion creates a new version
+func POSTCreationVersion(c *gin.Context) {
+	var versionForm struct {
+		Version string `json:"version" validate:"required"`
+	}
+
+	if err := c.BindJSON(&versionForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	user, _ := c.Get("user")
+
+	var errCrea error
+	crea := new(model.Creation)
+	crea.ID = lib.InitID(c.Param("encid"))
+	crea.CreatorID = user.(*model.User).ID
+	crea, errCrea = model.CreationEditByID(crea)
+	if errCrea != nil {
+		c.Error(errCrea).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", crea.ID.ValueEncoded))
+		return
+	}
+
+	curVersion := crea.Versions[len(crea.Versions)-1]
+	if version.Compare(curVersion, versionForm.Version, ">=") {
+		c.Error(errors.New("Version POST issue, either malformed or posted version lesser than the latest")).SetMeta(ErrCreaVersion.SetParams("version", versionForm.Version))
+		return
+	}
+
+	crea.Versions = append(crea.Versions, versionForm.Version)
+
+	if err := model.NewCreationVersion(crea); err != nil {
+		c.Error(err).SetMeta(ErrDBSave)
+		return
+	}
+
+	storage := lib.NewStorage(lib.SrcCreations)
+	if crea.HasScript {
+		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "script.js")
+	}
+	if crea.HasDoc {
+		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "doc.html")
+	}
+	if crea.HasStyle {
+		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "style.css")
+	}
+
+	if storage.Error != nil {
+		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "copy"))
+		return
+	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%s/%s", "creations", c.Param("encid"), "code"))
 
 	c.JSON(OK, nil)
 }

@@ -40,6 +40,25 @@ func NewStorage(src string) *Storage {
 	return stor
 }
 
+// CopyAndStoreFile copy and store cloud object
+func (s *Storage) CopyAndStoreFile(userID string, objID string, prevVersion string, version string, filename string) {
+	svc := s3.New(s.Session)
+
+	path := s.getBucketPath(makeID(userID, objID), prevVersion, filename)
+	newPath := s.getBucketPath(makeID(userID, objID), version, filename)
+
+	bucket := viper.GetString("cloud_repo")
+
+	obj := &s3.CopyObjectInput{
+		Bucket: aws.String(bucket),
+
+		Key:        aws.String(newPath),
+		CopySource: aws.String(bucket + "/" + path),
+	}
+
+	_, s.Error = svc.CopyObject(obj)
+}
+
 // GetFileContent returns requested file from the cloud
 func (s *Storage) GetFileContent(userID string, objID string, version string, filename string) string {
 	svc := s3.New(s.Session)

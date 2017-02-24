@@ -45,8 +45,8 @@ func Load() {
 			c.String(200, "%s", time.Now())
 		})
 
-		v1.POST("/users", handler.POSTUsers)
-		v1.GET("/users/:username", handler.GETUsers)
+		v1.POST("/users", handler.POSTUser)
+		v1.GET("/users/:username", handler.GETUser)
 
 		v1.POST("/token/generate", handler.GenerateToken)
 		v1.POST("/token/refresh", handler.RefreshToken)
@@ -56,19 +56,21 @@ func Load() {
 
 		v1.Use(middleware.Authenticate())
 		{
-			v1.POST("/creations", handler.POSTCreations)
-			v1.POST("/creations/buy", handler.BuyCreations)
-			v1.PUT("/creations/:encid", handler.PUTCreations)
+			v1.POST("/creations", handler.POSTCreation)
+			v1.PUT("/creations/:encid", handler.PUTCreation)
 			v1.GET("/creations/:encid/code", handler.GETCodeCreation)
-			v1.PUT("/creations/:encid/version/:version", handler.SaveVersion)
 			v1.PATCH("/creations/:encid/publish", handler.PublishCreation)
+			v1.POST("/creations/:encid/versions", handler.POSTCreationVersion)
+			v1.PUT("/creations/:encid/versions/:version", handler.SaveVersion)
+
+			v1.POST("/buy", handler.BuyCreations)
 
 			v1.POST("/users/password", handler.UpdatePassword)
 
 			// packages is private, so those requests are about the authenticated user only
 			v1.GET("/packages", handler.GETPackages)
 			v1.GET("/packages/:encid", handler.GETPackages)
-			v1.POST("/packages", handler.POSTPackages)
+			v1.POST("/packages", handler.POSTPackage)
 			v1.POST("/packages/:encid/push", handler.PushCreation)
 			v1.PATCH("/packages/:encid/build", handler.BuildPackage)
 		}

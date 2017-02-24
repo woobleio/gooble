@@ -49,8 +49,8 @@ func GETPackages(c *gin.Context) {
 	c.JSON(OK, NewRes(data))
 }
 
-// POSTPackages is a handler that create am empty Wooble package
-func POSTPackages(c *gin.Context) {
+// POSTPackage is a handler that create am empty Wooble package
+func POSTPackage(c *gin.Context) {
 	var data form.PackageForm
 
 	if err := c.BindJSON(&data); err != nil {
@@ -60,7 +60,7 @@ func POSTPackages(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	var pkg model.Package
+	pkg := new(model.Package)
 	pkg.UserID = user.(*model.User).ID
 
 	plan := user.(*model.User).Plan
@@ -83,13 +83,14 @@ func POSTPackages(c *gin.Context) {
 	pkg.Title = data.Title
 	pkg.Domains = data.Domains
 
-	pkgID, err := model.NewPackage(&pkg)
-	if err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+	var errPkg error
+	pkg, errPkg = model.NewPackage(pkg)
+	if errPkg != nil {
+		c.Error(errPkg).SetMeta(ErrDBSave)
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkgID))
+	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkg.ID.ValueEncoded))
 
 	c.JSON(Created, nil)
 }
@@ -119,7 +120,7 @@ func PushCreation(c *gin.Context) {
 	}
 
 	if crea.State == enum.Draft && crea.Versions[len(crea.Versions)-1] == pkgCreaForm.Version {
-		c.Error(errors.New("Creation not available")).SetMeta(ErrCreationNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+pkgCreaForm.Version))
+		c.Error(errors.New("Creation not available")).SetMeta(ErrCreaNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+pkgCreaForm.Version))
 		return
 	}
 

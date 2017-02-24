@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"strings"
 	form "wooble/forms"
 	model "wooble/models"
@@ -10,10 +9,10 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
-// GETUsers returns one users with private infos if authenticated, with public infos if not
-func GETUsers(c *gin.Context) {
+// GETUser returns one users with private infos if authenticated, with public infos if not
+func GETUser(c *gin.Context) {
+	var data *model.User
 	var err error
-	data := new(model.User)
 
 	token, _ := helper.ParseToken(c)
 
@@ -35,8 +34,8 @@ func GETUsers(c *gin.Context) {
 	c.JSON(OK, data)
 }
 
-// POSTUsers saves a new user in the database
-func POSTUsers(c *gin.Context) {
+// POSTUser saves a new user in the database
+func POSTUser(c *gin.Context) {
 	var data form.UserForm
 
 	if err := c.BindJSON(&data); err != nil {
@@ -96,7 +95,7 @@ func UpdatePassword(c *gin.Context) {
 	user, _ := c.Get("user")
 
 	if !user.(*model.User).IsPasswordValid(passwordForm.OldSecret) {
-		fmt.Println("invalid")
+		c.Error(nil).SetMeta(ErrBadCreds)
 		return
 	}
 

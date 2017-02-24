@@ -158,8 +158,7 @@ func CreationEditByID(crea *Creation) (*Creation, error) {
 }
 
 // NewCreation creates a creation
-func NewCreation(crea *Creation) (string, error) {
-	var creaID int64
+func NewCreation(crea *Creation) (*Creation, error) {
 	q := `
   INSERT INTO creation(
     title, 
@@ -174,11 +173,14 @@ func NewCreation(crea *Creation) (string, error) {
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	err := lib.DB.QueryRow(q, crea.Title, crea.Description, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Price, crea.Engine.Name, crea.State).Scan(&creaID)
-	if err != nil {
-		return "", err
-	}
-	return lib.HashID(creaID)
+	return crea, lib.DB.QueryRow(q, crea.Title, crea.Description, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Price, crea.Engine.Name, crea.State).Scan(&crea.ID)
+}
+
+// NewCreationVersion create a new version
+func NewCreationVersion(crea *Creation) error {
+	q := `UPDATE creation SET versions=$3 WHERE id = $1 AND creator_id = $2`
+	_, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.CreatorID, crea.Versions)
+	return err
 }
 
 // NewCreationPurchases creates a creation purchase
@@ -200,15 +202,16 @@ func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation
 }
 
 // UpdateCreationCode updates creation information
-func UpdateCreationCode(crea *Creation) error {
+func UpdateCreationCode(crea *Creation) (int64, error) {
 	q := `
   UPDATE creation SET has_script = $2, has_document = $3, has_style = $4
   WHERE id = $1
   AND state = 'draft'
   AND versions[array_length(versions, 1)] = $5
   `
-	_, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.HasScript, crea.HasDoc, crea.HasStyle, crea.Version)
-	return err
+	res, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.HasScript, crea.HasDoc, crea.HasStyle, crea.Version)
+	rowAff, _ := res.RowsAffected()
+	return rowAff, err
 }
 
 // PublishCreation switches creation "creaID" state to "public"

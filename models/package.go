@@ -115,13 +115,9 @@ func PackageNbCrea(pkg *Package) uint64 {
 }
 
 // NewPackage creates a new package
-func NewPackage(pkg *Package) (string, error) {
-	var pkgID int64
+func NewPackage(pkg *Package) (*Package, error) {
 	q := `INSERT INTO package(title, user_id, domains) VALUES ($1, $2, $3) RETURNING id`
-	if err := lib.DB.QueryRow(q, pkg.Title, pkg.UserID, pkg.Domains).Scan(&pkgID); err != nil {
-		return "", err
-	}
-	return lib.HashID(pkgID)
+	return pkg, lib.DB.QueryRow(q, pkg.Title, pkg.UserID, pkg.Domains).Scan(&pkg.ID)
 }
 
 // PushCreation pushes a creation in the package
