@@ -104,7 +104,6 @@ func TokenKey() []byte {
 // UserByToken return the user whom the token belong to
 func UserByToken(token interface{}) (*User, error) {
 	if token.(*jwt.Token) == nil {
-		fmt.Print("lol")
 		return nil, errors.New("No tokens")
 	}
 	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)

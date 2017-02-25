@@ -1,6 +1,9 @@
 package model
 
-import "wooble/lib"
+import (
+	"wooble/lib"
+	enum "wooble/models/enums"
+)
 
 // Creation is a Wooble creation
 type Creation struct {
@@ -16,7 +19,6 @@ type Creation struct {
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	HasDoc    bool   `json:"-"       db:"has_document"`
-	HasScript bool   `json:"-"       db:"has_script"`
 	HasStyle  bool   `json:"-"       db:"has_style"`
 	Engine    Engine `json:"-" db:""`
 	Price     uint64 `json:"price" db:"price"` // in cents euro
@@ -52,7 +54,6 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	    c.updated_at "crea.updated_at",
 	    c.versions,
 			c.has_document,
-			c.has_script,
 			c.has_style,
 			c.price,
 			c.state,
@@ -88,7 +89,6 @@ func CreationByID(id string) (*Creation, error) {
 		c.price,
 		c.state,
 		c.has_document,
-		c.has_script,
 		c.has_style,
 		e.name "eng.name",
 		e.extension,
@@ -144,7 +144,6 @@ func CreationEditByID(crea *Creation) (*Creation, error) {
     c.versions,
     c.price,
     c.has_document,
-		c.has_script,
 		c.has_style,
 		e.name "eng.name",
 		e.extension,
@@ -177,18 +176,18 @@ func NewCreation(crea *Creation) (*Creation, error) {
 }
 
 // NewCreationVersion create a new version
-func NewCreationVersion(crea *Creation) error {
-	q := `UPDATE creation SET versions=$3 WHERE id = $1 AND creator_id = $2`
-	_, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.CreatorID, crea.Versions)
-	return err
+func NewCreationVersion(crea *Creation) (int64, error) {
+	q := `UPDATE creation SET versions=$3 WHERE id = $1 AND creator_id = $2 AND state = $3`
+	res, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.CreatorID, crea.Versions, enum.Draft)
+	rowAff, _ := res.RowsAffected()
+	return rowAff, err
 }
 
 // NewCreationPurchases creates a creation purchase
 func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation) error {
 	qPurchase := `INSERT INTO creation_purchase(user_id, creation_id,	price, charge_id) VALUES ($1, $2, $3, $4)`
 
-	// TODO should substract a percentage (what wooble takes from the transaction)
-	qSellerDue := `UPDATE app_user SET total_due=total_due + $2 WHERE id=$1`
+	qSellerDue := `UPDATE app_user SET total_due=total_due + $2 WHERE id = $1`
 
 	tx := lib.DB.MustBegin()
 	for _, crea := range *creations {
@@ -204,12 +203,12 @@ func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation
 // UpdateCreationCode updates creation information
 func UpdateCreationCode(crea *Creation) (int64, error) {
 	q := `
-  UPDATE creation SET has_script = $2, has_document = $3, has_style = $4
+  UPDATE creation SET has_document = $2, has_style = $3
   WHERE id = $1
   AND state = 'draft'
   AND versions[array_length(versions, 1)] = $5
   `
-	res, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.HasScript, crea.HasDoc, crea.HasStyle, crea.Version)
+	res, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.HasDoc, crea.HasStyle, crea.Version)
 	rowAff, _ := res.RowsAffected()
 	return rowAff, err
 }
@@ -219,9 +218,9 @@ func PublishCreation(crea *Creation) error {
 	q := `
   UPDATE creation SET state = 'public'
   WHERE creator_id = $1
-  AND state = 'draft'
+  AND state = $3
   AND id = $2
   `
-	_, err := lib.DB.Exec(q, crea.CreatorID, crea.ID.ValueDecoded)
+	_, err := lib.DB.Exec(q, crea.CreatorID, crea.ID.ValueDecoded, enum.Draft)
 	return err
 }

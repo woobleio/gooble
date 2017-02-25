@@ -166,12 +166,10 @@ func GETCodeCreation(c *gin.Context) {
 	storage := lib.NewStorage(lib.SrcCreations)
 
 	latestVersion := crea.Versions[len(crea.Versions)-1]
+	data.Script = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "script.js")
 
 	if crea.HasDoc {
 		data.Document = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "doc.html")
-	}
-	if crea.HasScript {
-		data.Script = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "script.js")
 	}
 	if crea.HasStyle {
 		data.Style = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "style.css")
@@ -237,10 +235,7 @@ func SaveVersion(c *gin.Context) {
 	crea.ID = lib.InitID(creaID)
 	crea.HasDoc = codeForm.Document != ""
 	crea.HasStyle = codeForm.Style != ""
-	crea.HasScript = codeForm.Script != ""
 	crea.Version = version
-
-	fmt.Print(version)
 
 	if nbRowAffected, err := model.UpdateCreationCode(&crea); err != nil || nbRowAffected == 0 {
 		c.Error(err).SetMeta(ErrDBSave)
@@ -315,15 +310,14 @@ func POSTCreationVersion(c *gin.Context) {
 
 	crea.Versions = append(crea.Versions, versionForm.Version)
 
-	if err := model.NewCreationVersion(crea); err != nil {
+	if nbRowsAff, err := model.NewCreationVersion(crea); err != nil || nbRowsAff == 0 {
 		c.Error(err).SetMeta(ErrDBSave)
 		return
 	}
 
 	storage := lib.NewStorage(lib.SrcCreations)
-	if crea.HasScript {
-		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "script.js")
-	}
+	storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "script.js")
+
 	if crea.HasDoc {
 		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "doc.html")
 	}

@@ -127,7 +127,6 @@ CREATE TABLE creation (
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
     has_document boolean DEFAULT false NOT NULL,
-    has_script boolean DEFAULT false NOT NULL,
     has_style boolean DEFAULT false NOT NULL,
     engine text NOT NULL,
     price integer DEFAULT 0 NOT NULL,
@@ -389,7 +388,7 @@ SELECT pg_catalog.setval('app_user_id_seq', 62, true);
 -- Data for Name: creation; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation (id, title, creator_id, created_at, updated_at, has_document, has_script, has_style, engine, price, thumb_url, description, state, versions, old_creator_id) FROM stdin;
+COPY creation (id, title, creator_id, created_at, updated_at, has_document, has_style, engine, price, thumb_url, description, state, versions, old_creator_id) FROM stdin;
 \.
 
 

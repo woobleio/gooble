@@ -200,13 +200,8 @@ func BuildPackage(c *gin.Context) {
 			objName = creation.Alias.String
 		}
 
-		if creation.HasScript {
-			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "script.js")
-
-			script, err = wb.Inject(src, objName)
-		} else {
-			script, err = wb.Inject("", objName)
-		}
+		src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "script.js")
+		script, err = wb.Inject(src, objName)
 
 		if err != nil {
 			if err == wbzr.ErrUniqueName {
