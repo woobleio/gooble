@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strings"
 	form "wooble/forms"
 	model "wooble/models"
@@ -31,7 +32,7 @@ func GETUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(OK, data)
+	c.JSON(OK, NewRes(data))
 }
 
 // POSTUser saves a new user in the database
@@ -51,7 +52,7 @@ func POSTUser(c *gin.Context) {
 
 	uID, err := model.NewUser(&user)
 	if err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
@@ -59,7 +60,7 @@ func POSTUser(c *gin.Context) {
 	customer, errCust := model.NewCustomer(data.Email, data.Plan, data.CardToken)
 	if errCust != nil {
 		model.DeleteUser(uID)
-		c.Error(errCust).SetMeta(ErrDBSave)
+		c.Error(errCust).SetMeta(ErrDB)
 		return
 	}
 
@@ -77,7 +78,7 @@ func POSTUser(c *gin.Context) {
 
 	c.Header("Location", "/token/generate")
 
-	c.JSON(Created, nil)
+	c.JSON(Created, NewRes(user))
 }
 
 // UpdatePassword update authenticated user's password
@@ -100,11 +101,11 @@ func UpdatePassword(c *gin.Context) {
 	}
 
 	if err := model.UpdateUserPassword(user.(*model.User).ID, passwordForm.NewSecret); err != nil {
-		c.Error(err).SetMeta(ErrUpdate.SetParams("source", "user", "name", user.(*model.User).Name))
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
-	c.Header("Location", "/users/me")
+	c.Header("Location", fmt.Sprintf("/users/%s", user.(*model.User).Name))
 
-	c.JSON(OK, nil)
+	c.JSON(NoContent, nil)
 }

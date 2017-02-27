@@ -19,9 +19,7 @@ const (
 	chargeErr        errCode = "charge_fail"
 	creaNotAvail     errCode = "creation_not_available"
 	creaVersion      errCode = "creation_version"
-	dbFailSave       errCode = "db_failed_save"
-	dbFailSelect     errCode = "db_failed_select"
-	dbFailUpdate     errCode = "db_failed_update"
+	dbFail           errCode = "db_failed_save"
 	mustBuy          errCode = "must_buy"
 	planLimit        errCode = "plan_limit"
 	resNotFound      errCode = "res_not_found"
@@ -38,14 +36,12 @@ var (
 	ErrCharge        = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)
 	ErrCreaNotAvail  = NewAPIError(creaNotAvail, "Creation not available", "The creation %s is not available", http.StatusConflict)
 	ErrCreaVersion   = NewAPIError(creaVersion, "Bad version", "Version %s can't be created", http.StatusBadRequest)
-	ErrDBSave        = NewAPIError(dbFailSave, "Database error", "Failed to save the data", http.StatusConflict)
-	ErrDBSelect      = NewAPIError(dbFailSelect, "Database error", "Failed to select the resources requested", http.StatusInternalServerError)
+	ErrDB            = NewAPIError(dbFail, "Database error", "Database failed to process the request", http.StatusConflict)
 	ErrIntServ       = NewAPIError(servIntErr, "Internal server error", "Something wrong happened", http.StatusInternalServerError)
 	ErrMustBuy       = NewAPIError(mustBuy, "Must purchase before doing this", "One or some creations must be purchased to do this", http.StatusUnauthorized)
 	ErrPlanLimit     = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
 	ErrResNotFound   = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)
 	ErrServ          = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError)
-	ErrUpdate        = NewAPIError(dbFailUpdate, "Database error", "Failed to update %s %v", http.StatusInternalServerError)
 )
 
 // APIError is a struct that standardize a Wooble error

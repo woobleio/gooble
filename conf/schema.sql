@@ -723,7 +723,7 @@ ALTER TABLE ONLY creation
 --
 
 ALTER TABLE ONLY package_creation
-    ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES package(id);
+    ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES package(id) ON DELETE CASCADE;
 
 
 --

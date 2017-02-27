@@ -30,7 +30,7 @@ func GenerateToken(c *gin.Context) {
 		if err == sql.ErrNoRows {
 			c.Error(err).SetMeta(ErrBadCreds)
 		} else {
-			c.Error(err).SetMeta(ErrDBSelect)
+			c.Error(err).SetMeta(ErrDB)
 		}
 		return
 	}

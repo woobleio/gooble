@@ -74,10 +74,10 @@ func Load() {
 			v1.GET("/packages", handler.GETPackages)
 			v1.GET("/packages/:encid", handler.GETPackages)
 			v1.PUT("/packages/:encid", handler.PUTPackage)
-			// v1.DELETE("/packages/:encid", handler.DELETEPackage)
+			v1.DELETE("/packages/:encid", handler.DELETEPackage)
 			v1.POST("/packages", handler.POSTPackage)
-			v1.POST("/packages/:encid/push", handler.PushCreation)
-			// v1.DELETE("/packages/:encid/creations/:id")
+			v1.POST("/packages/:encid/creations", handler.PushCreation)
+			v1.DELETE("/packages/:encid/creations", handler.RemovePackageCreation)
 			v1.PATCH("/packages/:encid/build", handler.BuildPackage)
 		}
 	}

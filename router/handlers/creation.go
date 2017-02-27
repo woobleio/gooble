@@ -31,14 +31,14 @@ func GETCreations(c *gin.Context) {
 			if err == sql.ErrNoRows {
 				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
 			} else {
-				c.Error(err).SetMeta(ErrDBSelect)
+				c.Error(err).SetMeta(ErrDB)
 			}
 			return
 		}
 	} else {
 		data, err = model.AllCreations(opts)
 		if err != nil {
-			c.Error(err).SetMeta(ErrDBSelect)
+			c.Error(err).SetMeta(ErrDB)
 			return
 		}
 	}
@@ -69,13 +69,13 @@ func POSTCreation(c *gin.Context) {
 	var errCrea error
 	crea, errCrea = model.NewCreation(crea)
 	if errCrea != nil {
-		c.Error(errCrea).SetMeta(ErrDBSave)
+		c.Error(errCrea).SetMeta(ErrDB)
 		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", crea.ID.ValueEncoded))
 
-	c.JSON(Created, nil)
+	c.JSON(Created, NewRes(crea))
 }
 
 // BuyCreations is a handler that purchases creations
@@ -94,7 +94,7 @@ func BuyCreations(c *gin.Context) {
 	userID := user.(*model.User).ID
 	customerID, err := model.UserCustomerID(userID)
 	if err != nil || customerID == "" {
-		c.Error(err).SetMeta(ErrDBSelect)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
@@ -132,16 +132,16 @@ func BuyCreations(c *gin.Context) {
 	}
 
 	if err := model.NewCreationPurchases(userID, chargeID, &creas); err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
 	model.CaptureCharge(chargeID)
 
 	// TODO location to mycreations
-	c.Header("Location", fmt.Sprintf("/%s/%s/%s", "creations", buyForm.Creations[0], "code"))
+	// c.Header("Location", fmt.Sprintf("/creations/%s/code", buyForm.Creations[0]))
 
-	c.JSON(OK, nil)
+	c.JSON(NoContent, nil)
 }
 
 // GETCodeCreation return private creation view
@@ -180,7 +180,7 @@ func GETCodeCreation(c *gin.Context) {
 		return
 	}
 
-	c.JSON(OK, data)
+	c.JSON(OK, NewRes(data))
 }
 
 // PUTCreation edits creation information
@@ -204,13 +204,13 @@ func PUTCreation(c *gin.Context) {
 	crea.Price = creaForm.Price
 
 	if err := model.UpdateCreation(&crea); err != nil {
-		c.Error(err).SetMeta(ErrDBSave.SetParams("source", "creation", "id", creaID))
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
-	c.JSON(OK, nil)
+	c.JSON(NoContent, nil)
 }
 
 // SaveVersion save the current code for a version (must be in draft state)
@@ -238,7 +238,7 @@ func SaveVersion(c *gin.Context) {
 	crea.Version = version
 
 	if nbRowAffected, err := model.UpdateCreationCode(&crea); err != nil || nbRowAffected == 0 {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
@@ -260,7 +260,7 @@ func SaveVersion(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
-	c.JSON(Created, nil)
+	c.JSON(NoContent, nil)
 }
 
 // PublishCreation make a creation public
@@ -272,11 +272,11 @@ func PublishCreation(c *gin.Context) {
 	crea.CreatorID = user.(*model.User).ID
 
 	if err := model.PublishCreation(&crea); err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
-	c.JSON(OK, nil)
+	c.JSON(NoContent, nil)
 }
 
 // POSTCreationVersion creates a new version
@@ -311,7 +311,7 @@ func POSTCreationVersion(c *gin.Context) {
 	crea.Versions = append(crea.Versions, versionForm.Version)
 
 	if nbRowsAff, err := model.NewCreationVersion(crea); err != nil || nbRowsAff == 0 {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
@@ -330,7 +330,7 @@ func POSTCreationVersion(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s/%s", "creations", c.Param("encid"), "code"))
+	c.Header("Location", fmt.Sprintf("/creations/%s/code", c.Param("encid")))
 
 	c.JSON(OK, nil)
 }

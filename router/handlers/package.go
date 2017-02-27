@@ -34,14 +34,14 @@ func GETPackages(c *gin.Context) {
 			if err == sql.ErrNoRows {
 				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
 			} else {
-				c.Error(err).SetMeta(ErrDBSelect)
+				c.Error(err).SetMeta(ErrDB)
 			}
 		}
 	} else {
 		opts := lib.ParseOptions(c)
 		data, err = model.AllPackages(opts, user.(*model.User).ID)
 		if err != nil {
-			c.Error(err).SetMeta(ErrDBSelect)
+			c.Error(err).SetMeta(ErrDB)
 			return
 		}
 	}
@@ -86,13 +86,31 @@ func POSTPackage(c *gin.Context) {
 	var errPkg error
 	pkg, errPkg = model.NewPackage(pkg)
 	if errPkg != nil {
-		c.Error(errPkg).SetMeta(ErrDBSave)
+		c.Error(errPkg).SetMeta(ErrDB)
 		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkg.ID.ValueEncoded))
 
-	c.JSON(Created, nil)
+	c.JSON(Created, NewRes(pkg))
+}
+
+// DELETEPackage delete a package
+func DELETEPackage(c *gin.Context) {
+	user, _ := c.Get("user")
+
+	pkg := new(model.Package)
+	pkg.ID = lib.InitID(c.Param("encid"))
+	pkg.UserID = user.(*model.User).ID
+
+	if err := model.DeletePackage(pkg); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
+	c.Header("Location", "/packages")
+
+	c.JSON(NoContent, nil)
 }
 
 // PUTPackage is an handler that updates a package
@@ -122,13 +140,13 @@ func PUTPackage(c *gin.Context) {
 	pkg.Domains = data.Domains
 
 	if err := model.UpdatePackage(pkg); err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkg.ID.ValueEncoded))
 
-	c.JSON(OK, pkg)
+	c.JSON(NoContent, nil)
 }
 
 // PushCreation is an handler that pushes one or more creations in a package
@@ -160,18 +178,16 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	pkgID := c.Param("encid")
-
 	user, _ := c.Get("user")
 
 	var pkgErr error
 	pkg := new(model.Package)
-	pkg.ID = lib.InitID(pkgID)
+	pkg.ID = lib.InitID(c.Param("encid"))
 	pkg.UserID = user.(*model.User).ID
 
 	pkg, pkgErr = model.PackageByID(pkg)
 	if pkgErr != nil {
-		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
+		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkg.ID.ValueEncoded))
 		return
 	}
 
@@ -185,31 +201,29 @@ func PushCreation(c *gin.Context) {
 	}
 
 	if err := model.PushCreation(pkg, crea); err != nil {
-		c.Error(err).SetMeta(ErrDBSave)
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s", "packages", pkgID))
+	c.Header("Location", fmt.Sprintf("/%s/%s", "packages", pkg.ID.ValueEncoded))
 
-	c.JSON(Created, nil)
+	c.JSON(NoContent, nil)
 }
 
 // BuildPackage is a handler action that builds the Wooble lib of a package
 // (a Wooble lib is a file that bundles everything contained in a package,
 // the file is stored in the cloud)
 func BuildPackage(c *gin.Context) {
-	pkgID := c.Param("encid")
-
 	user, _ := c.Get("user")
 
 	var pkgErr error
 	pkg := new(model.Package)
-	pkg.ID = lib.InitID(pkgID)
+	pkg.ID = lib.InitID(c.Param("encid"))
 	pkg.UserID = user.(*model.User).ID
 
 	pkg, pkgErr = model.PackageByID(pkg)
 	if pkgErr != nil {
-		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
+		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkg.ID.ValueEncoded))
 		return
 	}
 
@@ -278,9 +292,35 @@ func BuildPackage(c *gin.Context) {
 
 	pkg.Source = lib.InitNullString("https://pkg.wooble.io" + strings.Join(spltPath, "/"))
 	if err := model.UpdatePackageSource(pkg); err != nil {
-		c.Error(err).SetMeta(ErrUpdate.SetParams("source", "package", "id", pkg.ID.ValueEncoded))
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
 	c.JSON(OK, NewRes(pkg))
+}
+
+// RemovePackageCreation remove a creation from a package
+func RemovePackageCreation(c *gin.Context) {
+	var data form.PackageCreationForm
+
+	user, _ := c.Get("user")
+
+	pkg := new(model.Package)
+	pkg.ID = lib.InitID(c.Param("encid"))
+	pkg.UserID = user.(*model.User).ID
+
+	if err := c.BindJSON(&data); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	crea := new(model.Creation)
+	crea.ID = lib.InitID(data.CreationID)
+
+	if err := model.DeletePackageCreation(pkg, crea); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
+	c.JSON(NoContent, nil)
 }

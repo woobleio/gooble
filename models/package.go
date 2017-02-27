@@ -120,6 +120,13 @@ func NewPackage(pkg *Package) (*Package, error) {
 	return pkg, lib.DB.QueryRow(q, pkg.Title, pkg.UserID, pkg.Domains).Scan(&pkg.ID)
 }
 
+// DeletePackage delete a package
+func DeletePackage(pkg *Package) error {
+	q := `DELETE FROM package WHERE id = $1 AND user_id = $2`
+	_, err := lib.DB.Exec(q, pkg.ID, pkg.UserID)
+	return err
+}
+
 // PushCreation pushes a creation in the package
 func PushCreation(pkg *Package, crea *Creation) error {
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
@@ -137,6 +144,20 @@ func UpdatePackage(pkg *Package) error {
 // UpdatePackageSource updates package source
 func UpdatePackageSource(pkg *Package) error {
 	q := `UPDATE package SET source=$2 WHERE id=$1`
-	_, err := lib.DB.Exec(q, pkg.ID.ValueDecoded, pkg.Source.String)
+	_, err := lib.DB.Exec(q, pkg.ID, pkg.Source.String)
+	return err
+}
+
+// DeletePackageCreation delete a creation from a package
+func DeletePackageCreation(pkg *Package, crea *Creation) error {
+	q := `
+	DELETE FROM package_creation 
+	USING package 
+	WHERE package_id = $1 AND package.id = package_id
+	AND creation_id = $2
+	AND package.user_id = $3
+	`
+
+	_, err := lib.DB.Exec(q, pkg.ID, crea.ID, pkg.UserID)
 	return err
 }

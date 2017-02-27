@@ -4,8 +4,9 @@ import "net/http"
 
 // Http status
 const (
-	Created int = http.StatusCreated
-	OK      int = http.StatusOK
+	Created   int = http.StatusCreated
+	OK        int = http.StatusOK
+	NoContent int = http.StatusNoContent
 )
 
 // JSONRes is a standardized JSON response
