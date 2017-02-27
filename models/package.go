@@ -129,8 +129,8 @@ func PushCreation(pkg *Package, crea *Creation) error {
 
 // UpdatePackage updates package form
 func UpdatePackage(pkg *Package) error {
-	q := `UPDATE package SET title=$2, domains=$3 WHERE id=$1`
-	_, err := lib.DB.Exec(q, pkg.ID, pkg.Title, pkg.Domains)
+	q := `UPDATE package SET title=$3, domains=$4 WHERE id=$1 AND user_id=$2`
+	_, err := lib.DB.Exec(q, pkg.ID, pkg.UserID, pkg.Title, pkg.Domains)
 	return err
 }
 

@@ -95,6 +95,42 @@ func POSTPackage(c *gin.Context) {
 	c.JSON(Created, nil)
 }
 
+// PUTPackage is an handler that updates a package
+func PUTPackage(c *gin.Context) {
+	var data form.PackageForm
+
+	if err := c.BindJSON(&data); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	user, _ := c.Get("user")
+
+	pkg := new(model.Package)
+	pkg.ID = lib.InitID(c.Param("encid"))
+	pkg.UserID = user.(*model.User).ID
+	pkg.Title = data.Title
+
+	plan := user.(*model.User).Plan
+	limitNbDomains := plan.NbDomains.Int64
+
+	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
+		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "domains", "plan", plan.Label.String))
+		return
+	}
+
+	pkg.Domains = data.Domains
+
+	if err := model.UpdatePackage(pkg); err != nil {
+		c.Error(err).SetMeta(ErrDBSave)
+		return
+	}
+
+	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkg.ID.ValueEncoded))
+
+	c.JSON(OK, pkg)
+}
+
 // PushCreation is an handler that pushes one or more creations in a package
 func PushCreation(c *gin.Context) {
 	var pkgCreaForm form.PackageCreationForm

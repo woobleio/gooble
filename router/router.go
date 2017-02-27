@@ -58,6 +58,7 @@ func Load() {
 		{
 			v1.POST("/creations", handler.POSTCreation)
 			v1.PUT("/creations/:encid", handler.PUTCreation)
+			// v1.DELETE("/creation/:encid", handler.DELETECreation)
 			v1.GET("/creations/:encid/code", handler.GETCodeCreation)
 			v1.PATCH("/creations/:encid/publish", handler.PublishCreation)
 			v1.POST("/creations/:encid/versions", handler.POSTCreationVersion)
@@ -66,12 +67,17 @@ func Load() {
 			v1.POST("/buy", handler.BuyCreations)
 
 			v1.POST("/users/password", handler.UpdatePassword)
+			// v1.DELETE("/users", handler.DeleteUser)
+			// v1.POST("/users/funds/withdraw", handler.WithdrawFunds)
 
 			// packages is private, so those requests are about the authenticated user only
 			v1.GET("/packages", handler.GETPackages)
 			v1.GET("/packages/:encid", handler.GETPackages)
+			v1.PUT("/packages/:encid", handler.PUTPackage)
+			// v1.DELETE("/packages/:encid", handler.DELETEPackage)
 			v1.POST("/packages", handler.POSTPackage)
 			v1.POST("/packages/:encid/push", handler.PushCreation)
+			// v1.DELETE("/packages/:encid/creations/:id")
 			v1.PATCH("/packages/:encid/build", handler.BuildPackage)
 		}
 	}
