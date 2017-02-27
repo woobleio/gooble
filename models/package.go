@@ -1,6 +1,9 @@
 package model
 
-import "wooble/lib"
+import (
+	"wooble/lib"
+	enum "wooble/models/enums"
+)
 
 // Package is a bundle of creations
 type Package struct {
@@ -124,6 +127,32 @@ func NewPackage(pkg *Package) (*Package, error) {
 func DeletePackage(pkg *Package) error {
 	q := `DELETE FROM package WHERE id = $1 AND user_id = $2`
 	_, err := lib.DB.Exec(q, pkg.ID, pkg.UserID)
+	return err
+}
+
+// UpdatePackageCreation udpates package creation information
+func UpdatePackageCreation(pkg *Package) error {
+	q := `
+	UPDATE package_creation
+	SET alias = $3,
+	version = (
+		SELECT $4 FROM creation
+		WHERE ((
+			$4 = ANY (versions[1:array_length(versions, 1)-1])
+			AND state = $5
+		)
+		OR (
+			$4 = ANY (versions)
+			AND state != $5
+		))
+		AND id = $6
+	)
+	WHERE package_id = (
+		SELECT id FROM package WHERE user_id = $1 AND id = $2
+	)
+	`
+	crea := pkg.Creations[0]
+	_, err := lib.DB.Exec(q, pkg.UserID, pkg.ID, crea.Alias, crea.Version, enum.Draft, crea.ID)
 	return err
 }
 

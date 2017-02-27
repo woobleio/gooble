@@ -149,6 +149,35 @@ func PUTPackage(c *gin.Context) {
 	c.JSON(NoContent, nil)
 }
 
+// PUTPackageCreation updates a package creation
+func PUTPackageCreation(c *gin.Context) {
+	var data form.PackageCreationForm
+
+	if err := c.BindJSON(&data); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	user, _ := c.Get("user")
+
+	crea := new(model.Creation)
+	pkgCrea := new(model.Package)
+	pkgCrea.ID = lib.InitID(c.Param("encid"))
+	pkgCrea.UserID = user.(*model.User).ID
+	crea.Alias = lib.InitNullString(data.Alias)
+	crea.Version = data.Version
+	pkgCrea.Creations = []model.Creation{*crea}
+
+	if err := model.UpdatePackageCreation(pkgCrea); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
+	c.Header("Location", fmt.Sprintf("/packages/%s", pkgCrea.ID.ValueEncoded))
+
+	c.JSON(NoContent, nil)
+}
+
 // PushCreation is an handler that pushes one or more creations in a package
 func PushCreation(c *gin.Context) {
 	var pkgCreaForm form.PackageCreationForm

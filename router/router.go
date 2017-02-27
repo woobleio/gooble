@@ -78,6 +78,7 @@ func Load() {
 			v1.POST("/packages", handler.POSTPackage)
 			v1.POST("/packages/:encid/creations", handler.PushCreation)
 			v1.DELETE("/packages/:encid/creations", handler.RemovePackageCreation)
+			v1.PUT("/packages/:encid/creations/:creaid", handler.PUTPackageCreation)
 			v1.PATCH("/packages/:encid/build", handler.BuildPackage)
 		}
 	}

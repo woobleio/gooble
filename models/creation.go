@@ -126,7 +126,7 @@ func CreationByIDAndVersion(crea *Creation) (*Creation, error) {
 	q := `
   SELECT id "crea.id", versions, state 
   FROM creation WHERE id = $1 
-  AND $2 = ANY (versions) 
+  AND $2 = ANY (versions)
   `
 	return crea, lib.DB.Get(crea, q, crea.ID.ValueDecoded, crea.Version)
 }

@@ -13,4 +13,5 @@ type PackageForm struct {
 type PackageCreationForm struct {
 	CreationID string `json:"creation" validate:"required"`
 	Version    string `json:"version"`
+	Alias      string `json:"alias"`
 }
