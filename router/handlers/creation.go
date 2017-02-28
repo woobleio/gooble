@@ -175,8 +175,8 @@ func GETCodeCreation(c *gin.Context) {
 		data.Style = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "style.css")
 	}
 
-	if storage.Error != nil {
-		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "files"))
+	if storage.Error() != nil {
+		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
 		return
 	}
 
@@ -253,8 +253,8 @@ func SaveVersion(c *gin.Context) {
 		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaID, version, "style.css")
 	}
 
-	if storage.Error != nil {
-		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "files"))
+	if storage.Error() != nil {
+		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
 		return
 	}
 
@@ -325,8 +325,8 @@ func POSTCreationVersion(c *gin.Context) {
 		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "style.css")
 	}
 
-	if storage.Error != nil {
-		c.Error(storage.Error).SetMeta(ErrServ.SetParams("source", "copy"))
+	if storage.Error() != nil {
+		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "copy"))
 		return
 	}
 

@@ -19,9 +19,16 @@ const (
 
 // Storage is Wooble cloud storage interface
 type Storage struct {
-	Error   error
+	errs    []error
 	Session *session.Session
 	Source  string
+}
+
+func (s *Storage) Error() error {
+	if len(s.errs) > 0 {
+		return s.errs[0]
+	}
+	return nil
 }
 
 // NewStorage initialized a Storage session
@@ -32,7 +39,7 @@ func NewStorage(src string) *Storage {
 	}
 
 	stor := &Storage{
-		nil,
+		make([]error, 0),
 		s,
 		src,
 	}
@@ -56,7 +63,9 @@ func (s *Storage) CopyAndStoreFile(userID string, objID string, prevVersion stri
 		CopySource: aws.String(bucket + "/" + path),
 	}
 
-	_, s.Error = svc.CopyObject(obj)
+	if _, err := svc.CopyObject(obj); err != nil {
+		s.errs = append(s.errs, err)
+	}
 }
 
 // GetFileContent returns requested file from the cloud
@@ -72,7 +81,7 @@ func (s *Storage) GetFileContent(userID string, objID string, version string, fi
 	}
 	out, err := svc.GetObject(obj)
 	if err != nil {
-		s.Error = err
+		s.errs = append(s.errs, err)
 		return ""
 	}
 	bf := new(bytes.Buffer)
@@ -93,7 +102,9 @@ func (s *Storage) StoreFile(content string, contentType string, userID string, o
 		Key:         aws.String(path),
 		ContentType: aws.String(contentType),
 	}
-	_, s.Error = svc.PutObject(obj)
+	if _, err := svc.PutObject(obj); err != nil {
+		s.errs = append(s.errs, err)
+	}
 	return path
 }
 
@@ -108,7 +119,9 @@ func (s *Storage) DeleteFile(userID string, objID string, filename string) {
 
 		Key: aws.String(path),
 	}
-	_, s.Error = svc.DeleteObject(obj)
+	if _, err := svc.DeleteObject(obj); err != nil {
+		s.errs = append(s.errs, err)
+	}
 }
 
 func (s *Storage) getBucketPath(id []byte, version string, filename string) string {

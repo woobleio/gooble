@@ -99,11 +99,13 @@ func DELETEUser(c *gin.Context) {
 		}
 	}
 
-	if storage.Error != nil {
-		c.Error(storage.Error)
+	if storage.Error() != nil {
+		c.Error(storage.Error())
 	}
 
 	model.BulkUpdatePackageSource(pkgToUpdt, "")
+
+	// TODO Unsub plan
 
 	if err := model.SafeDeleteUser(uID); err != nil {
 		c.Error(err).SetMeta(ErrDB)
