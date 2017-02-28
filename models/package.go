@@ -76,7 +76,8 @@ func AllPackages(opt *lib.Option, userID uint64) (*[]Package, error) {
 }
 
 // PackageByID returns package with id "id"
-func PackageByID(pkg *Package) (*Package, error) {
+func PackageByID(uID uint64, id lib.ID) (*Package, error) {
+	pkg := new(Package)
 	q := `
 	SELECT
 		pkg.id "pkg.id",
@@ -87,11 +88,11 @@ func PackageByID(pkg *Package) (*Package, error) {
 		pkg.created_at "pkg.created_at",
 		pkg.updated_at "pkg.updated_at"
 	FROM package pkg
-	WHERE pkg.id = $1
-  AND pkg.user_id = $2
+	WHERE pkg.id = $2
+  AND pkg.user_id = $1
 	`
 
-	if err := lib.DB.Get(pkg, q, pkg.ID.ValueDecoded, pkg.UserID); err != nil {
+	if err := lib.DB.Get(pkg, q, uID, id); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +100,7 @@ func PackageByID(pkg *Package) (*Package, error) {
 }
 
 // PackageNbCrea returns the number of creations in the package id "id"
-func PackageNbCrea(pkg *Package) uint64 {
+func PackageNbCrea(id lib.ID) uint64 {
 	var nbCrea struct {
 		Value uint64 `db:"nb_crea"`
 	}
@@ -112,7 +113,7 @@ func PackageNbCrea(pkg *Package) uint64 {
 	WHERE p.id = $1
 	`
 
-	lib.DB.Get(&nbCrea, q, pkg.ID.ValueDecoded)
+	lib.DB.Get(&nbCrea, q, id)
 
 	return nbCrea.Value
 }
@@ -124,9 +125,9 @@ func NewPackage(pkg *Package) (*Package, error) {
 }
 
 // DeletePackage delete a package
-func DeletePackage(pkg *Package) error {
-	q := `DELETE FROM package WHERE id = $1 AND user_id = $2`
-	_, err := lib.DB.Exec(q, pkg.ID, pkg.UserID)
+func DeletePackage(uID uint64, id lib.ID) error {
+	q := `DELETE FROM package WHERE id = $2 AND user_id = $1`
+	_, err := lib.DB.Exec(q, uID, id)
 	return err
 }
 
@@ -157,9 +158,9 @@ func UpdatePackageCreation(pkg *Package) error {
 }
 
 // PushCreation pushes a creation in the package
-func PushCreation(pkg *Package, crea *Creation) error {
+func PushCreation(pkgID lib.ID, creaID lib.ID) error {
 	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
-	_, err := lib.DB.Exec(q, pkg.ID.ValueDecoded, crea.ID.ValueDecoded)
+	_, err := lib.DB.Exec(q, pkgID, creaID)
 	return err
 }
 
@@ -171,9 +172,9 @@ func UpdatePackage(pkg *Package) error {
 }
 
 // UpdatePackageSource updates package source
-func UpdatePackageSource(pkg *Package) error {
-	q := `UPDATE package SET source=$2 WHERE id=$1`
-	_, err := lib.DB.Exec(q, pkg.ID, pkg.Source.String)
+func UpdatePackageSource(uID uint64, pkgID lib.ID, source string) error {
+	q := `UPDATE package SET source = $3 WHERE id = $2 AND user_id = $1`
+	_, err := lib.DB.Exec(q, uID, pkgID, source)
 	return err
 }
 
@@ -185,15 +186,15 @@ func BulkUpdatePackageSource(ids lib.StringSlice, source string) error {
 }
 
 // DeletePackageCreation delete a creation from a package
-func DeletePackageCreation(pkg *Package, crea *Creation) error {
+func DeletePackageCreation(uID uint64, pkgID lib.ID, creaID lib.ID) error {
 	q := `
 	DELETE FROM package_creation 
 	USING package 
-	WHERE package_id = $1 AND package.id = package_id
-	AND creation_id = $2
-	AND package.user_id = $3
+	WHERE package_id = $2 AND package.id = package_id
+	AND creation_id = $3
+	AND package.user_id = $1
 	`
 
-	_, err := lib.DB.Exec(q, pkg.ID, crea.ID, pkg.UserID)
+	_, err := lib.DB.Exec(q, uID, pkgID, creaID)
 	return err
 }

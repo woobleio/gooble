@@ -26,7 +26,7 @@ func GETCreations(c *gin.Context) {
 	creaID := c.Param("encid")
 
 	if creaID != "" {
-		data, err = model.CreationByID(creaID)
+		data, err = model.CreationByID(lib.InitID(creaID))
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
@@ -101,7 +101,7 @@ func BuyCreations(c *gin.Context) {
 	totalAmount := uint64(0)
 	creas := make([]model.Creation, 0)
 	for _, creaID := range buyForm.Creations {
-		crea, err := model.CreationByID(creaID)
+		crea, err := model.CreationByID(lib.InitID(creaID))
 		if err != nil {
 			c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
 			return
@@ -148,18 +148,12 @@ func BuyCreations(c *gin.Context) {
 func GETCodeCreation(c *gin.Context) {
 	var data form.CreationCodeForm
 
-	creaID := c.Param("encid")
-
 	user, _ := c.Get("user")
 
-	var errCrea error
-	crea := new(model.Creation)
-	crea.ID = lib.InitID(creaID)
-	crea.CreatorID = user.(*model.User).ID
-
-	crea, errCrea = model.CreationEditByID(crea)
-	if errCrea != nil {
-		c.Error(errCrea).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
+	creaID := c.Param("encid")
+	crea, err := model.CreationByID(lib.InitID(creaID))
+	if err != nil || (crea != nil && crea.CreatorID != user.(*model.User).ID) {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
 		return
 	}
 
@@ -168,13 +162,13 @@ func GETCodeCreation(c *gin.Context) {
 	latestVersion := crea.Versions[len(crea.Versions)-1]
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
-	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, "script.js")
+	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script+".js")
 
 	if crea.HasDoc {
-		data.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, "doc.html")
+		data.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
 	}
 	if crea.HasStyle {
-		data.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, "style.css")
+		data.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
 	}
 
 	if storage.Error() != nil {
@@ -247,13 +241,13 @@ func SaveVersion(c *gin.Context) {
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
 	if codeForm.Document != "" {
-		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, "doc.html")
+		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, enum.Document)
 	}
 	if codeForm.Script != "" {
-		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, "script.js")
+		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, enum.Script+".js")
 	}
 	if codeForm.Style != "" {
-		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, "style.css")
+		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, enum.Style)
 	}
 
 	if storage.Error() != nil {
@@ -295,13 +289,9 @@ func POSTCreationVersion(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	var errCrea error
-	crea := new(model.Creation)
-	crea.ID = lib.InitID(c.Param("encid"))
-	crea.CreatorID = user.(*model.User).ID
-	crea, errCrea = model.CreationEditByID(crea)
-	if errCrea != nil {
-		c.Error(errCrea).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", crea.ID.ValueEncoded))
+	crea, err := model.CreationByID(lib.InitID(c.Param("encid")))
+	if err != nil || (crea != nil && crea.CreatorID != user.(*model.User).ID) {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", crea.ID.ValueEncoded))
 		return
 	}
 
@@ -321,13 +311,13 @@ func POSTCreationVersion(c *gin.Context) {
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
-	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, "script.js")
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Script+".js")
 
 	if crea.HasDoc {
-		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, "doc.html")
+		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Document)
 	}
 	if crea.HasStyle {
-		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, "style.css")
+		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Style)
 	}
 
 	if storage.Error() != nil {

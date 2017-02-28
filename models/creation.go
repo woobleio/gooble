@@ -76,7 +76,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 }
 
 // CreationByID returns a creation with the id "id"
-func CreationByID(id string) (*Creation, error) {
+func CreationByID(id lib.ID) (*Creation, error) {
 	var crea Creation
 	q := `
   SELECT
@@ -101,9 +101,7 @@ func CreationByID(id string) (*Creation, error) {
   WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete')
 	`
 
-	decodedID, _ := lib.DecodeHash(id)
-
-	return &crea, lib.DB.Get(&crea, q, decodedID)
+	return &crea, lib.DB.Get(&crea, q, id)
 }
 
 // UpdateCreation update creation's information
@@ -114,46 +112,22 @@ func UpdateCreation(crea *Creation) error {
   WHERE id = $1
   AND creator_id = $2 
   `
-	_, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.CreatorID, crea.Title, crea.Description, crea.Price)
+	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price)
 	return err
 }
 
 // CreationByIDAndVersion returns the creation "creaID" and check if the version "version" exists
-func CreationByIDAndVersion(crea *Creation) (*Creation, error) {
-	if crea.Version == "" {
-		crea.Version = BaseVersion
+func CreationByIDAndVersion(id lib.ID, version string) (*Creation, error) {
+	crea := new(Creation)
+	if version == "" {
+		version = BaseVersion
 	}
 	q := `
   SELECT id "crea.id", versions, state 
   FROM creation WHERE id = $1 
   AND $2 = ANY (versions)
   `
-	return crea, lib.DB.Get(crea, q, crea.ID.ValueDecoded, crea.Version)
-}
-
-// CreationEditByID returns a creation with private infos
-func CreationEditByID(crea *Creation) (*Creation, error) {
-	q := `
-  SELECT
-    c.id "crea.id",
-    c.creator_id,
-    c.title,
-    c.description,
-    c.created_at "crea.created_at",
-    c.updated_at "crea.updated_at",
-    c.versions,
-    c.price,
-    c.has_document,
-		c.has_style,
-		e.name "eng.name",
-		e.extension,
-		e.content_type
-  FROM creation c
-  INNER JOIN engine e ON (c.engine=e.name)
-  WHERE c.id = $1 AND c.creator_id = $2
-  `
-
-	return crea, lib.DB.Get(crea, q, crea.ID.ValueDecoded, crea.CreatorID)
+	return crea, lib.DB.Get(crea, q, id, version)
 }
 
 // NewCreation creates a creation
@@ -178,7 +152,7 @@ func NewCreation(crea *Creation) (*Creation, error) {
 // NewCreationVersion create a new version
 func NewCreationVersion(crea *Creation) (int64, error) {
 	q := `UPDATE creation SET versions=$3 WHERE id = $1 AND creator_id = $2 AND state = $3`
-	res, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.CreatorID, crea.Versions, enum.Draft)
+	res, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Versions, enum.Draft)
 	rowAff, _ := res.RowsAffected()
 	return rowAff, err
 }
@@ -191,7 +165,7 @@ func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation
 
 	tx := lib.DB.MustBegin()
 	for _, crea := range *creations {
-		tx.Exec(qPurchase, buyerID, crea.ID.ValueDecoded, crea.Price, chargeID)
+		tx.Exec(qPurchase, buyerID, crea.ID, crea.Price, chargeID)
 
 		// Credit the seller
 		tx.Exec(qSellerDue, crea.Creator.ID, crea.Price)
@@ -208,7 +182,7 @@ func UpdateCreationCode(crea *Creation) (int64, error) {
   AND state = 'draft'
   AND versions[array_length(versions, 1)] = $5
   `
-	res, err := lib.DB.Exec(q, crea.ID.ValueDecoded, crea.HasDoc, crea.HasStyle, crea.Version)
+	res, err := lib.DB.Exec(q, crea.ID, crea.HasDoc, crea.HasStyle, crea.Version)
 	rowAff, _ := res.RowsAffected()
 	return rowAff, err
 }
@@ -221,6 +195,6 @@ func PublishCreation(crea *Creation) error {
   AND state = $3
   AND id = $2
   `
-	_, err := lib.DB.Exec(q, crea.CreatorID, crea.ID.ValueDecoded, enum.Draft)
+	_, err := lib.DB.Exec(q, crea.CreatorID, crea.ID, enum.Draft)
 	return err
 }

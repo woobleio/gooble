@@ -26,10 +26,7 @@ func GETPackages(c *gin.Context) {
 	pkgID := c.Param("encid")
 
 	if pkgID != "" {
-		var pkg model.Package
-		pkg.ID = lib.InitID(pkgID)
-		pkg.UserID = user.(*model.User).ID
-		data, err = model.PackageByID(&pkg)
+		data, err = model.PackageByID(user.(*model.User).ID, lib.InitID(pkgID))
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID))
@@ -99,14 +96,12 @@ func POSTPackage(c *gin.Context) {
 func DELETEPackage(c *gin.Context) {
 	user, _ := c.Get("user")
 
-	pkg := new(model.Package)
-	pkg.ID = lib.InitID(c.Param("encid"))
-	pkg.UserID = user.(*model.User).ID
-
-	if err := model.DeletePackage(pkg); err != nil {
+	if err := model.DeletePackage(user.(*model.User).ID, lib.InitID(c.Param("encid"))); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
+
+	// TODO delete package file
 
 	c.Header("Location", "/packages")
 
@@ -191,14 +186,9 @@ func PushCreation(c *gin.Context) {
 		pkgCreaForm.Version = model.BaseVersion
 	}
 
-	var errCrea error
-	crea := new(model.Creation)
-	crea.ID = lib.InitID(pkgCreaForm.CreationID)
-	crea.Version = pkgCreaForm.Version
-
-	crea, errCrea = model.CreationByIDAndVersion(crea)
-	if errCrea != nil {
-		c.Error(errCrea).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/"+pkgCreaForm.Version))
+	crea, err := model.CreationByIDAndVersion(lib.InitID(pkgCreaForm.CreationID), pkgCreaForm.Version)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/"+pkgCreaForm.Version))
 		return
 	}
 
@@ -209,27 +199,23 @@ func PushCreation(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	var pkgErr error
-	pkg := new(model.Package)
-	pkg.ID = lib.InitID(c.Param("encid"))
-	pkg.UserID = user.(*model.User).ID
-
-	pkg, pkgErr = model.PackageByID(pkg)
-	if pkgErr != nil {
-		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkg.ID.ValueEncoded))
+	pkgID := lib.InitID(c.Param("encid"))
+	pkg, err := model.PackageByID(user.(*model.User).ID, pkgID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkgID.ValueEncoded))
 		return
 	}
 
 	plan := user.(*model.User).Plan
 	limitNbCrea := uint64(plan.NbCrea.Int64)
-	pkgNbCrea := model.PackageNbCrea(pkg)
+	pkgNbCrea := model.PackageNbCrea(pkg.ID)
 
 	if limitNbCrea != 0 && pkgNbCrea >= limitNbCrea {
 		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "creation", "plan", plan.Label.String))
 		return
 	}
 
-	if err := model.PushCreation(pkg, crea); err != nil {
+	if err := model.PushCreation(pkg.ID, crea.ID); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
@@ -245,14 +231,10 @@ func PushCreation(c *gin.Context) {
 func BuildPackage(c *gin.Context) {
 	user, _ := c.Get("user")
 
-	var pkgErr error
-	pkg := new(model.Package)
-	pkg.ID = lib.InitID(c.Param("encid"))
-	pkg.UserID = user.(*model.User).ID
-
-	pkg, pkgErr = model.PackageByID(pkg)
-	if pkgErr != nil {
-		c.Error(pkgErr).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkg.ID.ValueEncoded))
+	pkgID := lib.InitID(c.Param("encid"))
+	pkg, err := model.PackageByID(user.(*model.User).ID, pkgID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkg.ID.ValueEncoded))
 		return
 	}
 
@@ -268,7 +250,6 @@ func BuildPackage(c *gin.Context) {
 
 	wb := wbzr.New(wbzr.JSES5)
 	for _, creation := range pkg.Creations {
-		var err error
 		var script engine.Script
 
 		creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
@@ -279,7 +260,7 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
-		src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, "script.js")
+		src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Script+".js")
 		script, err = wb.Inject(src, objName)
 
 		if err != nil {
@@ -291,11 +272,11 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		if creation.HasDoc {
-			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, "doc.html")
+			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Document)
 			err = script.IncludeHtml(src)
 		}
 		if creation.HasStyle {
-			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, "style.css")
+			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Style)
 			err = script.IncludeCss(src)
 		}
 
@@ -314,13 +295,13 @@ func BuildPackage(c *gin.Context) {
 	}
 
 	// TODO if multitype allowed, package should have an engine too
-	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), "", "wooble.js")
+	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), "", enum.Wooble)
 
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""
 
-	pkg.Source = lib.InitNullString("https://pkg.wooble.io" + strings.Join(spltPath, "/"))
-	if err := model.UpdatePackageSource(pkg); err != nil {
+	source := "https://pkg.wooble.io" + strings.Join(spltPath, "/")
+	if err := model.UpdatePackageSource(pkg.UserID, pkg.ID, source); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
@@ -334,19 +315,12 @@ func RemovePackageCreation(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	pkg := new(model.Package)
-	pkg.ID = lib.InitID(c.Param("encid"))
-	pkg.UserID = user.(*model.User).ID
-
 	if err := c.BindJSON(&data); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
-	crea := new(model.Creation)
-	crea.ID = lib.InitID(data.CreationID)
-
-	if err := model.DeletePackageCreation(pkg, crea); err != nil {
+	if err := model.DeletePackageCreation(user.(*model.User).ID, lib.InitID(c.Param("encid")), lib.InitID(data.CreationID)); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
