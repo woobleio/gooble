@@ -97,6 +97,20 @@ func (s *Storage) StoreFile(content string, contentType string, userID string, o
 	return path
 }
 
+// DeleteFile delete a file from the cloud
+func (s *Storage) DeleteFile(userID string, objID string, filename string) {
+	svc := s3.New(s.Session)
+
+	path := s.getBucketPath(makeID(userID, objID), "", filename)
+
+	obj := &s3.DeleteObjectInput{
+		Bucket: aws.String(viper.GetString("cloud_repo")),
+
+		Key: aws.String(path),
+	}
+	_, s.Error = svc.DeleteObject(obj)
+}
+
 func (s *Storage) getBucketPath(id []byte, version string, filename string) string {
 	var path string
 	switch s.Source {

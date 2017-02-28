@@ -16,7 +16,8 @@ type User struct {
 	Email string `json:"email,omitempty" db:"email"`
 	Name  string `json:"name" db:"name"`
 
-	Plan *Plan `json:"plan,omitempty" db:""`
+	Plan     *Plan      `json:"plan,omitempty" db:""`
+	Packages *[]Package `json:"packages,omitempty" db:""`
 
 	IsCreator bool   `json:"isCreator,omitempty" db:"is_creator"`
 	TotalDue  uint64 `json:"totalDue,omitempty" db:"total_due"`
@@ -26,6 +27,7 @@ type User struct {
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"user.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
+	DeletedAt *lib.NullTime `json:"deletedAt,omitempty" db:"user.deleted_at"`
 }
 
 // UserPublicByName returns user public profile with the name "username"
@@ -38,6 +40,7 @@ func UserPublicByName(username string) (*User, error) {
 			u.created_at "user.created_at"
     FROM app_user u
 		WHERE u.name = $1
+		AND u.deleted_at IS NULL
 	`
 	return &user, lib.DB.Get(&user, q, username)
 }
@@ -65,6 +68,7 @@ func UserPrivateByID(id uint64) (*User, error) {
     LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id)
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
 		WHERE u.id = $1
+		AND u.deleted_at IS NULL
     ORDER BY u.id, pu.start_date DESC
 	`
 
@@ -116,6 +120,7 @@ func UserByEmail(email string) (*User, error) {
     LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id)
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
     WHERE u.email = $1
+		AND u.deleted_at IS NULL
     ORDER BY u.id, pu.start_date DESC
 	`
 
@@ -133,7 +138,7 @@ func UserByEmail(email string) (*User, error) {
 // UserCustomerID returns customerID of user "uID"
 func UserCustomerID(uID uint64) (string, error) {
 	var user User
-	q := `SELECT customer_id FROM app_user WHERE app_user.id = $1`
+	q := `SELECT customer_id FROM app_user WHERE app_user.id = $1 AND deleted_at IS NULL`
 	return user.CustomerID, lib.DB.Get(&user, q, uID)
 }
 
@@ -144,9 +149,16 @@ func DeleteUser(uID uint64) error {
 	return err
 }
 
+// SafeDeleteUser sets deleted at to current date, meaning this user is disactivated
+func SafeDeleteUser(uID uint64) error {
+	q := `UPDATE app_user SET deleted_at = CURRENT_DATE WHERE id = $1`
+	_, err := lib.DB.Exec(q, uID)
+	return err
+}
+
 // UpdateUser updates user form (password not included)
 func UpdateUser(uID uint64, user *User) error {
-	q := `UPDATE app_user SET name=$2, email=$3, is_creator=$4 WHERE id=$1`
+	q := `UPDATE app_user SET name=$2, email=$3, is_creator=$4 WHERE id=$1 AND deleted_at IS NULL`
 	_, err := lib.DB.Exec(q, uID, user.Name, user.Email, user.IsCreator)
 	return err
 }
@@ -158,7 +170,7 @@ func UpdateUserPassword(uID uint64, newSecret string) error {
 	if errPasswd != nil {
 		return errPasswd
 	}
-	q := `UPDATE app_user SET passwd=$2, salt_key=$3 WHERE id=$1`
+	q := `UPDATE app_user SET passwd=$2, salt_key=$3 WHERE id=$1 AND deleted_at IS NULL`
 	_, err := lib.DB.Exec(q, uID, cp, salt)
 	return err
 }

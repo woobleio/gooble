@@ -39,7 +39,7 @@ func GETPackages(c *gin.Context) {
 		}
 	} else {
 		opts := lib.ParseOptions(c)
-		data, err = model.AllPackages(opts, user.(*model.User).ID)
+		data, err = model.AllPackages(&opts, user.(*model.User).ID)
 		if err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
@@ -264,9 +264,8 @@ func BuildPackage(c *gin.Context) {
 		}
 	}
 
-	storage := lib.NewStorage(lib.SrcPackages)
+	storage := lib.NewStorage(lib.SrcCreations)
 
-	storage.Source = lib.SrcCreations
 	wb := wbzr.New(wbzr.JSES5)
 	for _, creation := range pkg.Creations {
 		var err error

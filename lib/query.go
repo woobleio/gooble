@@ -17,6 +17,9 @@ func (q *Query) String() string {
 }
 
 func (q *Query) build() {
+	if q.Opt == nil {
+		return
+	}
 	var str string
 	if q.Opt.Limit > 0 {
 		str = strconv.FormatInt(q.Opt.Limit, 10)

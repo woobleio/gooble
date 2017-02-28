@@ -53,7 +53,7 @@ func (p *Package) PopulateCreations() error {
 }
 
 // AllPackages returns all packages
-func AllPackages(opt lib.Option, userID uint64) (*[]Package, error) {
+func AllPackages(opt *lib.Option, userID uint64) (*[]Package, error) {
 	var packages []Package
 	q := lib.Query{
 		Q: `SELECT
@@ -67,7 +67,7 @@ func AllPackages(opt lib.Option, userID uint64) (*[]Package, error) {
   	FROM package pkg
 		WHERE pkg.user_id = $1
     `,
-		Opt: &opt,
+		Opt: opt,
 	}
 
 	query := q.String()
@@ -174,6 +174,13 @@ func UpdatePackage(pkg *Package) error {
 func UpdatePackageSource(pkg *Package) error {
 	q := `UPDATE package SET source=$2 WHERE id=$1`
 	_, err := lib.DB.Exec(q, pkg.ID, pkg.Source.String)
+	return err
+}
+
+// BulkUpdatePackageSource updates somes packages "ids" source
+func BulkUpdatePackageSource(ids lib.StringSlice, source string) error {
+	q := `UPDATE package SET source = $2 WHERE id = ANY($1)`
+	_, err := lib.DB.Exec(q, ids, source)
 	return err
 }
 

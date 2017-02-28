@@ -67,7 +67,7 @@ func Load() {
 			v1.POST("/buy", handler.BuyCreations)
 
 			v1.POST("/users/password", handler.UpdatePassword)
-			// v1.DELETE("/users", handler.DeleteUser)
+			v1.DELETE("/users", handler.DELETEUser)
 			// v1.POST("/users/funds/withdraw", handler.WithdrawFunds)
 
 			// packages is private, so those requests are about the authenticated user only

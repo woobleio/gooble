@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	form "wooble/forms"
+	"wooble/lib"
 	model "wooble/models"
 	helper "wooble/router/helpers"
 
@@ -79,6 +80,37 @@ func POSTUser(c *gin.Context) {
 	c.Header("Location", "/token/generate")
 
 	c.JSON(Created, NewRes(user))
+}
+
+// DELETEUser delete the authenticated user
+func DELETEUser(c *gin.Context) {
+	user, _ := c.Get("user")
+	uID := user.(*model.User).ID
+
+	pkgs, _ := model.AllPackages(nil, uID)
+
+	storage := lib.NewStorage(lib.SrcPackages)
+
+	var pkgToUpdt lib.StringSlice
+	for _, pkg := range *pkgs {
+		if pkg.Source != nil {
+			storage.DeleteFile(fmt.Sprintf("%d", uID), pkg.ID.ValueEncoded, "wooble.js")
+			pkgToUpdt = append(pkgToUpdt, fmt.Sprintf("%d", pkg.ID.ValueDecoded))
+		}
+	}
+
+	if storage.Error != nil {
+		c.Error(storage.Error)
+	}
+
+	model.BulkUpdatePackageSource(pkgToUpdt, "")
+
+	if err := model.SafeDeleteUser(uID); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
+	c.JSON(NoContent, nil)
 }
 
 // UpdatePassword update authenticated user's password
