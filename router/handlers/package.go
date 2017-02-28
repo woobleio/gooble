@@ -278,7 +278,8 @@ func BuildPackage(c *gin.Context) {
 			objName = creation.Alias.String
 		}
 
-		src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "script.js")
+		creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
+		src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, "script.js")
 		script, err = wb.Inject(src, objName)
 
 		if err != nil {
@@ -290,11 +291,11 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		if creation.HasDoc {
-			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "doc.html")
+			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, "doc.html")
 			err = script.IncludeHtml(src)
 		}
 		if creation.HasStyle {
-			src := storage.GetFileContent(creatorIDStr, creation.ID.ValueEncoded, creation.Version, "style.css")
+			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, "style.css")
 			err = script.IncludeCss(src)
 		}
 
@@ -313,7 +314,7 @@ func BuildPackage(c *gin.Context) {
 	}
 
 	// TODO if multitype allowed, package should have an engine too
-	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), pkg.ID.ValueEncoded, "", "wooble.js")
+	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), "", "wooble.js")
 
 	spltPath := strings.Split(path, "/")
 	spltPath[0] = ""

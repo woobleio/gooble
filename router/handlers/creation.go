@@ -166,13 +166,15 @@ func GETCodeCreation(c *gin.Context) {
 	storage := lib.NewStorage(lib.SrcCreations)
 
 	latestVersion := crea.Versions[len(crea.Versions)-1]
-	data.Script = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "script.js")
+	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
+	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
+	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, "script.js")
 
 	if crea.HasDoc {
-		data.Document = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "doc.html")
+		data.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, "doc.html")
 	}
 	if crea.HasStyle {
-		data.Style = storage.GetFileContent(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, latestVersion, "style.css")
+		data.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, "style.css")
 	}
 
 	if storage.Error() != nil {
@@ -242,15 +244,16 @@ func SaveVersion(c *gin.Context) {
 		return
 	}
 
+	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
 	if codeForm.Document != "" {
-		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaID, version, "doc.html")
+		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, "doc.html")
 	}
 	if codeForm.Script != "" {
-		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaID, version, "script.js")
+		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, "script.js")
 	}
 	if codeForm.Style != "" {
-		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaID, version, "style.css")
+		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, "style.css")
 	}
 
 	if storage.Error() != nil {
@@ -315,14 +318,16 @@ func POSTCreationVersion(c *gin.Context) {
 		return
 	}
 
+	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
+	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
-	storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "script.js")
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, "script.js")
 
 	if crea.HasDoc {
-		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "doc.html")
+		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, "doc.html")
 	}
 	if crea.HasStyle {
-		storage.CopyAndStoreFile(fmt.Sprintf("%d", crea.CreatorID), crea.ID.ValueEncoded, curVersion, versionForm.Version, "style.css")
+		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, "style.css")
 	}
 
 	if storage.Error() != nil {

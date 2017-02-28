@@ -94,7 +94,7 @@ func DELETEUser(c *gin.Context) {
 	var pkgToUpdt lib.StringSlice
 	for _, pkg := range *pkgs {
 		if pkg.Source != nil {
-			storage.DeleteFile(fmt.Sprintf("%d", uID), pkg.ID.ValueEncoded, "wooble.js")
+			storage.DeleteFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), "wooble.js")
 			pkgToUpdt = append(pkgToUpdt, fmt.Sprintf("%d", pkg.ID.ValueDecoded))
 		}
 	}
