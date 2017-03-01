@@ -21,7 +21,7 @@ type User struct {
 	Packages *[]Package `json:"packages,omitempty" db:""`
 
 	IsCreator bool   `json:"isCreator,omitempty" db:"is_creator"`
-	Fund      uint64 `json:"totalDue,omitempty" db:"fund"`
+	Fund      uint64 `json:"fund,omitempty" db:"fund"`
 
 	Secret string `json:"-" db:"passwd"`
 	Salt   string `json:"-" db:"salt_key"`
