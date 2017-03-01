@@ -81,7 +81,7 @@ func POSTCreation(c *gin.Context) {
 // BuyCreations is a handler that purchases creations
 func BuyCreations(c *gin.Context) {
 	var buyForm struct {
-		Creations []string `json:"creations,omitempty" binding:"required"`
+		Creations []string `json:"creations,omitempty" validate:"required"`
 		CardToken string   `json:"cardToken"`
 	}
 
@@ -141,7 +141,7 @@ func BuyCreations(c *gin.Context) {
 	// TODO location to mycreations
 	// c.Header("Location", fmt.Sprintf("/creations/%s/code", buyForm.Creations[0]))
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // GETCodeCreation return private creation view
@@ -206,7 +206,7 @@ func PUTCreation(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // SaveVersion save the current code for a version (must be in draft state)
@@ -257,23 +257,19 @@ func SaveVersion(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // PublishCreation make a creation public
 func PublishCreation(c *gin.Context) {
 	user, _ := c.Get("user")
 
-	var crea model.Creation
-	crea.ID = lib.InitID(c.Param("encid"))
-	crea.CreatorID = user.(*model.User).ID
-
-	if err := model.PublishCreation(&crea); err != nil {
+	if err := model.PublishCreation(user.(*model.User).ID, lib.InitID(c.Param("encid"))); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // POSTCreationVersion creates a new version
@@ -288,23 +284,18 @@ func POSTCreationVersion(c *gin.Context) {
 	}
 
 	user, _ := c.Get("user")
+	uID := user.(*model.User).ID
 
-	crea, err := model.CreationByID(lib.InitID(c.Param("encid")))
-	if err != nil || (crea != nil && crea.CreatorID != user.(*model.User).ID) {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", crea.ID.ValueEncoded))
+	creaID := lib.InitID(c.Param("encid"))
+	crea, err := model.CreationPrivateByID(uID, creaID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID.ValueEncoded))
 		return
 	}
 
 	curVersion := crea.Versions[len(crea.Versions)-1]
 	if version.Compare(curVersion, versionForm.Version, ">=") {
 		c.Error(errors.New("Version POST issue, either malformed or posted version lesser than the latest")).SetMeta(ErrCreaVersion.SetParams("version", versionForm.Version))
-		return
-	}
-
-	crea.Versions = append(crea.Versions, versionForm.Version)
-
-	if nbRowsAff, err := model.NewCreationVersion(crea); err != nil || nbRowsAff == 0 {
-		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
@@ -322,6 +313,11 @@ func POSTCreationVersion(c *gin.Context) {
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "copy"))
+		return
+	}
+
+	if nbRowsAff, err := model.NewCreationVersion(uID, crea.ID, append(crea.Versions, versionForm.Version)); err != nil || nbRowsAff == 0 {
+		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 

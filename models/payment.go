@@ -9,8 +9,11 @@ import (
 	"strings"
 
 	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/account"
+	"github.com/stripe/stripe-go/bankaccount"
 	"github.com/stripe/stripe-go/charge"
 	"github.com/stripe/stripe-go/customer"
+	"github.com/stripe/stripe-go/transfer"
 )
 
 // NewCustomer creates a new customer in the payment system
@@ -56,4 +59,37 @@ func ChargeOneTimeForCreations(amount uint64, objIDs []string, token string) (*s
 // CaptureCharge applies the charge
 func CaptureCharge(chargeID string) (*stripe.Charge, error) {
 	return charge.Capture(chargeID, nil)
+}
+
+// RegisterBank links a bank account to a customer
+func RegisterBank(email string, token string) (*stripe.Account, error) {
+	accParams := &stripe.AccountParams{
+		Managed: true,
+		Country: "FR",
+		Email:   email,
+	}
+	acc, err := account.New(accParams)
+	if err != nil {
+		return nil, err
+	}
+
+	bkParams := &stripe.BankAccountParams{
+		AccountID: acc.ID,
+		Token:     token,
+	}
+
+	_, err = bankaccount.New(bkParams)
+	return acc, err
+}
+
+// PayUser transfer money to the customer
+func PayUser(accID string, amount uint64) (*stripe.Transfer, error) {
+	tParams := &stripe.TransferParams{
+		Amount:   int64(amount),
+		Currency: "eur",
+		Dest:     accID,
+		Desc:     "Wooble.io funds",
+	}
+
+	return transfer.New(tParams)
 }

@@ -105,7 +105,7 @@ func DELETEPackage(c *gin.Context) {
 
 	c.Header("Location", "/packages")
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // PUTPackage is an handler that updates a package
@@ -141,7 +141,7 @@ func PUTPackage(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkg.ID.ValueEncoded))
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // PUTPackageCreation updates a package creation
@@ -170,7 +170,7 @@ func PUTPackageCreation(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/packages/%s", pkgCrea.ID.ValueEncoded))
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // PushCreation is an handler that pushes one or more creations in a package
@@ -222,7 +222,7 @@ func PushCreation(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/%s/%s", "packages", pkg.ID.ValueEncoded))
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // BuildPackage is a handler action that builds the Wooble lib of a package
@@ -325,5 +325,5 @@ func RemovePackageCreation(c *gin.Context) {
 		return
 	}
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }

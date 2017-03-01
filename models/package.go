@@ -9,7 +9,7 @@ import (
 type Package struct {
 	ID lib.ID `json:"id" db:"pkg.id"`
 
-	Title string `json:"title" binding:"required" db:"pkg.title"`
+	Title string `json:"title" validate:"required" db:"pkg.title"`
 
 	Domains   lib.StringSlice `json:"domains" db:"domains"`
 	UserID    uint64          `json:"-" db:"pkg.user_id"`

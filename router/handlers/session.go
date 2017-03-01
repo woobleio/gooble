@@ -14,8 +14,8 @@ import (
 // GenerateToken generates a new token
 func GenerateToken(c *gin.Context) {
 	type CredsForm struct {
-		Email  string `json:"email" binding:"required"`
-		Secret string `json:"secret" binding:"required"`
+		Email  string `json:"email" validate:"required"`
+		Secret string `json:"secret" validate:"required"`
 	}
 
 	var form CredsForm

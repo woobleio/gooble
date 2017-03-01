@@ -85,7 +85,7 @@ CREATE TABLE app_user (
     passwd text,
     salt_key text NOT NULL,
     customer_id text NOT NULL,
-    total_due integer DEFAULT 0 NOT NULL
+    fund integer DEFAULT 0 NOT NULL
 );
 
 
@@ -365,7 +365,7 @@ ALTER TABLE ONLY plan_user ALTER COLUMN id SET DEFAULT nextval('plan_user_id_seq
 -- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, total_due) FROM stdin;
+COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, fund) FROM stdin;
 \.
 
 

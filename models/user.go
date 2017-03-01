@@ -10,8 +10,9 @@ import (
 
 // User is a Wooble user
 type User struct {
-	ID         uint64 `json:"-" db:"user.id"`
-	CustomerID string `json:"-" db:"customer_id"`
+	ID         uint64         `json:"-" db:"user.id"`
+	CustomerID string         `json:"-" db:"customer_id"`
+	AccountID  lib.NullString `json:"-" db:"account_id"`
 
 	Email string `json:"email,omitempty" db:"email"`
 	Name  string `json:"name" db:"name"`
@@ -20,7 +21,7 @@ type User struct {
 	Packages *[]Package `json:"packages,omitempty" db:""`
 
 	IsCreator bool   `json:"isCreator,omitempty" db:"is_creator"`
-	TotalDue  uint64 `json:"totalDue,omitempty" db:"total_due"`
+	Fund      uint64 `json:"totalDue,omitempty" db:"fund"`
 
 	Secret string `json:"-" db:"passwd"`
 	Salt   string `json:"-" db:"salt_key"`
@@ -58,6 +59,7 @@ func UserPrivateByID(id uint64) (*User, error) {
 			u.updated_at "user.updated_at",
 			u.salt_key,
       u.customer_id,
+			u.account_id,
       pu.start_date,
       pu.end_date,
       pl.label "plan.label",
@@ -175,6 +177,13 @@ func UpdateUserPassword(uID uint64, newSecret string) error {
 	return err
 }
 
+// UpdateUserAccountID updates user "uID" account ID
+func UpdateUserAccountID(uID uint64, accID string) error {
+	q := `UPDATE app_user SET account_id = $2 WHERE id = $1 AND account_id IS NULL`
+	_, err := lib.DB.Exec(q, uID, accID)
+	return err
+}
+
 // UpdateCustomerID updates user's customer ID
 func UpdateCustomerID(uID uint64, customerID string) error {
 	q := `UPDATE app_user SET customer_id=$2 WHERE id=$1`
@@ -198,6 +207,13 @@ func UserNbPackages(uID uint64) int64 {
 	lib.DB.Get(&nbPackages, q, uID)
 
 	return nbPackages.Value
+}
+
+// UserSubFund substracts user "uID" fund by "amount"
+func UserSubFund(uID uint64, amount uint64) error {
+	q := `UPDATE appe_user SET fund = fund - $2 WHERE id = $1`
+	_, err := lib.DB.Exec(q, uID, amount)
+	return err
 }
 
 // IsPasswordValid checks if a password is valid

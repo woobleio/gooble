@@ -113,14 +113,14 @@ func DELETEUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
 }
 
 // UpdatePassword update authenticated user's password
 func UpdatePassword(c *gin.Context) {
 	var passwordForm struct {
-		OldSecret string `json:"oldSecret" binding:"required"`
-		NewSecret string `json:"newSecret" binding:"required"`
+		OldSecret string `json:"oldSecret" validate:"required"`
+		NewSecret string `json:"newSecret" validate:"required"`
 	}
 
 	if err := c.BindJSON(&passwordForm); err != nil {
@@ -142,5 +142,69 @@ func UpdatePassword(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/users/%s", user.(*model.User).Name))
 
-	c.JSON(NoContent, nil)
+	c.AbortWithStatus(NoContent)
+}
+
+// POSTUserBank creates bank info for customer (only for funds)
+func POSTUserBank(c *gin.Context) {
+	var bankForm struct {
+		BankToken string `json:"bankToken" validate:"required"`
+	}
+
+	if err := c.BindJSON(&bankForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	var errUser error
+	privateUser := new(model.User)
+	user, _ := c.Get("user")
+	privateUser, errUser = model.UserPrivateByID(user.(*model.User).ID)
+	if errUser != nil {
+		c.Error(errUser).SetMeta(ErrDB)
+		return
+	}
+
+	acc, err := model.RegisterBank(privateUser.Email, bankForm.BankToken)
+	if err != nil {
+		c.Error(err).SetMeta(ErrServ.SetParams("source", "bank register"))
+		return
+	}
+
+	if err := model.UpdateUserAccountID(privateUser.ID, acc.ID); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
+	c.AbortWithStatus(NoContent)
+}
+
+// WithdrawFunds withdraws users fund to a registered bank account
+func WithdrawFunds(c *gin.Context) {
+	user, _ := c.Get("user")
+
+	var errUser error
+	privateUser := new(model.User)
+	privateUser, errUser = model.UserPrivateByID(user.(*model.User).ID)
+	if errUser != nil {
+		c.Error(errUser).SetMeta(ErrDB)
+		return
+	}
+
+	if privateUser.Fund <= 0 {
+		// Error nothing to withdraw TODO
+		return
+	}
+
+	if _, err := model.PayUser(privateUser.AccountID.String, privateUser.Fund); err != nil {
+		c.Error(err).SetMeta(ErrIntServ)
+		return
+	}
+
+	if err := model.UserSubFund(privateUser.ID, privateUser.Fund); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
+	c.AbortWithStatus(NoContent)
 }

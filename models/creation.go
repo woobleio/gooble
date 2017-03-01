@@ -12,7 +12,7 @@ type Creation struct {
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
 	Creator     User            `json:"creator" db:""`
-	Versions    lib.StringSlice `json:"versions" db:"versions"`
+	Versions    lib.StringSlice `json:"versions,omitempty" db:"versions"`
 	Version     string          `json:"version,omitempty" db:"version"`
 	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state" db:"state"`
@@ -22,7 +22,7 @@ type Creation struct {
 	HasStyle  bool   `json:"-"       db:"has_style"`
 	Engine    Engine `json:"-" db:""`
 	Price     uint64 `json:"price" db:"price"` // in cents euro
-	IsToBuy   bool   `json:"isToBuy" db:"is_to_buy"`
+	IsToBuy   bool   `json:"isToBuy,omitempty" db:"is_to_buy"`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
@@ -104,6 +104,32 @@ func CreationByID(id lib.ID) (*Creation, error) {
 	return &crea, lib.DB.Get(&crea, q, id)
 }
 
+// CreationPrivateByID returns a creation as private
+func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
+	var crea Creation
+	q := `
+	SELECT
+		c.id "crea.id",
+		c.title,
+		c.description,
+		c.created_at "crea.created_at",
+		c.updated_at "crea.updated_at",
+		c.versions,
+		c.price,
+		c.state,
+		c.has_document,
+		c.has_style,
+		e.name "eng.name",
+		e.extension,
+		e.content_type
+	FROM creation c
+	INNER JOIN engine e ON (c.engine=e.name)
+	WHERE creator_id = $1 AND c.id = $2 
+	`
+
+	return &crea, lib.DB.Get(&crea, q, uID, creaID)
+}
+
 // UpdateCreation update creation's information
 func UpdateCreation(crea *Creation) error {
 	q := `
@@ -150,9 +176,9 @@ func NewCreation(crea *Creation) (*Creation, error) {
 }
 
 // NewCreationVersion create a new version
-func NewCreationVersion(crea *Creation) (int64, error) {
-	q := `UPDATE creation SET versions=$3 WHERE id = $1 AND creator_id = $2 AND state = $3`
-	res, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Versions, enum.Draft)
+func NewCreationVersion(uID uint64, creaID lib.ID, versions lib.StringSlice) (int64, error) {
+	q := `UPDATE creation SET versions = $3 WHERE id = $2 AND creator_id = $1 AND state = $4`
+	res, err := lib.DB.Exec(q, uID, creaID, versions, enum.Draft)
 	rowAff, _ := res.RowsAffected()
 	return rowAff, err
 }
@@ -161,7 +187,7 @@ func NewCreationVersion(crea *Creation) (int64, error) {
 func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation) error {
 	qPurchase := `INSERT INTO creation_purchase(user_id, creation_id,	price, charge_id) VALUES ($1, $2, $3, $4)`
 
-	qSellerDue := `UPDATE app_user SET total_due=total_due + $2 WHERE id = $1`
+	qSellerDue := `UPDATE app_user SET fund=fund + $2 WHERE id = $1`
 
 	tx := lib.DB.MustBegin()
 	for _, crea := range *creations {
@@ -188,13 +214,13 @@ func UpdateCreationCode(crea *Creation) (int64, error) {
 }
 
 // PublishCreation switches creation "creaID" state to "public"
-func PublishCreation(crea *Creation) error {
+func PublishCreation(uID uint64, id lib.ID) error {
 	q := `
   UPDATE creation SET state = 'public'
   WHERE creator_id = $1
   AND state = $3
   AND id = $2
   `
-	_, err := lib.DB.Exec(q, crea.CreatorID, crea.ID, enum.Draft)
+	_, err := lib.DB.Exec(q, uID, id, enum.Draft)
 	return err
 }

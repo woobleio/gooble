@@ -85,7 +85,7 @@ CREATE TABLE app_user (
     passwd text,
     salt_key text NOT NULL,
     customer_id text NOT NULL,
-    total_due integer DEFAULT 0 NOT NULL
+    fund integer DEFAULT 0 NOT NULL
 );
 
 
@@ -366,7 +366,7 @@ ALTER TABLE ONLY plan_user ALTER COLUMN id SET DEFAULT nextval('plan_user_id_seq
 -- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, total_due) FROM stdin;
+COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, fund) FROM stdin;
 59	slals_free	slals@slals_free.fr	2017-02-22	\N	f	09316eb8047c3264d0c50124a2a4409d03846649be9fb7d4f5e411b547440285	fpllngzieyoh43e	cus_AAMqJu81GGYRlU	0
 61	slals_premium	slals@slals_premium.fr	2017-02-22	\N	f	6b0135eeb7aa920dfb5eb15ceb5dd4bdf32809699b8f528160b6a098ff1f1877	vi7hvszwk1b182t	cus_AAMuS2nlfYGfGE	0
 62	slals_pro	slals@slals_pro.fr	2017-02-22	\N	f	710d839226d79f074f6375bbddcee677f051c920d6c8ba25bd9fcfb2b6c52b7d	vjzjpezi4hx9gvm	cus_AAMvccmbIfgIaf	0

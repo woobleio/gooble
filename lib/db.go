@@ -220,7 +220,7 @@ func (id *ID) Scan(value interface{}) error {
 
 // Value implements the driver Valuer interface
 func (id ID) Value() (driver.Value, error) {
-	return id.ValueDecoded, nil
+	return int64(id.ValueDecoded), nil
 }
 
 // StringSlice see https://gist.github.com/adharris/4163702
