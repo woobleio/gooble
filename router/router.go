@@ -58,7 +58,7 @@ func Load() {
 		{
 			v1.POST("/creations", handler.POSTCreation)
 			v1.PUT("/creations/:encid", handler.PUTCreation)
-			// v1.DELETE("/creation/:encid", handler.DELETECreation)
+			v1.DELETE("/creation/:encid", handler.DELETECreation)
 			v1.GET("/creations/:encid/code", handler.GETCodeCreation)
 			v1.PATCH("/creations/:encid/publish", handler.PublishCreation)
 			v1.POST("/creations/:encid/versions", handler.POSTCreationVersion)

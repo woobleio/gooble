@@ -51,8 +51,8 @@ func NewStorage(src string) *Storage {
 func (s *Storage) CopyAndStoreFile(userID string, objID string, prevVersion string, version string, filename string) {
 	svc := s3.New(s.Session)
 
-	path := s.getBucketPath(makeID(userID, objID), prevVersion, filename)
-	newPath := s.getBucketPath(makeID(userID, objID), version, filename)
+	path := s.getFilePath(makeID(userID, objID), prevVersion, filename)
+	newPath := s.getFilePath(makeID(userID, objID), version, filename)
 
 	bucket := viper.GetString("cloud_repo")
 
@@ -72,7 +72,7 @@ func (s *Storage) CopyAndStoreFile(userID string, objID string, prevVersion stri
 func (s *Storage) GetFileContent(userID string, objID string, version string, filename string) string {
 	svc := s3.New(s.Session)
 
-	path := s.getBucketPath(makeID(userID, objID), version, filename)
+	path := s.getFilePath(makeID(userID, objID), version, filename)
 
 	obj := &s3.GetObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
@@ -93,7 +93,7 @@ func (s *Storage) GetFileContent(userID string, objID string, version string, fi
 func (s *Storage) StoreFile(content string, contentType string, userID string, objID string, version string, filename string) string {
 	svc := s3.New(s.Session)
 
-	path := s.getBucketPath(makeID(userID, objID), version, filename)
+	path := s.getFilePath(makeID(userID, objID), version, filename)
 
 	obj := &s3.PutObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
@@ -108,11 +108,11 @@ func (s *Storage) StoreFile(content string, contentType string, userID string, o
 	return path
 }
 
-// DeleteFile delete a file from the cloud
-func (s *Storage) DeleteFile(userID string, objID string, filename string) {
+// DeleteObject delete a file from the cloud
+func (s *Storage) DeleteObject(userID string, objID string) {
 	svc := s3.New(s.Session)
 
-	path := s.getBucketPath(makeID(userID, objID), "", filename)
+	path := s.getObjectPath(makeID(userID, objID))
 
 	obj := &s3.DeleteObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
@@ -124,7 +124,11 @@ func (s *Storage) DeleteFile(userID string, objID string, filename string) {
 	}
 }
 
-func (s *Storage) getBucketPath(id []byte, version string, filename string) string {
+func (s *Storage) getObjectPath(id []byte) string {
+	return fmt.Sprintf("%s/%x", s.Source, id)
+}
+
+func (s *Storage) getFilePath(id []byte, version string, filename string) string {
 	var path string
 	switch s.Source {
 	case SrcCreations:

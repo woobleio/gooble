@@ -78,6 +78,35 @@ func POSTCreation(c *gin.Context) {
 	c.JSON(Created, NewRes(crea))
 }
 
+// DELETECreation delete the creation of the authenticated user
+func DELETECreation(c *gin.Context) {
+	creaID := lib.InitID(c.Param("encid"))
+
+	user, _ := c.Get("user")
+	uID := user.(*model.User).ID
+
+	if model.CreationInUse(creaID) {
+		if err := model.SafeDeleteCreation(uID, creaID); err != nil {
+			c.Error(err).SetMeta(ErrDB)
+			return
+		}
+	} else {
+		if err := model.DeleteCreation(uID, creaID); err != nil {
+			c.Error(err).SetMeta(ErrDB)
+			return
+		}
+		uIDStr := fmt.Sprintf("%d", uID)
+		creaIDStr := fmt.Sprintf("%d", creaID.ValueDecoded)
+		storage := lib.NewStorage(lib.SrcCreations)
+		storage.DeleteObject(uIDStr, creaIDStr)
+		if storage.Error() != nil {
+			c.Error(storage.Error()) // log error
+		}
+	}
+
+	c.AbortWithStatus(NoContent)
+}
+
 // BuyCreations is a handler that purchases creations
 func BuyCreations(c *gin.Context) {
 	var buyForm struct {

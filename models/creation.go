@@ -175,6 +175,29 @@ func NewCreation(crea *Creation) (*Creation, error) {
 	return crea, lib.DB.QueryRow(q, crea.Title, crea.Description, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Price, crea.Engine.Name, crea.State).Scan(&crea.ID)
 }
 
+// DeleteCreation deletes a creation
+func DeleteCreation(uID uint64, creaID lib.ID) error {
+	q := `
+	DELETE FROM creation
+	WHERE creator_id = $1
+	AND id = $2
+	`
+	_, err := lib.DB.Exec(q, uID, creaID)
+	return err
+}
+
+// SafeDeleteCreation sets creation's state to 'Deleted'
+func SafeDeleteCreation(uID uint64, creaID lib.ID) error {
+	q := `
+	UPDATE creation
+	SET state = $3
+	WHERE creator_id = $1
+	AND id = $2
+	`
+	_, err := lib.DB.Exec(q, uID, creaID, enum.Deleted)
+	return err
+}
+
 // NewCreationVersion create a new version
 func NewCreationVersion(uID uint64, creaID lib.ID, versions lib.StringSlice) (int64, error) {
 	q := `UPDATE creation SET versions = $3 WHERE id = $2 AND creator_id = $1 AND state = $4`
@@ -223,4 +246,21 @@ func PublishCreation(uID uint64, id lib.ID) error {
   `
 	_, err := lib.DB.Exec(q, uID, id, enum.Draft)
 	return err
+}
+
+// CreationInUsed returns true if the creation is not used by anyone
+func CreationInUse(creaID lib.ID) bool {
+	crea := new(Creation)
+	q := `
+	SELECT crea.id FROM creation_purchase
+	WHERE creation_id = $1
+	OR creation_id IN (
+		SELECT creation_id FROM package_creation
+		WHERE creation_id = $1
+	)
+	`
+	if err := lib.DB.Get(crea, q, creaID); err != nil {
+		return false
+	}
+	return true
 }
