@@ -68,8 +68,8 @@ func Load() {
 
 			v1.POST("/users/password", handler.UpdatePassword)
 			v1.DELETE("/users", handler.DELETEUser)
-			v1.POST("/users/funds/bank", handler.POSTUserBank)      // FIXME Stripe version, don't work for now
-			v1.POST("/users/funds/withdraw", handler.WithdrawFunds) // FIXME Stripe version, don't work for now
+			v1.POST("/users/funds/bank", handler.POSTUserBank)      // FIXME Stripe version, managed account don't work for now
+			v1.POST("/users/funds/withdraw", handler.WithdrawFunds) // FIXME Stripe version, managed account don't work for now
 
 			// packages is private, so those requests are about the authenticated user only
 			v1.GET("/packages", handler.GETPackages)

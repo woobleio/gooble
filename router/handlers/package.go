@@ -96,12 +96,20 @@ func POSTPackage(c *gin.Context) {
 func DELETEPackage(c *gin.Context) {
 	user, _ := c.Get("user")
 
-	if err := model.DeletePackage(user.(*model.User).ID, lib.InitID(c.Param("encid"))); err != nil {
+	uID := user.(*model.User).ID
+	pkgID := lib.InitID(c.Param("encid"))
+
+	if err := model.DeletePackage(uID, pkgID); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
-	// TODO delete package file
+	storage := lib.NewStorage(lib.SrcPackages)
+	storage.DeleteObject(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkgID.ValueDecoded))
+
+	if storage.Error() != nil {
+		c.Error(storage.Error())
+	}
 
 	c.Header("Location", "/packages")
 

@@ -13,6 +13,7 @@ import (
 	"github.com/stripe/stripe-go/bankaccount"
 	"github.com/stripe/stripe-go/charge"
 	"github.com/stripe/stripe-go/customer"
+	"github.com/stripe/stripe-go/sub"
 	"github.com/stripe/stripe-go/transfer"
 )
 
@@ -92,4 +93,21 @@ func PayUser(accID string, amount uint64) (*stripe.Transfer, error) {
 	}
 
 	return transfer.New(tParams)
+}
+
+// UnsubCustomer unsubscribes customer from his current plan
+func UnsubCustomer(custID string) error {
+	cust, err := customer.Get(custID, nil)
+	if err != nil {
+		return err
+	}
+
+	subID := cust.Subs.Values[0].ID
+
+	subParams := &stripe.SubParams{
+		EndCancel: true,
+	}
+	_, err = sub.Cancel(subID, subParams)
+
+	return err
 }

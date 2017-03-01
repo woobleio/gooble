@@ -105,7 +105,11 @@ func DELETEUser(c *gin.Context) {
 
 	model.BulkUpdatePackageSource(pkgToUpdt, "")
 
-	// TODO Unsub plan
+	privUser, _ := model.UserPrivateByID(uID)
+	if err := model.UnsubCustomer(privUser.CustomerID); err != nil {
+		c.Error(err).SetMeta(ErrIntServ)
+		return
+	}
 
 	if err := model.SafeDeleteUser(uID); err != nil {
 		c.Error(err).SetMeta(ErrDB)
