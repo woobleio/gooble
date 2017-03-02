@@ -87,7 +87,7 @@ func POSTPackage(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkg.ID.ValueEncoded))
+	c.Header("Location", fmt.Sprintf("/packages/%v", pkg.ID.ValueEncoded))
 
 	c.JSON(Created, NewRes(pkg))
 }
@@ -147,7 +147,7 @@ func PUTPackage(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%v", "packages", pkg.ID.ValueEncoded))
+	c.Header("Location", fmt.Sprintf("/packages/%s", pkg.ID.ValueEncoded))
 
 	c.AbortWithStatus(NoContent)
 }

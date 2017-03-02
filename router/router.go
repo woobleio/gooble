@@ -48,41 +48,49 @@ func Load() {
 		v1.POST("/users", handler.POSTUser)
 		v1.GET("/users/:username", handler.GETUser)
 
-		v1.POST("/token/generate", handler.GenerateToken)
-		v1.POST("/token/refresh", handler.RefreshToken)
+		v1.POST("/tokens", handler.GenerateToken)
+		v1.PUT("/tokens", handler.RefreshToken)
 
 		v1.GET("/creations", handler.GETCreations)
 		v1.GET("/creations/:encid", handler.GETCreations)
 
 		v1.Use(middleware.Authenticate())
 		{
-			v1.POST("/creations", handler.POSTCreation)
-			v1.PUT("/creations/:encid", handler.PUTCreation)
-			v1.DELETE("/creations/:encid", handler.DELETECreation)
-			v1.GET("/creations/:encid/code", handler.GETCodeCreation)
-			v1.PATCH("/creations/:encid/publish", handler.PublishCreation)
+			creations := v1.Group("/creations")
+			{
+				creations.POST("", handler.POSTCreation)
+				creations.PUT("/:encid", handler.PUTCreation)
+				creations.DELETE("/:encid", handler.DELETECreation)
+				creations.PATCH("/:encid/publish", handler.PublishCreation)
+				creations.GET("/:encid/code", handler.GETCreationCode)
 
-			v1.POST("/creations/:encid/versions", handler.POSTCreationVersion)
-			v1.PUT("/creations/:encid/versions", handler.SaveVersion)
+				creations.POST("/:encid/versions", handler.POSTCreationVersion)
+				creations.PUT("/:encid/versions", handler.SaveVersion)
+			}
 
 			v1.POST("/buy", handler.BuyCreations)
 
-			v1.POST("/users/password", handler.UpdatePassword)
-			v1.DELETE("/users", handler.DELETEUser)
-			v1.POST("/users/funds/bank", handler.POSTUserBank)      // FIXME Stripe version, managed account don't work for now
-			v1.POST("/users/funds/withdraw", handler.WithdrawFunds) // FIXME Stripe version, managed account don't work for now
+			users := v1.Group("/users")
+			{
+				users.PATCH("/password", handler.UpdatePassword)
+				users.DELETE("", handler.DELETEUser)
+				users.POST("/funds/bank", handler.POSTUserBank)      // FIXME Stripe version, managed account don't work for now
+				users.POST("/funds/withdraw", handler.WithdrawFunds) // FIXME Stripe version, managed account don't work for now
+			}
 
-			// packages is private, so those requests are about the authenticated user only
-			v1.GET("/packages", handler.GETPackages)
-			v1.GET("/packages/:encid", handler.GETPackages)
-			v1.POST("/packages", handler.POSTPackage)
-			v1.PUT("/packages/:encid", handler.PUTPackage)
-			v1.DELETE("/packages/:encid", handler.DELETEPackage)
+			packages := v1.Group("/packages")
+			{
+				packages.GET("", handler.GETPackages)
+				packages.POST("", handler.POSTPackage)
+				packages.GET("/:encid", handler.GETPackages)
+				packages.PUT("/:encid", handler.PUTPackage)
+				packages.DELETE("/:encid", handler.DELETEPackage)
 
-			v1.POST("/packages/:encid/creations", handler.PushCreation)
-			v1.DELETE("/packages/:encid/creations", handler.RemovePackageCreation)
-			v1.PUT("/packages/:encid/creations/:creaid", handler.PUTPackageCreation)
-			v1.PUT("/packages/:encid/build", handler.BuildPackage)
+				packages.POST("/:encid/creations", handler.PushCreation)
+				packages.DELETE("/:encid/creations", handler.RemovePackageCreation)
+				packages.PUT("/:encid/creations/:creaid", handler.PUTPackageCreation)
+				packages.POST("/:encid/build", handler.BuildPackage)
+			}
 		}
 	}
 

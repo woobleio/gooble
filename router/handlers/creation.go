@@ -188,8 +188,8 @@ func BuyCreations(c *gin.Context) {
 	c.AbortWithStatus(NoContent)
 }
 
-// GETCodeCreation return private creation view
-func GETCodeCreation(c *gin.Context) {
+// GETCreationCode return private creation view
+func GETCreationCode(c *gin.Context) {
 	var data form.CreationCodeForm
 
 	user, _ := c.Get("user")
@@ -248,7 +248,7 @@ func PUTCreation(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
+	c.Header("Location", fmt.Sprintf("/creations/%s", creaID))
 
 	c.AbortWithStatus(NoContent)
 }

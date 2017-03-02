@@ -78,7 +78,7 @@ func POSTUser(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", "/token/generate")
+	c.Header("Location", "/tokens")
 
 	c.JSON(Created, NewRes(user))
 }

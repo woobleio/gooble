@@ -128,7 +128,7 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 		e.content_type
 	FROM creation c
 	INNER JOIN engine e ON (c.engine=e.name)
-	WHERE creator_id = $1 AND c.id = $2 
+	WHERE creator_id = $1 AND c.id = $2 AND c.state != 'delete'
 	`
 
 	return &crea, lib.DB.Get(&crea, q, uID, creaID)
