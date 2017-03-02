@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"wooble/lib"
 	enum "wooble/models/enums"
 )
@@ -170,10 +171,15 @@ func UpdatePackage(pkg *Package) error {
 	return err
 }
 
-// UpdatePackageSource updates package source
-func UpdatePackageSource(uID uint64, pkgID lib.ID, source string) error {
-	q := `UPDATE package SET source = $3 WHERE id = $2 AND user_id = $1`
-	_, err := lib.DB.Exec(q, uID, pkgID, source)
+// UpdatePackagePatch updates user informations
+func UpdatePackagePatch(uID uint64, pkgID lib.ID, patch lib.SQLPatch) error {
+	q := patch.GetUpdateQuery("package") +
+		`WHERE id = $` + fmt.Sprintf("%d", patch.Index+1) +
+		` AND user_id = $` + fmt.Sprintf("%d", patch.Index+2)
+
+	patch.Args = append(patch.Args, uID)
+	patch.Args = append(patch.Args, pkgID)
+	_, err := lib.DB.Exec(q, patch.Args...)
 	return err
 }
 

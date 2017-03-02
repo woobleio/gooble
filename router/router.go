@@ -83,12 +83,12 @@ func Load() {
 				packages.POST("", handler.POSTPackage)
 				packages.GET("/:encid", handler.GETPackages)
 				packages.PUT("/:encid", handler.PUTPackage)
+				packages.PATCH("/:encid", handler.PATCHPackage)
 				packages.DELETE("/:encid", handler.DELETEPackage)
 
 				packages.POST("/:encid/creations", handler.PushCreation)
 				packages.DELETE("/:encid/creations", handler.RemovePackageCreation)
 				packages.PUT("/:encid/creations/:creaid", handler.PUTPackageCreation)
-				packages.POST("/:encid/build", handler.BuildPackage)
 			}
 		}
 	}

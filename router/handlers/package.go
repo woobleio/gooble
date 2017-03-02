@@ -92,7 +92,103 @@ func POSTPackage(c *gin.Context) {
 	c.JSON(Created, NewRes(pkg))
 }
 
-// DELETEPackage delete a package
+// PATCHPackage patches a packages
+func PATCHPackage(c *gin.Context) {
+	var pkgPatchForm form.PackagePatchForm
+	var pkg model.Package
+
+	if err := c.BindJSON(&pkgPatchForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	user, _ := c.Get("user")
+	pkg.ID = lib.InitID(c.Param("encid"))
+
+	if *pkgPatchForm.Build {
+		fullPkg, err := model.PackageByID(user.(*model.User).ID, pkg.ID)
+		if err != nil {
+			c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", fullPkg.ID.ValueEncoded))
+			return
+		}
+
+		// Check if at least one creation should be bought to be build in the package
+		for _, creation := range fullPkg.Creations {
+			if creation.IsToBuy {
+				c.Error(nil).SetMeta(ErrMustBuy)
+				return
+			}
+		}
+
+		storage := lib.NewStorage(lib.SrcCreations)
+
+		wb := wbzr.New(wbzr.JSES5)
+		for _, creation := range fullPkg.Creations {
+			var script engine.Script
+
+			creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
+
+			objName := creation.Title
+			if creation.Alias != nil {
+				objName = creation.Alias.String
+			}
+
+			creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
+			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Script)
+			script, err = wb.Inject(src, objName)
+
+			if err != nil {
+				if err == wbzr.ErrUniqueName {
+					c.Error(err).SetMeta(ErrAliasRequired.SetParams("name", creation.Title))
+					return
+				}
+				panic(err)
+			}
+
+			if creation.HasDoc {
+				src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Document)
+				err = script.IncludeHtml(src)
+			}
+			if creation.HasStyle {
+				src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Style)
+				err = script.IncludeCss(src)
+			}
+
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		storage.Source = lib.SrcPackages
+
+		bf, err := wb.SecureAndWrap(fullPkg.Domains...)
+
+		if err != nil || storage.Error() != nil {
+			c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "package"))
+			return
+		}
+
+		// TODO if multitype allowed, package should have an engine too
+		path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", fullPkg.ID.ValueDecoded), "", enum.Wooble)
+
+		spltPath := strings.Split(path, "/")
+		spltPath[0] = ""
+
+		pkgPatchForm.Source = new(string)
+		*pkgPatchForm.Source = "https://pkg.wooble.io" + strings.Join(spltPath, "/")
+	}
+
+	if err := model.UpdatePackagePatch(user.(*model.User).ID, pkg.ID, lib.SQLPatches(pkgPatchForm)); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
+	pkg.Source = lib.InitNullString(*pkgPatchForm.Source)
+
+	c.JSON(OK, NewRes(pkg))
+}
+
+// DELETEPackage deletes a package
 func DELETEPackage(c *gin.Context) {
 	user, _ := c.Get("user")
 
@@ -231,92 +327,6 @@ func PushCreation(c *gin.Context) {
 	c.Header("Location", fmt.Sprintf("/packages/%s", pkg.ID.ValueEncoded))
 
 	c.AbortWithStatus(NoContent)
-}
-
-// BuildPackage is a handler action that builds the Wooble lib of a package
-// (a Wooble lib is a file that bundles everything contained in a package,
-// the file is stored in the cloud)
-func BuildPackage(c *gin.Context) {
-	user, _ := c.Get("user")
-
-	pkgID := lib.InitID(c.Param("encid"))
-	pkg, err := model.PackageByID(user.(*model.User).ID, pkgID)
-	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", pkg.ID.ValueEncoded))
-		return
-	}
-
-	// Check if at least one creation should be bought to be build in the package
-	for _, creation := range pkg.Creations {
-		if creation.IsToBuy {
-			c.Error(nil).SetMeta(ErrMustBuy)
-			return
-		}
-	}
-
-	storage := lib.NewStorage(lib.SrcCreations)
-
-	wb := wbzr.New(wbzr.JSES5)
-	for _, creation := range pkg.Creations {
-		var script engine.Script
-
-		creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
-
-		objName := creation.Title
-		if creation.Alias != nil {
-			objName = creation.Alias.String
-		}
-
-		creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
-		src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Script)
-		script, err = wb.Inject(src, objName)
-
-		if err != nil {
-			if err == wbzr.ErrUniqueName {
-				c.Error(err).SetMeta(ErrAliasRequired.SetParams("name", creation.Title))
-				return
-			}
-			panic(err)
-		}
-
-		if creation.HasDoc {
-			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Document)
-			err = script.IncludeHtml(src)
-		}
-		if creation.HasStyle {
-			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Style)
-			err = script.IncludeCss(src)
-		}
-
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	storage.Source = lib.SrcPackages
-
-	bf, err := wb.SecureAndWrap(pkg.Domains...)
-
-	if err != nil || storage.Error() != nil {
-		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "package"))
-		return
-	}
-
-	// TODO if multitype allowed, package should have an engine too
-	path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), "", enum.Wooble)
-
-	spltPath := strings.Split(path, "/")
-	spltPath[0] = ""
-
-	source := "https://pkg.wooble.io" + strings.Join(spltPath, "/")
-	if err := model.UpdatePackageSource(pkg.UserID, pkg.ID, source); err != nil {
-		c.Error(err).SetMeta(ErrDB)
-		return
-	}
-
-	pkg.Source = lib.InitNullString(source)
-
-	c.JSON(OK, NewRes(pkg))
 }
 
 // RemovePackageCreation remove a creation from a package
