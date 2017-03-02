@@ -1,11 +1,8 @@
 package model
 
 import (
-	"encoding/hex"
-
+	"fmt"
 	"wooble/lib"
-
-	"golang.org/x/crypto/scrypt"
 )
 
 // User is a Wooble user
@@ -88,7 +85,7 @@ func UserPrivateByID(id uint64) (*User, error) {
 // NewUser creates a new user
 func NewUser(user *User) (uID uint64, err error) {
 	salt := lib.GenKey()
-	cp, errPasswd := getPassword(user.Secret, []byte(salt))
+	cp, errPasswd := lib.Encrypt(user.Secret, []byte(salt))
 	if errPasswd != nil {
 		return 0, errPasswd
 	}
@@ -165,15 +162,14 @@ func UpdateUser(uID uint64, user *User) error {
 	return err
 }
 
-// UpdateUserPassword updates user "uID" passwd and its salt key
-func UpdateUserPassword(uID uint64, newSecret string) error {
-	salt := lib.GenKey()
-	cp, errPasswd := getPassword(newSecret, []byte(salt))
-	if errPasswd != nil {
-		return errPasswd
-	}
-	q := `UPDATE app_user SET passwd=$2, salt_key=$3 WHERE id=$1 AND deleted_at IS NULL`
-	_, err := lib.DB.Exec(q, uID, cp, salt)
+// UpdateUserPatch updates user informations
+func UpdateUserPatch(uID uint64, patch lib.SQLPatch) error {
+	q := patch.GetUpdateQuery("app_user") +
+		`WHERE id = $` + fmt.Sprintf("%d", patch.Index+1) +
+		` AND deleted_at IS NULL`
+
+	patch.Args = append(patch.Args, uID)
+	_, err := lib.DB.Exec(q, patch.Args...)
 	return err
 }
 
@@ -228,14 +224,9 @@ func (u *User) IsPasswordValid(passwd string) bool {
 		u.Salt = userCreds.Salt
 		u.Secret = userCreds.Secret
 	}
-	cp, err := getPassword(passwd, []byte(u.Salt))
+	cp, err := lib.Encrypt(passwd, []byte(u.Salt))
 	if err != nil || cp == "" {
 		return false
 	}
 	return u.Secret == cp
-}
-
-func getPassword(passwd string, salt []byte) (string, error) {
-	cp, err := scrypt.Key([]byte(passwd), []byte(salt), 16384, 8, 1, 32)
-	return hex.EncodeToString(cp), err
 }

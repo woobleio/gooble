@@ -61,21 +61,20 @@ func Load() {
 				creations.POST("", handler.POSTCreation)
 				creations.PUT("/:encid", handler.PUTCreation)
 				creations.DELETE("/:encid", handler.DELETECreation)
-				creations.PATCH("/:encid/publish", handler.PublishCreation)
 				creations.GET("/:encid/code", handler.GETCreationCode)
 
 				creations.POST("/:encid/versions", handler.POSTCreationVersion)
 				creations.PUT("/:encid/versions", handler.SaveVersion)
 			}
 
-			v1.POST("/buy", handler.BuyCreations)
+			v1.POST("/purchases", handler.BuyCreations)
 
 			users := v1.Group("/users")
 			{
-				users.PATCH("/password", handler.UpdatePassword)
+				users.PATCH("", handler.PATCHUser)
 				users.DELETE("", handler.DELETEUser)
-				users.POST("/funds/bank", handler.POSTUserBank)      // FIXME Stripe version, managed account don't work for now
-				users.POST("/funds/withdraw", handler.WithdrawFunds) // FIXME Stripe version, managed account don't work for now
+				users.POST("/funds/bank", handler.POSTUserBank)      // FIXME Stripe version, managed account don't work for now GO TO PATCH
+				users.POST("/funds/withdraw", handler.WithdrawFunds) // FIXME Stripe version, managed account don't work for now GO TO PATCH
 			}
 
 			packages := v1.Group("/packages")

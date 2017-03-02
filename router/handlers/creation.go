@@ -300,18 +300,6 @@ func SaveVersion(c *gin.Context) {
 	c.AbortWithStatus(NoContent)
 }
 
-// PublishCreation make a creation public
-func PublishCreation(c *gin.Context) {
-	user, _ := c.Get("user")
-
-	if err := model.PublishCreation(user.(*model.User).ID, lib.InitID(c.Param("encid"))); err != nil {
-		c.Error(err).SetMeta(ErrDB)
-		return
-	}
-
-	c.AbortWithStatus(NoContent)
-}
-
 // POSTCreationVersion creates a new version
 func POSTCreationVersion(c *gin.Context) {
 	var versionForm struct {

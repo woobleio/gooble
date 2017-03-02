@@ -121,26 +121,29 @@ func DELETEUser(c *gin.Context) {
 	c.AbortWithStatus(NoContent)
 }
 
-// UpdatePassword update authenticated user's password
-func UpdatePassword(c *gin.Context) {
-	var passwordForm struct {
-		OldSecret string `json:"oldSecret" validate:"required"`
-		NewSecret string `json:"newSecret" validate:"required"`
-	}
+// PATCHUser update authenticated user's password
+func PATCHUser(c *gin.Context) {
+	var userPatchForm form.UserPatchForm
 
-	if err := c.BindJSON(&passwordForm); err != nil {
+	if err := c.BindJSON(&userPatchForm); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
 		return
 	}
 
 	user, _ := c.Get("user")
 
-	if !user.(*model.User).IsPasswordValid(passwordForm.OldSecret) {
-		c.Error(nil).SetMeta(ErrBadCreds)
-		return
+	// Check the password if is in the patch
+	if userPatchForm.NewSecret != nil {
+		if !user.(*model.User).IsPasswordValid(*userPatchForm.OldSecret) {
+			c.Error(nil).SetMeta(ErrBadCreds)
+			return
+		}
+		userPatchForm.Salt = new(string)
+		*userPatchForm.Salt = lib.GenKey()
+		*userPatchForm.NewSecret, _ = lib.Encrypt(*userPatchForm.NewSecret, []byte(*userPatchForm.Salt))
 	}
 
-	if err := model.UpdateUserPassword(user.(*model.User).ID, passwordForm.NewSecret); err != nil {
+	if err := model.UpdateUserPatch(user.(*model.User).ID, lib.SQLPatches(userPatchForm)); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}

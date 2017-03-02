@@ -138,11 +138,11 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, price = $5
+  SET title = $3, description = $4, price = $5, state = $6
   WHERE id = $1
   AND creator_id = $2 
   `
-	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price)
+	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price, crea.State)
 	return err
 }
 
@@ -224,18 +224,6 @@ func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation
 	}
 
 	return tx.Commit()
-}
-
-// PublishCreation switches creation "creaID" state to "public"
-func PublishCreation(uID uint64, id lib.ID) error {
-	q := `
-  UPDATE creation SET state = 'public'
-  WHERE creator_id = $1
-  AND state = $3
-  AND id = $2
-  `
-	_, err := lib.DB.Exec(q, uID, id, enum.Draft)
-	return err
 }
 
 // CreationInUse returns true if the creation is used by anyone

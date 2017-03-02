@@ -1,7 +1,10 @@
 package lib
 
 import (
+	"encoding/hex"
 	"math/rand"
+
+	"golang.org/x/crypto/scrypt"
 
 	"github.com/speps/go-hashids"
 	"github.com/spf13/viper"
@@ -15,6 +18,12 @@ func GenKey() string {
 		b[i] = keyRange[rand.Intn(len(keyRange))]
 	}
 	return string(b)
+}
+
+// Encrypt encrypt the string
+func Encrypt(toEncrypt string, salt []byte) (string, error) {
+	cp, err := scrypt.Key([]byte(toEncrypt), []byte(salt), 16384, 8, 1, 32)
+	return hex.EncodeToString(cp), err
 }
 
 // GetTokenLifetime returns token lifetime
