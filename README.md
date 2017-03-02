@@ -61,12 +61,6 @@ HTTP/1.1 204 NoContent
 Authorization: <refreshed token>
 ```
 
-`POST /v1/funds/bank`
-`NOT YET IMPLEMENTED`
-
-`POST /v1/funds/withdraw`
-`NOT YET IMPLEMENTED`
-
 ### Token
 
 `POST /v1/tokens`
@@ -89,7 +83,7 @@ Content-Type: application/json
 }
 ```
 
-`PUT /v1/token`
+`PUT /v1/tokens`
 ```js
 Authorization: <user token>
 ```
@@ -204,16 +198,6 @@ Authorization: <refreshed token if expired>
 
 `DELETE /v1/creations/:encid`
 `Delete the creation if nobody use it, else it will make the creation unlisted by putting its state to 'delete'`
-```js
-Authorization: <user token>
-```
-```js
-HTTP/1.1 204 NoContent
-Authorization: <refreshed token if expired>
-```
-
-`PATCH /v1/creations/:encid/publish`
-`Set creation state to 'public'`
 ```js
 Authorization: <user token>
 ```
@@ -356,6 +340,28 @@ Location: /packages/:<id of the new package>
 Authorization: <refreshed token if expired>
 ```
 
+`PATCH /v1/packages/:encid`
+```js
+Content-Type: application/json
+Authorization: <user token>
+
+{
+  "title"?: <package title>
+  "domains"?: [<domains with which the package will work>]
+  "build"?: <build operation, boolean expected>
+}
+```
+```js
+HTTP/1.1 200 OK
+Authorization: <refreshed token if expired>
+
+{
+  "data":{
+    "source"?: <package source (CDN)>
+  }
+}
+```
+
 `DELETE /v1/packages/:encid`
 ```js
 Authorization: <user token>
@@ -387,20 +393,4 @@ Authorization: <user token>
 ```js
 HTTP/1.1 204 NoContent
 Authorization: <refreshed token if expired>
-```
-
-`PUT /v1/packages/:packageID/build`
-```js
-Authorization: <user token>
-```
-```js
-HTTP/1.1 200 OK
-Content-Type: application/json
-Authorization: <refreshed token if expired>
-
-{
-  "data": {
-    "source": <CDN url of the builded package>
-  }
-}
 ```
