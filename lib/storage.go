@@ -19,9 +19,11 @@ const (
 
 // Storage is Wooble cloud storage interface
 type Storage struct {
-	errs    []error
 	Session *session.Session
 	Source  string
+
+	errs        []error
+	bulkObjects []*s3.ObjectIdentifier
 }
 
 func (s *Storage) Error() error {
@@ -39,12 +41,22 @@ func NewStorage(src string) *Storage {
 	}
 
 	stor := &Storage{
-		make([]error, 0),
 		s,
 		src,
+		make([]error, 0),
+		make([]*s3.ObjectIdentifier, 0),
 	}
 
 	return stor
+}
+
+// PushBulkObject push an object to process in the cloud
+func (s *Storage) PushBulkFile(userID string, objID string, version string, filename string) {
+	path := s.getFilePath(makeID(userID, objID), version, filename)
+	obj := &s3.ObjectIdentifier{
+		Key: aws.String(path),
+	}
+	s.bulkObjects = append(s.bulkObjects, obj)
 }
 
 // CopyAndStoreFile copy and store cloud object
@@ -108,24 +120,36 @@ func (s *Storage) StoreFile(content string, contentType string, userID string, o
 	return path
 }
 
-// DeleteObject delete a file from the cloud
-func (s *Storage) DeleteObject(userID string, objID string) {
+// BulkDeleteFiles delete pushed objects
+func (s *Storage) BulkDeleteFiles() {
 	svc := s3.New(s.Session)
 
-	path := s.getObjectPath(makeID(userID, objID))
+	params := &s3.DeleteObjectsInput{
+		Bucket: aws.String(viper.GetString("cloud_repo")),
+		Delete: &s3.Delete{
+			Objects: s.bulkObjects,
+		},
+	}
+
+	_, err := svc.DeleteObjects(params)
+	s.errs = append(s.errs, err)
+}
+
+// DeleteFile delete a file from the cloud
+func (s *Storage) DeleteFile(userID string, objID string, version string, filename string) {
+	svc := s3.New(s.Session)
+
+	path := s.getFilePath(makeID(userID, objID), version, filename)
 
 	obj := &s3.DeleteObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
 
 		Key: aws.String(path),
 	}
+
 	if _, err := svc.DeleteObject(obj); err != nil {
 		s.errs = append(s.errs, err)
 	}
-}
-
-func (s *Storage) getObjectPath(id []byte) string {
-	return fmt.Sprintf("%s/%x", s.Source, id)
 }
 
 func (s *Storage) getFilePath(id []byte, version string, filename string) string {

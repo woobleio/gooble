@@ -6,6 +6,7 @@ import (
 	form "wooble/forms"
 	"wooble/lib"
 	model "wooble/models"
+	enum "wooble/models/enums"
 	helper "wooble/router/helpers"
 
 	"gopkg.in/gin-gonic/gin.v1"
@@ -94,10 +95,11 @@ func DELETEUser(c *gin.Context) {
 	var pkgToUpdt lib.StringSlice
 	for _, pkg := range *pkgs {
 		if pkg.Source != nil {
-			storage.DeleteObject(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded))
+			storage.PushBulkFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), "", enum.Wooble)
 			pkgToUpdt = append(pkgToUpdt, fmt.Sprintf("%d", pkg.ID.ValueDecoded))
 		}
 	}
+	storage.BulkDeleteFiles()
 
 	if storage.Error() != nil {
 		c.Error(storage.Error())

@@ -105,7 +105,7 @@ func DELETEPackage(c *gin.Context) {
 	}
 
 	storage := lib.NewStorage(lib.SrcPackages)
-	storage.DeleteObject(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkgID.ValueDecoded))
+	storage.DeleteFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkgID.ValueDecoded), "", enum.Wooble)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error())
@@ -190,10 +190,6 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if pkgCreaForm.Version == "" {
-		pkgCreaForm.Version = model.BaseVersion
-	}
-
 	crea, err := model.CreationByIDAndVersion(lib.InitID(pkgCreaForm.CreationID), pkgCreaForm.Version)
 	if err != nil {
 		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/"+pkgCreaForm.Version))
@@ -223,12 +219,16 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if err := model.PushCreation(pkg.ID, crea.ID); err != nil {
+	if pkgCreaForm.Version == "" {
+		pkgCreaForm.Version = crea.Versions[len(crea.Versions)-1]
+	}
+
+	if err := model.NewPackageCreation(pkg.ID, crea.ID, pkgCreaForm.Version); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s", "packages", pkg.ID.ValueEncoded))
+	c.Header("Location", fmt.Sprintf("/packages/%s", pkg.ID.ValueEncoded))
 
 	c.AbortWithStatus(NoContent)
 }
@@ -268,7 +268,7 @@ func BuildPackage(c *gin.Context) {
 		}
 
 		creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
-		src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Script+".js")
+		src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Script)
 		script, err = wb.Inject(src, objName)
 
 		if err != nil {
@@ -313,6 +313,8 @@ func BuildPackage(c *gin.Context) {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
+
+	pkg.Source = lib.InitNullString(source)
 
 	c.JSON(OK, NewRes(pkg))
 }

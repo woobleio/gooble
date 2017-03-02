@@ -15,7 +15,7 @@ type User struct {
 	AccountID  lib.NullString `json:"-" db:"account_id"`
 
 	Email string `json:"email,omitempty" db:"email"`
-	Name  string `json:"name" db:"name"`
+	Name  string `json:"name,omitempty" db:"name"`
 
 	Plan     *Plan      `json:"plan,omitempty" db:""`
 	Packages *[]Package `json:"packages,omitempty" db:""`

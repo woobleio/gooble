@@ -58,11 +58,12 @@ func Load() {
 		{
 			v1.POST("/creations", handler.POSTCreation)
 			v1.PUT("/creations/:encid", handler.PUTCreation)
-			v1.DELETE("/creation/:encid", handler.DELETECreation)
+			v1.DELETE("/creations/:encid", handler.DELETECreation)
 			v1.GET("/creations/:encid/code", handler.GETCodeCreation)
 			v1.PATCH("/creations/:encid/publish", handler.PublishCreation)
+
 			v1.POST("/creations/:encid/versions", handler.POSTCreationVersion)
-			v1.PUT("/creations/:encid/versions/:version", handler.SaveVersion)
+			v1.PUT("/creations/:encid/versions", handler.SaveVersion)
 
 			v1.POST("/buy", handler.BuyCreations)
 
@@ -74,13 +75,14 @@ func Load() {
 			// packages is private, so those requests are about the authenticated user only
 			v1.GET("/packages", handler.GETPackages)
 			v1.GET("/packages/:encid", handler.GETPackages)
+			v1.POST("/packages", handler.POSTPackage)
 			v1.PUT("/packages/:encid", handler.PUTPackage)
 			v1.DELETE("/packages/:encid", handler.DELETEPackage)
-			v1.POST("/packages", handler.POSTPackage)
+
 			v1.POST("/packages/:encid/creations", handler.PushCreation)
 			v1.DELETE("/packages/:encid/creations", handler.RemovePackageCreation)
 			v1.PUT("/packages/:encid/creations/:creaid", handler.PUTPackageCreation)
-			v1.PATCH("/packages/:encid/build", handler.BuildPackage)
+			v1.PUT("/packages/:encid/build", handler.BuildPackage)
 		}
 	}
 

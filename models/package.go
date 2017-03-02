@@ -32,7 +32,6 @@ func (p *Package) PopulateCreations() error {
     c.creator_id,
 		c.versions,
 		c.has_document,
-		c.has_script,
 		c.has_style,
 		c.price,
 		u.id "user.id",
@@ -157,10 +156,10 @@ func UpdatePackageCreation(pkg *Package) error {
 	return err
 }
 
-// PushCreation pushes a creation in the package
-func PushCreation(pkgID lib.ID, creaID lib.ID) error {
-	q := `INSERT INTO package_creation(package_id, creation_id) VALUES ($1, $2)`
-	_, err := lib.DB.Exec(q, pkgID, creaID)
+// NewPackageCreation create a new relationship with package and creation
+func NewPackageCreation(pkgID lib.ID, creaID lib.ID, version string) error {
+	q := `INSERT INTO package_creation(package_id, creation_id, version) VALUES ($1, $2, $3)`
+	_, err := lib.DB.Exec(q, pkgID, creaID, version)
 	return err
 }
 

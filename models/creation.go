@@ -11,11 +11,11 @@ type Creation struct {
 
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
-	Creator     User            `json:"creator" db:""`
+	Creator     User            `json:"creator,omitempty" db:""`
 	Versions    lib.StringSlice `json:"versions,omitempty" db:"versions"`
 	Version     string          `json:"version,omitempty" db:"version"`
 	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
-	State       string          `json:"state" db:"state"`
+	State       string          `json:"state,omitempty" db:"state"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	HasDoc    bool   `json:"-"       db:"has_document"`
@@ -65,7 +65,10 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
-		WHERE c.state = 'public' OR c.state = 'delete'
+		WHERE c.state = 'public'
+		OR (
+			c.state = 'draft' AND array_length(c.versions, 1) > 1
+		)
 		`,
 		Opt: &opt,
 	}
@@ -112,6 +115,7 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 		c.id "crea.id",
 		c.title,
 		c.description,
+		c.creator_id,
 		c.created_at "crea.created_at",
 		c.updated_at "crea.updated_at",
 		c.versions,
@@ -199,11 +203,10 @@ func SafeDeleteCreation(uID uint64, creaID lib.ID) error {
 }
 
 // NewCreationVersion create a new version
-func NewCreationVersion(uID uint64, creaID lib.ID, versions lib.StringSlice) (int64, error) {
-	q := `UPDATE creation SET versions = $3 WHERE id = $2 AND creator_id = $1 AND state = $4`
-	res, err := lib.DB.Exec(q, uID, creaID, versions, enum.Draft)
-	rowAff, _ := res.RowsAffected()
-	return rowAff, err
+func NewCreationVersion(uID uint64, creaID lib.ID, version lib.StringSlice) error {
+	q := `UPDATE creation SET versions = $4, state = $5 WHERE id = $2 AND creator_id = $1 AND state = $3`
+	_, err := lib.DB.Exec(q, uID, creaID, enum.Public, version, enum.Draft)
+	return err
 }
 
 // NewCreationPurchases creates a creation purchase
@@ -223,19 +226,6 @@ func NewCreationPurchases(buyerID uint64, chargeID string, creations *[]Creation
 	return tx.Commit()
 }
 
-// UpdateCreationCode updates creation information
-func UpdateCreationCode(crea *Creation) (int64, error) {
-	q := `
-  UPDATE creation SET has_document = $2, has_style = $3
-  WHERE id = $1
-  AND state = 'draft'
-  AND versions[array_length(versions, 1)] = $5
-  `
-	res, err := lib.DB.Exec(q, crea.ID, crea.HasDoc, crea.HasStyle, crea.Version)
-	rowAff, _ := res.RowsAffected()
-	return rowAff, err
-}
-
 // PublishCreation switches creation "creaID" state to "public"
 func PublishCreation(uID uint64, id lib.ID) error {
 	q := `
@@ -248,19 +238,17 @@ func PublishCreation(uID uint64, id lib.ID) error {
 	return err
 }
 
-// CreationInUsed returns true if the creation is not used by anyone
+// CreationInUse returns true if the creation is used by anyone
 func CreationInUse(creaID lib.ID) bool {
-	crea := new(Creation)
+	var inUse struct {
+		InUse bool `db:"creation_in_use"`
+	}
 	q := `
-	SELECT crea.id FROM creation_purchase
-	WHERE creation_id = $1
-	OR creation_id IN (
-		SELECT creation_id FROM package_creation
-		WHERE creation_id = $1
-	)
+	SELECT EXISTS (SELECT creation_id FROM creation_purchase WHERE creation_id = $1)
+	OR EXISTS (SELECT creation_id FROM package_creation WHERE creation_id = $1) AS creation_in_use
 	`
-	if err := lib.DB.Get(crea, q, creaID); err != nil {
+	if err := lib.DB.Get(&inUse, q, creaID); err != nil {
 		return false
 	}
-	return true
+	return inUse.InUse
 }

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 
 	version "github.com/mcuadros/go-version"
 
@@ -86,19 +85,35 @@ func DELETECreation(c *gin.Context) {
 	uID := user.(*model.User).ID
 
 	if model.CreationInUse(creaID) {
+		fmt.Print("totototo")
 		if err := model.SafeDeleteCreation(uID, creaID); err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
 		}
 	} else {
+		crea, err := model.CreationPrivateByID(uID, creaID)
+		if err != nil {
+			c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID.ValueEncoded))
+			return
+		}
 		if err := model.DeleteCreation(uID, creaID); err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
 		}
+
 		uIDStr := fmt.Sprintf("%d", uID)
-		creaIDStr := fmt.Sprintf("%d", creaID.ValueDecoded)
+		creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
+
 		storage := lib.NewStorage(lib.SrcCreations)
-		storage.DeleteObject(uIDStr, creaIDStr)
+
+		for _, v := range crea.Versions {
+			storage.PushBulkFile(uIDStr, creaIDStr, v, enum.Script)
+			storage.PushBulkFile(uIDStr, creaIDStr, v, enum.Document)
+			storage.PushBulkFile(uIDStr, creaIDStr, v, enum.Style)
+		}
+
+		storage.BulkDeleteFiles()
+
 		if storage.Error() != nil {
 			c.Error(storage.Error()) // log error
 		}
@@ -179,10 +194,10 @@ func GETCodeCreation(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	creaID := c.Param("encid")
-	crea, err := model.CreationByID(lib.InitID(creaID))
-	if err != nil || (crea != nil && crea.CreatorID != user.(*model.User).ID) {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
+	creaID := lib.InitID(c.Param("encid"))
+	crea, err := model.CreationPrivateByID(user.(*model.User).ID, creaID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID.ValueEncoded))
 		return
 	}
 
@@ -191,7 +206,7 @@ func GETCodeCreation(c *gin.Context) {
 	latestVersion := crea.Versions[len(crea.Versions)-1]
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
-	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script+".js")
+	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
 
 	if crea.HasDoc {
 		data.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
@@ -242,8 +257,7 @@ func PUTCreation(c *gin.Context) {
 func SaveVersion(c *gin.Context) {
 	var codeForm form.CreationCodeForm
 
-	version := c.Param("version")
-	creaID := c.Param("encid")
+	creaID := lib.InitID(c.Param("encid"))
 
 	if err := c.BindJSON(&codeForm); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
@@ -251,29 +265,26 @@ func SaveVersion(c *gin.Context) {
 	}
 
 	user, _ := c.Get("user")
-
-	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
-
-	version = strings.Replace(version, "_", ".", -1)
-
-	var crea model.Creation
-	crea.ID = lib.InitID(creaID)
-	crea.HasDoc = codeForm.Document != ""
-	crea.HasStyle = codeForm.Style != ""
-	crea.Version = version
-
-	if nbRowAffected, err := model.UpdateCreationCode(&crea); err != nil || nbRowAffected == 0 {
-		c.Error(err).SetMeta(ErrDB)
+	crea, err := model.CreationPrivateByID(user.(*model.User).ID, creaID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
 		return
 	}
 
+	if crea.State != enum.Draft {
+		// TODO state error
+		return
+	}
+
+	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
+	version := crea.Versions[len(crea.Versions)-1]
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
 	if codeForm.Document != "" {
 		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, enum.Document)
 	}
 	if codeForm.Script != "" {
-		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, enum.Script+".js")
+		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, enum.Script)
 	}
 	if codeForm.Style != "" {
 		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, enum.Style)
@@ -284,7 +295,7 @@ func SaveVersion(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", creaID))
+	c.Header("Location", fmt.Sprintf("/creations/%s", creaID.ValueEncoded))
 
 	c.AbortWithStatus(NoContent)
 }
@@ -331,7 +342,7 @@ func POSTCreationVersion(c *gin.Context) {
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
-	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Script+".js")
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Script)
 
 	if crea.HasDoc {
 		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Document)
@@ -345,12 +356,12 @@ func POSTCreationVersion(c *gin.Context) {
 		return
 	}
 
-	if nbRowsAff, err := model.NewCreationVersion(uID, crea.ID, append(crea.Versions, versionForm.Version)); err != nil || nbRowsAff == 0 {
+	if err := model.NewCreationVersion(uID, crea.ID, append(crea.Versions, versionForm.Version)); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
 	c.Header("Location", fmt.Sprintf("/creations/%s/code", c.Param("encid")))
 
-	c.JSON(OK, nil)
+	c.AbortWithStatus(NoContent)
 }
