@@ -150,11 +150,8 @@ Content-Type: application/json
 Authorization: <user token>
 
 {
-  "engine"?: <engine, JSES5 default>
   "title": <creation title>
-  "document"?: <creation HTML>
-  "script"?: <creation Script>
-  "style"?: <creation CSS>
+  "engine"?: <engine, JSES5 default>
 }
 ```
 ```js
@@ -166,7 +163,6 @@ Authorization: <refreshed token if expired>
   "data": {
     "id": <creation id>
     "title": <creation title>
-    "description"?: <creation description>
     "creator": {
       "name": <creator name>
     }

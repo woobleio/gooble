@@ -165,18 +165,16 @@ func NewCreation(crea *Creation) (*Creation, error) {
 	q := `
   INSERT INTO creation(
     title, 
-    description, 
     creator_id, 
     versions, 
-    price, 
     engine,
 		state
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+  ) VALUES ($1, $2, $3, $4, $5) RETURNING id
   `
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	return crea, lib.DB.QueryRow(q, crea.Title, crea.Description, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Price, crea.Engine.Name, crea.State).Scan(&crea.ID)
+	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Engine.Name).Scan(&crea.ID)
 }
 
 // DeleteCreation deletes a creation

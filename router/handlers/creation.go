@@ -48,7 +48,6 @@ func GETCreations(c *gin.Context) {
 // POSTCreation creates a new creation
 func POSTCreation(c *gin.Context) {
 	var data form.CreationForm
-	data.State = enum.Draft
 
 	if err := c.BindJSON(&data); err != nil {
 		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
@@ -59,10 +58,13 @@ func POSTCreation(c *gin.Context) {
 
 	crea := new(model.Creation)
 	crea.CreatorID = user.(*model.User).ID
-	crea.State = data.State
+	crea.State = enum.Draft
 	crea.Title = data.Title
 	crea.Description = lib.InitNullString(data.Description)
 	crea.Price = data.Price
+	if data.Engine == "" {
+		data.Engine = "JSES5"
+	}
 	crea.Engine = model.Engine{Name: data.Engine}
 
 	var errCrea error
