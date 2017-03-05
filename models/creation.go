@@ -174,7 +174,7 @@ func NewCreation(crea *Creation) (*Creation, error) {
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Engine.Name).Scan(&crea.ID)
+	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Engine.Name, crea.State).Scan(&crea.ID)
 }
 
 // DeleteCreation deletes a creation
