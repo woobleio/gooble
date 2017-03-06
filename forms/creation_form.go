@@ -15,6 +15,7 @@ type CreationForm struct {
 type CreationCodeForm struct {
 	Script string `json:"script" validate:"required"`
 
+	Title    string `json:"title"`
 	Style    string `json:"style"`
 	Document string `json:"document"`
 }

@@ -50,7 +50,7 @@ func NewStorage(src string) *Storage {
 	return stor
 }
 
-// PushBulkObject push an object to process in the cloud
+// PushBulkFile prepares multiple files to be processed in the cloud
 func (s *Storage) PushBulkFile(userID string, objID string, version string, filename string) {
 	path := s.getFilePath(makeID(userID, objID), version, filename)
 	obj := &s3.ObjectIdentifier{

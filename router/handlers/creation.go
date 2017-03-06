@@ -217,10 +217,12 @@ func GETCreationCode(c *gin.Context) {
 		data.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
 	}
 
-	if storage.Error() != nil {
-		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
-		return
+	if storage.Error() != nil { // TODO manage storage errors better
+		c.Error(storage.Error())
+		data.Script = ""
 	}
+
+	data.Title = crea.Title
 
 	c.JSON(OK, NewRes(data))
 }
