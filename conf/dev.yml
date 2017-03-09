@@ -1,0 +1,17 @@
+# DB config
+db_host: woobledb
+db_name: wooble
+db_port: 5432
+db_username: wooble
+db_password: w00b
+
+# Third parties config
+cloud_repo: wooble-dev
+stripe_key: <stripe key>
+
+# Server config
+token_key: abcd1234
+token_lifetime: 30 # minutes
+keygen_range: abcdefghijklmnopqrstuvwxyz0123456789
+salt_for_id: hello
+allow_origin: http://localhost:4000

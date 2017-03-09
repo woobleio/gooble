@@ -6,13 +6,13 @@ import (
 
 	"golang.org/x/crypto/scrypt"
 
-	"github.com/speps/go-hashids"
+	hashids "github.com/speps/go-hashids"
 	"github.com/spf13/viper"
 )
 
 // GenKey generates random key
 func GenKey() string {
-	keyRange := viper.GetString("key_range")
+	keyRange := viper.GetString("keygen_range")
 	b := make([]byte, 15)
 	for i := range b {
 		b[i] = keyRange[rand.Intn(len(keyRange))]

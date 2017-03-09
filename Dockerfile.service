@@ -9,6 +9,8 @@ ENV CONFPATH $GOPATH/configs
 
 ENV AWS_REGION eu-central-1
 
+RUN apt-get update && apt-get -y install vim
+
 RUN mkdir -p $GOPATH/src/wooble/ \
       && chmod -R 777 /go \
       && mkdir $CONFPATH \
@@ -29,32 +31,10 @@ RUN echo "[prod-acc]" >> $HOME/.aws/credentials \
       && echo "aws_secret_access_key = <SECRET_KEY>\n" >> $HOME/.aws/credentials
 
 #
-# SET DATABASE CONF
+# SET SERV CONFS
 #
-RUN echo "db_host: woobledb" >> $CONFPATH/dev.yml \
-      && echo "db_name: wooble" >> $CONFPATH/dev.yml \
-      && echo "db_port: 5432" >> $CONFPATH/dev.yml \
-      && echo "db_username: wooble" >> $CONFPATH/dev.yml \
-      && echo "db_password: w00b" >> $CONFPATH/dev.yml \
-      && echo "cloud_repo: wooble-dev" >> $CONFPATH/dev.yml \
-      && echo "key_range: abcdefghijklmnopqrstuvwxyz0123456789" >> $CONFPATH/dev.yml \
-      && echo "salt_for_id: hello"  >> $CONFPATH/dev.yml \
-      && echo "token_key: abcd1234" >> $CONFPATH/dev.yml \
-      && echo "stripe_key:" >> $CONFPATH/dev.yml \
-      && echo "token_lifetime: 30" >> $CONFPATH/dev.yml \
-      && echo "allow_origin: http://localhost:3000" >> $CONFPATH/dev.yml
-
-RUN echo "db_host: woobledb" >> $CONFPATH/test.yml \
-      && echo "db_name: wooble_test" >> $CONFPATH/test.yml \
-      && echo "db_port: 5432" >> $CONFPATH/test.yml \
-      && echo "db_username: user_test" >> $CONFPATH/test.yml \
-      && echo "cloud_repo: wooble-dev" >> $CONFPATH/test.yml \
-      && echo "key_range: abcdefghijklmnopqrstuvwxyz0123456789" >> $CONFPATH/test.yml \
-      && echo "salt_for_id: hello"  >> $CONFPATH/test.yml \
-      && echo "token_key: abcd1234" >> $CONFPATH/test.yml \
-      && echo "stripe_key: " >> $CONFPATH/test.yml \
-      && echo "token_lifetime: 30" >> $CONFPATH/test.yml \
-      && echo "allow_origin: http://localhost:3000" >> $CONFPATH/test.yml
+ADD ./conf/dev.yml $CONFPATH/
+ADD ./conf/dev.yml $CONFPATH/test.yml
 
 WORKDIR $GOPATH/src/wooble
 
