@@ -17,7 +17,7 @@ SET row_security = off;
 
 --
 -- TOC entry 1 (class 3079 OID 12361)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
@@ -26,7 +26,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- TOC entry 2231 (class 0 OID 0)
 -- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -128,8 +128,6 @@ CREATE TABLE creation (
     creator_id integer NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
-    has_document boolean DEFAULT false NOT NULL,
-    has_style boolean DEFAULT false NOT NULL,
     engine text NOT NULL,
     price integer DEFAULT 0 NOT NULL,
     thumb_url text,
@@ -387,7 +385,7 @@ SELECT pg_catalog.setval('app_user_id_seq', 73, true);
 -- Data for Name: creation; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation (id, title, creator_id, created_at, updated_at, has_document, has_style, engine, price, thumb_url, description, state, versions, old_creator_id) FROM stdin;
+COPY creation (id, title, creator_id, created_at, updated_at, engine, price, thumb_url, description, state, versions, old_creator_id) FROM stdin;
 \.
 
 
@@ -775,4 +773,3 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
-

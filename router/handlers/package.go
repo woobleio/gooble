@@ -145,12 +145,13 @@ func PATCHPackage(c *gin.Context) {
 				panic(err)
 			}
 
-			if creation.HasDoc {
-				src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Document)
+			docSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Document)
+			if docSrc != "" {
 				err = script.IncludeHtml(src)
 			}
-			if creation.HasStyle {
-				src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Style)
+
+			styleSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Style)
+			if styleSrc != "" {
 				err = script.IncludeCss(src)
 			}
 

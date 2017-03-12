@@ -18,8 +18,6 @@ type Creation struct {
 	State       string          `json:"state,omitempty" db:"state"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
-	HasDoc    bool   `json:"-"       db:"has_document"`
-	HasStyle  bool   `json:"-"       db:"has_style"`
 	Engine    Engine `json:"-" db:""`
 	Price     uint64 `json:"price" db:"price"` // in cents euro
 	IsToBuy   bool   `json:"isToBuy,omitempty" db:"is_to_buy"`
@@ -53,8 +51,6 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    c.versions,
-			c.has_document,
-			c.has_style,
 			c.price,
 			c.state,
 			e.name "eng.name",
@@ -91,8 +87,6 @@ func CreationByID(id lib.ID) (*Creation, error) {
     c.versions,
 		c.price,
 		c.state,
-		c.has_document,
-		c.has_style,
 		e.name "eng.name",
 		e.extension,
 		e.content_type,
@@ -121,8 +115,6 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 		c.versions,
 		c.price,
 		c.state,
-		c.has_document,
-		c.has_style,
 		e.name "eng.name",
 		e.extension,
 		e.content_type
@@ -140,7 +132,7 @@ func UpdateCreation(crea *Creation) error {
   UPDATE creation
   SET title = $3, description = $4, price = $5, state = $6
   WHERE id = $1
-  AND creator_id = $2 
+  AND creator_id = $2
   `
 	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price, crea.State)
 	return err
@@ -153,8 +145,8 @@ func CreationByIDAndVersion(id lib.ID, version string) (*Creation, error) {
 		version = BaseVersion
 	}
 	q := `
-  SELECT id "crea.id", versions, state 
-  FROM creation WHERE id = $1 
+  SELECT id "crea.id", versions, state
+  FROM creation WHERE id = $1
   AND $2 = ANY (versions)
   `
 	return crea, lib.DB.Get(crea, q, id, version)
@@ -164,9 +156,9 @@ func CreationByIDAndVersion(id lib.ID, version string) (*Creation, error) {
 func NewCreation(crea *Creation) (*Creation, error) {
 	q := `
   INSERT INTO creation(
-    title, 
-    creator_id, 
-    versions, 
+    title,
+    creator_id,
+    versions,
     engine,
 		state
   ) VALUES ($1, $2, $3, $4, $5) RETURNING id

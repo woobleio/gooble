@@ -10,7 +10,7 @@ import (
 	"wooble/forms"
 	"wooble/lib"
 	"wooble/models"
-	enum "wooble/models/enums"
+	"wooble/models/enums"
 
 	"gopkg.in/gin-gonic/gin.v1"
 )
@@ -208,14 +208,10 @@ func GETCreationCode(c *gin.Context) {
 	latestVersion := crea.Versions[len(crea.Versions)-1]
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
-	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
 
-	if crea.HasDoc {
-		data.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
-	}
-	if crea.HasStyle {
-		data.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
-	}
+	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
+	data.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
+	data.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
 
 	if storage.Error() != nil { // TODO manage storage errors better
 		c.Error(storage.Error())
@@ -246,6 +242,7 @@ func PUTCreation(c *gin.Context) {
 	crea.Title = creaForm.Title
 	crea.Description = lib.InitNullString(creaForm.Description)
 	crea.Price = creaForm.Price
+	crea.State = creaForm.State
 
 	if err := model.UpdateCreation(&crea); err != nil {
 		c.Error(err).SetMeta(ErrDB)
@@ -284,15 +281,10 @@ func SaveVersion(c *gin.Context) {
 	version := crea.Versions[len(crea.Versions)-1]
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
-	if codeForm.Document != "" {
-		storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, enum.Document)
-	}
-	if codeForm.Script != "" {
-		storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, enum.Script)
-	}
-	if codeForm.Style != "" {
-		storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, enum.Style)
-	}
+
+	storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, enum.Document)
+	storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, enum.Script)
+	storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, enum.Style)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
@@ -334,14 +326,10 @@ func POSTCreationVersion(c *gin.Context) {
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
-	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Script)
 
-	if crea.HasDoc {
-		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Document)
-	}
-	if crea.HasStyle {
-		storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Style)
-	}
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Script)
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Document)
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Style)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "copy"))

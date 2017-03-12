@@ -32,8 +32,6 @@ func (p *Package) PopulateCreations() error {
 		c.title,
     c.creator_id,
 		c.versions,
-		c.has_document,
-		c.has_style,
 		c.price,
 		u.id "user.id",
 		u.name,
@@ -193,8 +191,8 @@ func BulkUpdatePackageSource(ids lib.StringSlice, source string) error {
 // DeletePackageCreation delete a creation from a package
 func DeletePackageCreation(uID uint64, pkgID lib.ID, creaID lib.ID) error {
 	q := `
-	DELETE FROM package_creation 
-	USING package 
+	DELETE FROM package_creation
+	USING package
 	WHERE package_id = $2 AND package.id = package_id
 	AND creation_id = $3
 	AND package.user_id = $1

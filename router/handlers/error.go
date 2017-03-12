@@ -152,6 +152,7 @@ func HandleErrors(c *gin.Context) {
 			publicError := err.Meta.(APIError)
 			switch err.Type {
 			case gin.ErrorTypeBind:
+				fmt.Print(err.Err)
 				valErrors := err.Err.(validator.ValidationErrors)
 				for _, valErr := range valErrors {
 					publicError = publicError.ValidationError(valErr)
