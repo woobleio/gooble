@@ -49,6 +49,7 @@ RUN go get github.com/mcuadros/go-version
 RUN go get github.com/speps/go-hashids
 RUN go get github.com/spf13/viper
 RUN go get github.com/stripe/stripe-go
+RUN go get github.com/tdewolff/minify
 RUN go get github.com/woobleio/wooblizer
 
 RUN go get golang.org/x/crypto/scrypt

@@ -15,6 +15,7 @@ import (
 const (
 	SrcCreations string = "creations"
 	SrcPackages  string = "packages"
+	SrcPreview   string = "preview"
 )
 
 // Storage is Wooble cloud storage interface
@@ -152,6 +153,11 @@ func (s *Storage) DeleteFile(userID string, objID string, version string, filena
 	}
 }
 
+// SetSource set storage source
+func (s *Storage) SetSource(src string) {
+	s.Source = src
+}
+
 func (s *Storage) getFilePath(id []byte, version string, filename string) string {
 	var path string
 	switch s.Source {
@@ -159,6 +165,8 @@ func (s *Storage) getFilePath(id []byte, version string, filename string) string
 		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, id, version, filename)
 	case SrcPackages:
 		path = fmt.Sprintf("%s/%x/%s", s.Source, id, filename)
+	case SrcPreview:
+		path = fmt.Sprintf("public/%s/%x/%s/%s", s.Source, id, version, filename)
 	}
 	return path
 }

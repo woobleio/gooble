@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	version "github.com/mcuadros/go-version"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/js"
 
 	"wooble/forms"
 	"wooble/lib"
@@ -87,7 +89,6 @@ func DELETECreation(c *gin.Context) {
 	uID := user.(*model.User).ID
 
 	if model.CreationInUse(creaID) {
-		fmt.Print("totototo")
 		if err := model.SafeDeleteCreation(uID, creaID); err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
@@ -218,6 +219,18 @@ func GETCreationCode(c *gin.Context) {
 		data.Script = ""
 	}
 
+	if data.Script == "" {
+		data.Script = `var woobly = {
+		  "attribute": "a value (optionnal)",
+		  "_init": function() {
+		    // Creation code at runtime
+		  },
+		  "method": function(a, b) {
+		    // a method (optionnal)
+		  }
+		}`
+	}
+
 	data.Title = crea.Title
 
 	c.JSON(OK, NewRes(data))
@@ -285,6 +298,31 @@ func SaveVersion(c *gin.Context) {
 	storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, enum.Document)
 	storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, enum.Script)
 	storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, enum.Style)
+
+	minifier := minify.New()
+	minifier.AddFunc("text/javascript", js.Minify)
+
+	var minErr error
+	codeForm.Script, minErr = minifier.String("text/javascript", codeForm.Script)
+
+	if minErr != nil {
+		c.Error(minErr).SetMeta(ErrServ.SetParams("source", "minifier"))
+		return
+	}
+
+	preview := `<html>
+		<head>
+			<script type="text/javascript">` + codeForm.Script + `</script>
+			<script type="text/javascript">(function(){woobly._init()})()</script>
+			<style>` + codeForm.Style + `</style>
+		</head>
+		<body>
+			` + codeForm.Document + `
+		</body>
+	</html>`
+
+	storage.SetSource(lib.SrcPreview)
+	storage.StoreFile(preview, "text/html", userIDStr, creaIDStr, version, enum.Preview)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
