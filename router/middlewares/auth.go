@@ -6,7 +6,7 @@ import (
 	"wooble/router/helpers"
 
 	jwt_lib "github.com/dgrijalva/jwt-go"
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 )
 
 // Authenticate is a handler middleware that authorizes a token (header field Authorization)

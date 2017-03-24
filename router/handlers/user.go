@@ -9,7 +9,7 @@ import (
 	enum "wooble/models/enums"
 	helper "wooble/router/helpers"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 )
 
 // GETUser returns one users with private infos if authenticated, with public infos if not

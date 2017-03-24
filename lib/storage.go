@@ -158,6 +158,11 @@ func (s *Storage) SetSource(src string) {
 	s.Source = src
 }
 
+// GetPathFor returns object path
+func (s *Storage) GetPathFor(userID string, objID string, version string, filename string) string {
+	return s.getFilePath(makeID(userID, objID), version, filename)
+}
+
 func (s *Storage) getFilePath(id []byte, version string, filename string) string {
 	var path string
 	switch s.Source {

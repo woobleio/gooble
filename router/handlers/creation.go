@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gin-gonic/gin"
 	version "github.com/mcuadros/go-version"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
@@ -13,8 +14,6 @@ import (
 	"wooble/lib"
 	"wooble/models"
 	"wooble/models/enums"
-
-	"gopkg.in/gin-gonic/gin.v1"
 )
 
 // GETCreations is a handler that returns one or more creations
@@ -220,15 +219,16 @@ func GETCreationCode(c *gin.Context) {
 	}
 
 	if data.Script == "" {
+		// TODO put this in wooblizer lib
 		data.Script = `var woobly = {
-		  "attribute": "a value (optionnal)",
-		  "_init": function() {
-		    // Creation code at runtime
-		  },
-		  "method": function(a, b) {
-		    // a method (optionnal)
-		  }
-		}`
+  "attribute": "a value (optionnal)",
+  "_init": function() {
+    // Creation code at runtime
+  },
+  "method": function(a, b) {
+    // a method (optionnal)
+  }
+}`
 	}
 
 	data.Title = crea.Title

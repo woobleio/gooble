@@ -11,9 +11,9 @@ import (
 	"wooble/models"
 	enum "wooble/models/enums"
 
+	"github.com/gin-gonic/gin"
 	"github.com/woobleio/wooblizer/wbzr"
 	"github.com/woobleio/wooblizer/wbzr/engine"
-	"gopkg.in/gin-gonic/gin.v1"
 )
 
 // GETPackages is a handler that returns one or more packages
@@ -176,7 +176,7 @@ func PATCHPackage(c *gin.Context) {
 		spltPath[0] = ""
 
 		pkgPatchForm.Source = new(string)
-		*pkgPatchForm.Source = "https://pkg.wooble.io" + strings.Join(spltPath, "/")
+		*pkgPatchForm.Source = lib.GetPkgURL() + strings.Join(spltPath, "/")
 	}
 
 	if err := model.UpdatePackagePatch(user.(*model.User).ID, pkg.ID, lib.SQLPatches(pkgPatchForm)); err != nil {

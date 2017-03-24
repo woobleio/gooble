@@ -3,14 +3,14 @@ package router
 import (
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	cors "gopkg.in/gin-contrib/cors.v1"
 
 	"wooble/lib"
 	"wooble/router/handlers"
 	middleware "wooble/router/middlewares"
 
-	cors "gopkg.in/gin-contrib/cors.v1"
-	"gopkg.in/gin-gonic/gin.v1"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 

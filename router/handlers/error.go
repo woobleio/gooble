@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 

@@ -8,7 +8,7 @@ import (
 	"wooble/models"
 	"wooble/router/helpers"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 )
 
 // GenerateToken generates a new token

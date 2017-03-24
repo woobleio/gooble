@@ -1,6 +1,9 @@
 package model
 
 import (
+	"fmt"
+	"strings"
+
 	"wooble/lib"
 	enum "wooble/models/enums"
 )
@@ -16,6 +19,7 @@ type Creation struct {
 	Version     string          `json:"version,omitempty" db:"version"`
 	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state,omitempty" db:"state"`
+	PreviewURL  string          `json:"previewUrl,omitempty"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	Engine    Engine `json:"-" db:""`
@@ -97,6 +101,16 @@ func CreationByID(id lib.ID) (*Creation, error) {
 	INNER JOIN engine e ON (c.engine=e.name)
   WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete')
 	`
+
+	if err := lib.DB.Get(&crea, q, id); err != nil {
+		return nil, err
+	}
+
+	s := lib.NewStorage(lib.SrcPreview)
+	previewURL := s.GetPathFor(fmt.Sprintf("%d", crea.Creator.ID), fmt.Sprintf("%d", crea.ID.ValueDecoded), crea.Versions[len(crea.Versions)-1], "index.html")
+	spltPath := strings.Split(previewURL, "/")
+	crea.PreviewURL = lib.GetAssetURL() + strings.Join(spltPath[1:], "/")
+	fmt.Print(lib.GetAssetURL())
 
 	return &crea, lib.DB.Get(&crea, q, id)
 }

@@ -53,7 +53,7 @@ RUN go get github.com/tdewolff/minify
 RUN go get github.com/woobleio/wooblizer
 
 RUN go get golang.org/x/crypto/scrypt
-RUN go get gopkg.in/gin-gonic/gin.v1
+RUN go get github.com/gin-gonic/gin
 RUN go get gopkg.in/gin-contrib/cors.v1
 RUN go get gopkg.in/go-playground/validator.v9
 
