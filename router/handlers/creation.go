@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	version "github.com/mcuadros/go-version"
@@ -35,6 +36,12 @@ func GETCreations(c *gin.Context) {
 			}
 			return
 		}
+		s := lib.NewStorage(lib.SrcPreview)
+		creatorID := fmt.Sprintf("%d", data.(*model.Creation).Creator.ID)
+		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)
+		previewURL := s.GetPathFor(creatorID, creaID, data.(*model.Creation).Versions[len(data.(*model.Creation).Versions)-1], "index.html")
+		spltPath := strings.Split(previewURL, "/")
+		data.(*model.Creation).PreviewURL = lib.GetAssetURL() + "/" + strings.Join(spltPath[1:], "/")
 	} else {
 		data, err = model.AllCreations(opts)
 		if err != nil {

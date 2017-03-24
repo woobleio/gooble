@@ -1,9 +1,6 @@
 package model
 
 import (
-	"fmt"
-	"strings"
-
 	"wooble/lib"
 	enum "wooble/models/enums"
 )
@@ -105,12 +102,6 @@ func CreationByID(id lib.ID) (*Creation, error) {
 	if err := lib.DB.Get(&crea, q, id); err != nil {
 		return nil, err
 	}
-
-	s := lib.NewStorage(lib.SrcPreview)
-	previewURL := s.GetPathFor(fmt.Sprintf("%d", crea.Creator.ID), fmt.Sprintf("%d", crea.ID.ValueDecoded), crea.Versions[len(crea.Versions)-1], "index.html")
-	spltPath := strings.Split(previewURL, "/")
-	crea.PreviewURL = lib.GetAssetURL() + strings.Join(spltPath[1:], "/")
-	fmt.Print(lib.GetAssetURL())
 
 	return &crea, lib.DB.Get(&crea, q, id)
 }
