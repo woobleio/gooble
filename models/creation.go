@@ -16,7 +16,9 @@ type Creation struct {
 	Version     string          `json:"version,omitempty" db:"version"`
 	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state,omitempty" db:"state"`
-	PreviewURL  string          `json:"previewUrl,omitempty"`
+	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
+
+	PreviewURL string `json:"previewUrl,omitempty"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	Engine    Engine `json:"-" db:""`
@@ -42,7 +44,7 @@ type CreationPurchase struct {
 const BaseVersion string = "1.0"
 
 // AllCreations returns all creations
-func AllCreations(opt lib.Option) (*[]Creation, error) {
+func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	var creations []Creation
 	q := lib.Query{
 		Q: `SELECT
@@ -53,6 +55,7 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 	    c.updated_at "crea.updated_at",
 	    c.versions,
 			c.price,
+			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
 			c.state,
 			e.name "eng.name",
 			e.extension,
@@ -72,11 +75,11 @@ func AllCreations(opt lib.Option) (*[]Creation, error) {
 
 	query := q.String()
 
-	return &creations, lib.DB.Select(&creations, query)
+	return &creations, lib.DB.Select(&creations, query, uID)
 }
 
 // CreationByID returns a creation with the id "id"
-func CreationByID(id lib.ID) (*Creation, error) {
+func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
 	var crea Creation
 	q := `
   SELECT
@@ -87,6 +90,7 @@ func CreationByID(id lib.ID) (*Creation, error) {
     c.updated_at "crea.updated_at",
     c.versions,
 		c.price,
+		CASE WHEN c.creator_id = $2 THEN true ELSE false END "is_owner",
 		c.state,
 		e.name "eng.name",
 		e.extension,
@@ -103,7 +107,7 @@ func CreationByID(id lib.ID) (*Creation, error) {
 		return nil, err
 	}
 
-	return &crea, lib.DB.Get(&crea, q, id)
+	return &crea, lib.DB.Get(&crea, q, id, uID)
 }
 
 // CreationPrivateByID returns a creation as private

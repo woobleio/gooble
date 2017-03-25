@@ -15,7 +15,7 @@ import (
 const (
 	SrcCreations string = "creations"
 	SrcPackages  string = "packages"
-	SrcPreview   string = "preview"
+	SrcPreview   string = "previews"
 )
 
 // Storage is Wooble cloud storage interface

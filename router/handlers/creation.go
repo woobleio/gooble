@@ -15,6 +15,7 @@ import (
 	"wooble/lib"
 	"wooble/models"
 	"wooble/models/enums"
+	helper "wooble/router/helpers"
 )
 
 // GETCreations is a handler that returns one or more creations
@@ -26,8 +27,18 @@ func GETCreations(c *gin.Context) {
 
 	creaID := c.Param("encid")
 
+	token, _ := helper.ParseToken(c)
+
+	// Auth not mandatory, only here to know either the auth'd user owns the creation or not
+	authUserID := uint64(0)
+	if token != nil {
+		if user, _ := model.UserByToken(token); user != nil {
+			authUserID = user.ID
+		}
+	}
+
 	if creaID != "" {
-		data, err = model.CreationByID(lib.InitID(creaID))
+		data, err = model.CreationByID(lib.InitID(creaID), authUserID)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
@@ -36,14 +47,16 @@ func GETCreations(c *gin.Context) {
 			}
 			return
 		}
+
 		s := lib.NewStorage(lib.SrcPreview)
 		creatorID := fmt.Sprintf("%d", data.(*model.Creation).Creator.ID)
 		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)
 		previewURL := s.GetPathFor(creatorID, creaID, data.(*model.Creation).Versions[len(data.(*model.Creation).Versions)-1], "index.html")
 		spltPath := strings.Split(previewURL, "/")
 		data.(*model.Creation).PreviewURL = lib.GetAssetURL() + "/" + strings.Join(spltPath[1:], "/")
+
 	} else {
-		data, err = model.AllCreations(opts)
+		data, err = model.AllCreations(opts, authUserID)
 		if err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
@@ -154,7 +167,7 @@ func BuyCreations(c *gin.Context) {
 	totalAmount := uint64(0)
 	creas := make([]model.Creation, 0)
 	for _, creaID := range buyForm.Creations {
-		crea, err := model.CreationByID(lib.InitID(creaID))
+		crea, err := model.CreationByID(lib.InitID(creaID), 0)
 		if err != nil {
 			c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
 			return
