@@ -13,12 +13,12 @@ type Creation struct {
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
 	Creator     User            `json:"creator,omitempty" db:""`
 	Versions    lib.StringSlice `json:"versions,omitempty" db:"versions"`
-	Version     string          `json:"version,omitempty" db:"version"`
 	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state,omitempty" db:"state"`
 	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
 
 	PreviewURL string `json:"previewUrl,omitempty"`
+	Version    string `json:"version,omitempty"`
 
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	Engine    Engine `json:"-" db:""`
@@ -100,14 +100,18 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
   FROM creation c
   INNER JOIN app_user u ON (c.creator_id = u.id)
 	INNER JOIN engine e ON (c.engine=e.name)
-  WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete')
+  WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete' OR array_length(c.versions, 1) > 1)
 	`
 
-	if err := lib.DB.Get(&crea, q, id); err != nil {
+	if err := lib.DB.Get(&crea, q, id, uID); err != nil {
 		return nil, err
 	}
 
-	return &crea, lib.DB.Get(&crea, q, id, uID)
+	if len(crea.Versions) > 1 {
+		crea.Versions = crea.Versions[:len(crea.Versions)-1]
+	}
+
+	return &crea, nil
 }
 
 // CreationPrivateByID returns a creation as private
