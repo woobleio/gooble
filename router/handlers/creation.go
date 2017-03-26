@@ -212,8 +212,6 @@ func BuyCreations(c *gin.Context) {
 
 // GETCreationCode return private creation view
 func GETCreationCode(c *gin.Context) {
-	var data form.CreationCodeForm
-
 	user, _ := c.Get("user")
 
 	creaID := lib.InitID(c.Param("encid"))
@@ -229,18 +227,33 @@ func GETCreationCode(c *gin.Context) {
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 
-	data.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
-	data.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
-	data.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
+	filter := c.Query("filter")
+	if filter != "" {
+		fFields := strings.Split(filter, ",")
+		for _, field := range fFields {
+			switch field {
+			case "script":
+				crea.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
+			case "document":
+				crea.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
+			case "style":
+				crea.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
+			}
+		}
+	} else {
+		crea.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
+		crea.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
+		crea.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
+	}
 
 	if storage.Error() != nil { // TODO manage storage errors better
 		c.Error(storage.Error())
-		data.Script = ""
+		crea.Script = ""
 	}
 
-	if data.Script == "" {
+	if crea.Script == "" {
 		// TODO put this in wooblizer lib
-		data.Script = `var woobly = {
+		crea.Script = `var woobly = {
   "attribute": "a value (optionnal)",
   "_init": function() {
     // Creation code at runtime
@@ -251,9 +264,7 @@ func GETCreationCode(c *gin.Context) {
 }`
 	}
 
-	data.Title = crea.Title
-
-	c.JSON(OK, NewRes(data))
+	c.JSON(OK, NewRes(crea))
 }
 
 // PUTCreation edits creation information

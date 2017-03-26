@@ -20,6 +20,10 @@ type Creation struct {
 	PreviewURL string `json:"previewUrl,omitempty"`
 	Version    string `json:"version,omitempty"`
 
+	Script   string `json:"script,omitempty"`
+	Document string `json:"document,omitempty"`
+	Style    string `json:"style,omitempty"`
+
 	CreatorID uint64 `json:"-"       db:"creator_id"`
 	Engine    Engine `json:"-" db:""`
 	Price     uint64 `json:"price" db:"price"` // in cents euro
