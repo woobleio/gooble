@@ -83,6 +83,7 @@ func POSTCreation(c *gin.Context) {
 	crea.Title = data.Title
 	crea.Description = lib.InitNullString(data.Description)
 	crea.Price = data.Price
+	crea.Alias = data.Alias
 	if data.Engine == "" {
 		data.Engine = "JSES5"
 	}
@@ -287,6 +288,7 @@ func PUTCreation(c *gin.Context) {
 	crea.Description = lib.InitNullString(creaForm.Description)
 	crea.Price = creaForm.Price
 	crea.State = creaForm.State
+	crea.Alias = creaForm.Alias
 
 	if err := model.UpdateCreation(&crea); err != nil {
 		c.Error(err).SetMeta(ErrDB)

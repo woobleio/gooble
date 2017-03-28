@@ -2,7 +2,8 @@ package form
 
 // CreationForm is a form for creation
 type CreationForm struct {
-	Title string `json:"title" validate:"required,max=15,min=3"`
+	Title string `json:"title" validate:"required,min=3,max=20"`
+	Alias string `json:"alias" validate:"required,min=1,max=10"`
 
 	Engine      string `json:"engine" validate:"omitempty,alphanum"`
 	State       string `json:"state" validate:"omitempty,alpha"`

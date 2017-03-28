@@ -128,10 +128,7 @@ func PATCHPackage(c *gin.Context) {
 
 			creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
 
-			objName := creation.Title
-			if creation.Alias != nil {
-				objName = creation.Alias.String
-			}
+			objName := creation.Alias
 
 			creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
 			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Script)
@@ -264,7 +261,7 @@ func PUTPackageCreation(c *gin.Context) {
 	pkgCrea := new(model.Package)
 	pkgCrea.ID = lib.InitID(c.Param("encid"))
 	pkgCrea.UserID = user.(*model.User).ID
-	crea.Alias = lib.InitNullString(data.Alias)
+	crea.Alias = data.Alias
 	crea.Version = data.Version
 	pkgCrea.Creations = []model.Creation{*crea}
 

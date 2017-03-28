@@ -27,12 +27,12 @@ func (p *Package) PopulateCreations() error {
 	q := `
 	SELECT
 		c.id "crea.id",
-    pc.alias,
 		pc.version,
 		c.title,
     c.creator_id,
 		c.versions,
 		c.price,
+		CASE WHEN pc.alias IS NOT NULL THEN pc.alias ELSE c.alias END AS alias,
 		u.id "user.id",
 		u.name,
     CASE WHEN c.price = 0  THEN 'false'

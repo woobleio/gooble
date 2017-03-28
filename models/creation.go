@@ -13,7 +13,7 @@ type Creation struct {
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
 	Creator     User            `json:"creator,omitempty" db:""`
 	Versions    lib.StringSlice `json:"versions,omitempty" db:"versions"`
-	Alias       *lib.NullString `json:"alias,omitempty" db:"alias"`
+	Alias       string          `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state,omitempty" db:"state"`
 	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
 
@@ -59,6 +59,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	    c.updated_at "crea.updated_at",
 	    c.versions,
 			c.price,
+			c.alias,
 			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
 			c.state,
 			e.name "eng.name",
@@ -94,6 +95,7 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
     c.updated_at "crea.updated_at",
     c.versions,
 		c.price,
+		c.alias,
 		CASE WHEN c.creator_id = $2 THEN true ELSE false END "is_owner",
 		c.state,
 		e.name "eng.name",
@@ -126,6 +128,7 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 		c.id "crea.id",
 		c.title,
 		c.description,
+		c.alias,
 		c.creator_id,
 		c.created_at "crea.created_at",
 		c.updated_at "crea.updated_at",
@@ -147,11 +150,11 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, price = $5, state = $6
+  SET title = $3, description = $4, price = $5, state = $6, alias = $7
   WHERE id = $1
   AND creator_id = $2
   `
-	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price, crea.State)
+	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price, crea.State, crea.Alias)
 	return err
 }
 
@@ -177,13 +180,14 @@ func NewCreation(crea *Creation) (*Creation, error) {
     creator_id,
     versions,
     engine,
-		state
-  ) VALUES ($1, $2, $3, $4, $5) RETURNING id
+		state,
+		alias
+  ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
   `
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Engine.Name, crea.State).Scan(&crea.ID)
+	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Engine.Name, crea.State, crea.Alias).Scan(&crea.ID)
 }
 
 // DeleteCreation deletes a creation
