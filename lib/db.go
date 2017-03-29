@@ -224,6 +224,59 @@ func (id ID) Value() (driver.Value, error) {
 	return int64(id.ValueDecoded), nil
 }
 
+// Exprs for psql arrays
+var (
+	unquotedChar  = `[^",\\{}\s(NULL)]`
+	unquotedValue = fmt.Sprintf("(%s)+", unquotedChar)
+
+	quotedChar  = `[^"\\]|\\"|\\\\`
+	quotedValue = fmt.Sprintf("\"(%s)*\"", quotedChar)
+
+	arrayValue = fmt.Sprintf("(?P<value>(%s|%s))", unquotedValue, quotedValue)
+
+	arrayExp = regexp.MustCompile(fmt.Sprintf("((%s)(,)?)", arrayValue))
+
+	valueIndex int
+)
+
+// UintSlice if a uint slice for sql driver
+type UintSlice []uint64
+
+// Value returns UintSlice as psql value
+func (us UintSlice) Value() (driver.Value, error) {
+	uints := make([]string, len(us))
+	for i, v := range us {
+		uints[i] = strconv.FormatUint(v, 10)
+	}
+	return "{" + strings.Join(uints, ",") + "}", nil
+}
+
+// Scan scans UintSlice
+func (us *UintSlice) Scan(src interface{}) error {
+	asBytes, ok := src.([]byte)
+	if !ok {
+		return errors.New("Scan source was not []bytes")
+	}
+
+	array := string(asBytes)
+
+	parsed := make([]uint64, 0)
+	matches := arrayExp.FindAllStringSubmatch(array, -1)
+	for _, match := range matches {
+		s := match[valueIndex]
+		// the string _might_ be wrapped in quotes, so trim them:
+		s = strings.Trim(s, "\"")
+		s = strings.Trim(s, ",")
+
+		val, _ := strconv.ParseUint(s, 10, 64)
+		parsed = append(parsed, val)
+	}
+
+	(*us) = UintSlice(parsed)
+
+	return nil
+}
+
 // StringSlice see https://gist.github.com/adharris/4163702
 type StringSlice []string
 
@@ -233,20 +286,6 @@ func (s *StringSlice) Scan(src interface{}) error {
 	if !ok {
 		return errors.New("Scan source was not []bytes")
 	}
-
-	var (
-		unquotedChar  = `[^",\\{}\s(NULL)]`
-		unquotedValue = fmt.Sprintf("(%s)+", unquotedChar)
-
-		quotedChar  = `[^"\\]|\\"|\\\\`
-		quotedValue = fmt.Sprintf("\"(%s)*\"", quotedChar)
-
-		arrayValue = fmt.Sprintf("(?P<value>(%s|%s))", unquotedValue, quotedValue)
-
-		arrayExp = regexp.MustCompile(fmt.Sprintf("((%s)(,)?)", arrayValue))
-
-		valueIndex int
-	)
 
 	array := string(asBytes)
 

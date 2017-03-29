@@ -12,7 +12,7 @@ type PackageForm struct {
 // PackageCreationForm if a form standard for pushing creation in a package
 type PackageCreationForm struct {
 	CreationID string `json:"creation" validate:"required"`
-	Version    string `json:"version"`
+	Version    uint64 `json:"version"`
 	Alias      string `json:"alias"`
 }
 

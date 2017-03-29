@@ -2,12 +2,10 @@ package handler
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	version "github.com/mcuadros/go-version"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
 
@@ -48,10 +46,11 @@ func GETCreations(c *gin.Context) {
 			return
 		}
 
+		creaLastVersion := fmt.Sprintf("%d", data.(*model.Creation).Versions[len(data.(*model.Creation).Versions)-1])
 		s := lib.NewStorage(lib.SrcPreview)
 		creatorID := fmt.Sprintf("%d", data.(*model.Creation).Creator.ID)
 		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)
-		previewURL := s.GetPathFor(creatorID, creaID, data.(*model.Creation).Versions[len(data.(*model.Creation).Versions)-1], "index.html")
+		previewURL := s.GetPathFor(creatorID, creaID, creaLastVersion, "index.html")
 		spltPath := strings.Split(previewURL, "/")
 		data.(*model.Creation).PreviewURL = lib.GetAssetURL() + "/" + strings.Join(spltPath[1:], "/")
 
@@ -130,9 +129,9 @@ func DELETECreation(c *gin.Context) {
 		storage := lib.NewStorage(lib.SrcCreations)
 
 		for _, v := range crea.Versions {
-			storage.PushBulkFile(uIDStr, creaIDStr, v, enum.Script)
-			storage.PushBulkFile(uIDStr, creaIDStr, v, enum.Document)
-			storage.PushBulkFile(uIDStr, creaIDStr, v, enum.Style)
+			storage.PushBulkFile(uIDStr, creaIDStr, fmt.Sprintf("%d", v), enum.Script)
+			storage.PushBulkFile(uIDStr, creaIDStr, fmt.Sprintf("%d", v), enum.Document)
+			storage.PushBulkFile(uIDStr, creaIDStr, fmt.Sprintf("%d", v), enum.Style)
 		}
 
 		storage.BulkDeleteFiles()
@@ -224,7 +223,7 @@ func GETCreationCode(c *gin.Context) {
 
 	storage := lib.NewStorage(lib.SrcCreations)
 
-	latestVersion := crea.Versions[len(crea.Versions)-1]
+	latestVersion := fmt.Sprintf("%d", crea.Versions[len(crea.Versions)-1])
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 
@@ -324,7 +323,7 @@ func SaveVersion(c *gin.Context) {
 	}
 
 	userIDStr := fmt.Sprintf("%d", user.(*model.User).ID)
-	version := crea.Versions[len(crea.Versions)-1]
+	version := fmt.Sprintf("%d", crea.Versions[len(crea.Versions)-1])
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
 
@@ -369,15 +368,6 @@ func SaveVersion(c *gin.Context) {
 
 // POSTCreationVersion creates a new version
 func POSTCreationVersion(c *gin.Context) {
-	var versionForm struct {
-		Version string `json:"version" validate:"required"`
-	}
-
-	if err := c.BindJSON(&versionForm); err != nil {
-		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
-		return
-	}
-
 	user, _ := c.Get("user")
 	uID := user.(*model.User).ID
 
@@ -389,25 +379,24 @@ func POSTCreationVersion(c *gin.Context) {
 	}
 
 	curVersion := crea.Versions[len(crea.Versions)-1]
-	if version.Compare(curVersion, versionForm.Version, ">=") {
-		c.Error(errors.New("Version POST issue, either malformed or posted version lesser than the latest")).SetMeta(ErrCreaVersion.SetParams("version", versionForm.Version))
-		return
-	}
+	newVersion := curVersion + 1
 
 	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
+	curVersionStr := fmt.Sprintf("%d", curVersion)
+	newVersionStr := fmt.Sprintf("%d", newVersion)
 
-	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Script)
-	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Document)
-	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersion, versionForm.Version, enum.Style)
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersionStr, newVersionStr, enum.Script)
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersionStr, newVersionStr, enum.Document)
+	storage.CopyAndStoreFile(uIDStr, creaIDStr, curVersionStr, newVersionStr, enum.Style)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "copy"))
 		return
 	}
 
-	if err := model.NewCreationVersion(uID, crea.ID, append(crea.Versions, versionForm.Version)); err != nil {
+	if err := model.NewCreationVersion(uID, crea.ID, append(crea.Versions, newVersion)); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}

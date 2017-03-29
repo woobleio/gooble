@@ -45,7 +45,6 @@ RUN go get github.com/codegangsta/gin
 RUN go get github.com/dgrijalva/jwt-go
 RUN go get github.com/jmoiron/sqlx
 RUN go get github.com/lib/pq
-RUN go get github.com/mcuadros/go-version
 RUN go get github.com/speps/go-hashids
 RUN go get github.com/spf13/viper
 RUN go get github.com/stripe/stripe-go

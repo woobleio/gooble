@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"wooble/lib"
 	enum "wooble/models/enums"
 )
@@ -12,13 +13,13 @@ type Creation struct {
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
 	Creator     User            `json:"creator,omitempty" db:""`
-	Versions    lib.StringSlice `json:"versions,omitempty" db:"versions"`
+	Versions    lib.UintSlice   `json:"versions,omitempty" db:"versions"`
 	Alias       string          `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state,omitempty" db:"state"`
 	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
 
 	PreviewURL string `json:"previewUrl,omitempty"`
-	Version    string `json:"version,omitempty"`
+	Version    uint64 `json:"version,omitempty"`
 
 	Script   string `json:"script,omitempty"`
 	Document string `json:"document,omitempty"`
@@ -45,7 +46,7 @@ type CreationPurchase struct {
 }
 
 // BaseVersion is creation default version
-const BaseVersion string = "1.0"
+const BaseVersion uint64 = 1
 
 // AllCreations returns all creations
 func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
@@ -159,9 +160,9 @@ func UpdateCreation(crea *Creation) error {
 }
 
 // CreationByIDAndVersion returns the creation "creaID" and check if the version "version" exists
-func CreationByIDAndVersion(id lib.ID, version string) (*Creation, error) {
+func CreationByIDAndVersion(id lib.ID, version uint64) (*Creation, error) {
 	crea := new(Creation)
-	if version == "" {
+	if version == 0 {
 		version = BaseVersion
 	}
 	q := `
@@ -187,7 +188,7 @@ func NewCreation(crea *Creation) (*Creation, error) {
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
-	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, BaseVersion), crea.Engine.Name, crea.State, crea.Alias).Scan(&crea.ID)
+	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, fmt.Sprintf("%d", BaseVersion)), crea.Engine.Name, crea.State, crea.Alias).Scan(&crea.ID)
 }
 
 // DeleteCreation deletes a creation
@@ -214,7 +215,7 @@ func SafeDeleteCreation(uID uint64, creaID lib.ID) error {
 }
 
 // NewCreationVersion create a new version
-func NewCreationVersion(uID uint64, creaID lib.ID, version lib.StringSlice) error {
+func NewCreationVersion(uID uint64, creaID lib.ID, version lib.UintSlice) error {
 	q := `UPDATE creation SET versions = $4, state = $5 WHERE id = $2 AND creator_id = $1 AND state = $3`
 	_, err := lib.DB.Exec(q, uID, creaID, enum.Public, version, enum.Draft)
 	return err

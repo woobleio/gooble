@@ -156,7 +156,7 @@ func UpdatePackageCreation(pkg *Package) error {
 }
 
 // NewPackageCreation create a new relationship with package and creation
-func NewPackageCreation(pkgID lib.ID, creaID lib.ID, version string, alias string) error {
+func NewPackageCreation(pkgID lib.ID, creaID lib.ID, version uint64, alias string) error {
 	q := `INSERT INTO package_creation(package_id, creation_id, version, alias) VALUES ($1, $2, $3, $4)`
 	_, err := lib.DB.Exec(q, pkgID, creaID, version, alias)
 	return err

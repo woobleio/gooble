@@ -131,7 +131,8 @@ func PATCHPackage(c *gin.Context) {
 			objName := creation.Alias
 
 			creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
-			src := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Script)
+			creaVersionStr := fmt.Sprintf("%d", creation.Version)
+			src := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Script)
 			script, err = wb.Inject(src, objName)
 
 			if err != nil {
@@ -142,12 +143,12 @@ func PATCHPackage(c *gin.Context) {
 				panic(err)
 			}
 
-			docSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Document)
+			docSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Document)
 			if docSrc != "" {
 				err = script.IncludeHtml(src)
 			}
 
-			styleSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creation.Version, enum.Style)
+			styleSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Style)
 			if styleSrc != "" {
 				err = script.IncludeCss(src)
 			}
@@ -285,13 +286,14 @@ func PushCreation(c *gin.Context) {
 	}
 
 	crea, err := model.CreationByIDAndVersion(lib.InitID(pkgCreaForm.CreationID), pkgCreaForm.Version)
+	creaVersionStr := fmt.Sprintf("%d", pkgCreaForm.Version)
 	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/"+pkgCreaForm.Version))
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", pkgCreaForm.CreationID+"/v"+creaVersionStr))
 		return
 	}
 
 	if crea.State == enum.Draft && crea.Versions[len(crea.Versions)-1] == pkgCreaForm.Version {
-		c.Error(errors.New("Creation not available")).SetMeta(ErrCreaNotAvail.SetParams("id", crea.ID.ValueEncoded+"/"+pkgCreaForm.Version))
+		c.Error(errors.New("Creation not available")).SetMeta(ErrCreaNotAvail.SetParams("id", crea.ID.ValueEncoded+"/v"+creaVersionStr))
 		return
 	}
 
@@ -313,7 +315,7 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if pkgCreaForm.Version == "" {
+	if pkgCreaForm.Version == 0 {
 		pkgCreaForm.Version = crea.Versions[len(crea.Versions)-1]
 	}
 
