@@ -132,6 +132,7 @@ CREATE TABLE creation (
     price integer DEFAULT 0 NOT NULL,
     thumb_url text,
     description text,
+    alias text DEFAULT 'woobly'::text,
     state enum_creation_states DEFAULT 'draft'::enum_creation_states NOT NULL,
     versions text[] DEFAULT '{1.0}'::text[],
     old_creator_id integer
@@ -385,7 +386,7 @@ SELECT pg_catalog.setval('app_user_id_seq', 73, true);
 -- Data for Name: creation; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation (id, title, creator_id, created_at, updated_at, engine, price, thumb_url, description, state, versions, old_creator_id) FROM stdin;
+COPY creation (id, title, creator_id, created_at, updated_at, engine, price, thumb_url, description, alias, state, versions, old_creator_id) FROM stdin;
 \.
 
 

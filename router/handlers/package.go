@@ -317,7 +317,7 @@ func PushCreation(c *gin.Context) {
 		pkgCreaForm.Version = crea.Versions[len(crea.Versions)-1]
 	}
 
-	if err := model.NewPackageCreation(pkg.ID, crea.ID, pkgCreaForm.Version); err != nil {
+	if err := model.NewPackageCreation(pkg.ID, crea.ID, pkgCreaForm.Version, crea.Alias); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
