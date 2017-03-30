@@ -63,7 +63,6 @@ func POSTPackage(c *gin.Context) {
 	plan := user.(*model.User).Plan
 
 	limitNbPkg := plan.NbPkg.Int64
-	limitNbDomains := plan.NbDomains.Int64
 	userNbPkg := model.UserNbPackages(pkg.UserID)
 
 	// 0 means unlimited
@@ -72,13 +71,8 @@ func POSTPackage(c *gin.Context) {
 		return
 	}
 
-	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
-		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "domains", "plan", plan.Label.String))
-		return
-	}
-
 	pkg.Title = data.Title
-	pkg.Domains = data.Domains
+	pkg.Referer = lib.InitNullString(data.Referer)
 
 	var errPkg error
 	pkg, errPkg = model.NewPackage(pkg)
@@ -160,7 +154,7 @@ func PATCHPackage(c *gin.Context) {
 
 		storage.Source = lib.SrcPackages
 
-		bf, err := wb.SecureAndWrap(fullPkg.Domains...)
+		bf, err := wb.SecureAndWrap([]string{fullPkg.Referer.String}...)
 
 		if err != nil || storage.Error() != nil {
 			c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "package"))
@@ -226,16 +220,7 @@ func PUTPackage(c *gin.Context) {
 	pkg.ID = lib.InitID(c.Param("encid"))
 	pkg.UserID = user.(*model.User).ID
 	pkg.Title = data.Title
-
-	plan := user.(*model.User).Plan
-	limitNbDomains := plan.NbDomains.Int64
-
-	if limitNbDomains != 0 && int64(len(data.Domains)) > limitNbDomains {
-		c.Error(nil).SetMeta(ErrPlanLimit.SetParams("source", "domains", "plan", plan.Label.String))
-		return
-	}
-
-	pkg.Domains = data.Domains
+	pkg.Referer = lib.InitNullString(data.Referer)
 
 	if err := model.UpdatePackage(pkg); err != nil {
 		c.Error(err).SetMeta(ErrDB)

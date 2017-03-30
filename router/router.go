@@ -34,6 +34,7 @@ func Load() {
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = lib.GetOrigins()
+	config.AllowMethods = []string{"POST", "GET", "PUT", "PATCH", "DELETE"}
 	config.AllowHeaders = []string{"Content-Type", "Authorization"}
 	config.ExposeHeaders = []string{"Authorization", "Location"}
 

@@ -12,7 +12,7 @@ type Package struct {
 
 	Title string `json:"title" validate:"required" db:"pkg.title"`
 
-	Domains   lib.StringSlice `json:"domains" db:"domains"`
+	Referer   *lib.NullString `json:"referer,omitempty" db:"referer"`
 	UserID    uint64          `json:"-" db:"pkg.user_id"`
 	User      User            `json:"-" db:""`
 	Creations []Creation      `json:"creations,omitempty" db:""`
@@ -58,7 +58,7 @@ func AllPackages(opt *lib.Option, userID uint64) (*[]Package, error) {
   		pkg.id "pkg.id",
   		pkg.user_id "pkg.user_id",
   		pkg.title "pkg.title",
-  		pkg.domains,
+  		pkg.referer,
 			pkg.source,
   		pkg.created_at "pkg.created_at",
   		pkg.updated_at "pkg.updated_at"
@@ -81,7 +81,7 @@ func PackageByID(uID uint64, id lib.ID) (*Package, error) {
 		pkg.id "pkg.id",
 		pkg.user_id "pkg.user_id",
 		pkg.title "pkg.title",
-		pkg.domains,
+		pkg.referer,
 		pkg.source,
 		pkg.created_at "pkg.created_at",
 		pkg.updated_at "pkg.updated_at"
@@ -118,8 +118,8 @@ func PackageNbCrea(id lib.ID) uint64 {
 
 // NewPackage creates a new package
 func NewPackage(pkg *Package) (*Package, error) {
-	q := `INSERT INTO package(title, user_id, domains) VALUES ($1, $2, $3) RETURNING id`
-	return pkg, lib.DB.QueryRow(q, pkg.Title, pkg.UserID, pkg.Domains).Scan(&pkg.ID)
+	q := `INSERT INTO package(title, user_id, referer) VALUES ($1, $2, $3) RETURNING id`
+	return pkg, lib.DB.QueryRow(q, pkg.Title, pkg.UserID, pkg.Referer).Scan(&pkg.ID)
 }
 
 // DeletePackage delete a package
@@ -164,8 +164,8 @@ func NewPackageCreation(pkgID lib.ID, creaID lib.ID, version uint64, alias strin
 
 // UpdatePackage updates package form
 func UpdatePackage(pkg *Package) error {
-	q := `UPDATE package SET title=$3, domains=$4 WHERE id=$1 AND user_id=$2`
-	_, err := lib.DB.Exec(q, pkg.ID, pkg.UserID, pkg.Title, pkg.Domains)
+	q := `UPDATE package SET title = $3, referer = $4 WHERE id = $1 AND user_id = $2`
+	_, err := lib.DB.Exec(q, pkg.ID, pkg.UserID, pkg.Title, pkg.Referer)
 	return err
 }
 

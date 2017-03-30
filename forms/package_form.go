@@ -1,12 +1,10 @@
 package form
 
-import "wooble/lib"
-
 // PackageForm is a form standard for package
 type PackageForm struct {
 	Title string `json:"title" validate:"required,ascii,max=15"`
 
-	Domains lib.StringSlice `json:"domains"`
+	Referer string `json:"referer"`
 }
 
 // PackageCreationForm if a form standard for pushing creation in a package

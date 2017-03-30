@@ -206,7 +206,7 @@ CREATE TABLE package (
     title text NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
-    domains text[] NOT NULL,
+    referer text[] NOT NULL,
     source text
 );
 
@@ -263,7 +263,7 @@ CREATE TABLE plan (
     price_per_year numeric DEFAULT 0 NOT NULL,
     nb_pkg integer DEFAULT 1,
     nb_crea integer DEFAULT 1,
-    nb_domains integer DEFAULT 1
+    nb_referer integer DEFAULT 1
 );
 
 
@@ -426,7 +426,7 @@ JSES5	.js	application/javascript
 -- Data for Name: package; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY package (id, user_id, title, created_at, updated_at, domains, source) FROM stdin;
+COPY package (id, user_id, title, created_at, updated_at, referer, source) FROM stdin;
 \.
 
 
@@ -455,7 +455,7 @@ SELECT pg_catalog.setval('package_id_seq', 59, true);
 -- Data for Name: plan; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY plan (label, price_per_month, price_per_year, nb_pkg, nb_crea, nb_domains) FROM stdin;
+COPY plan (label, price_per_month, price_per_year, nb_pkg, nb_crea, nb_referer) FROM stdin;
 free	0	0	1	10	1
 premium	2000	21525	2	20	2
 pro	10000	110000	0	0	0

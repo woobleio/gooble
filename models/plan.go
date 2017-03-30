@@ -13,15 +13,13 @@ const (
 // Plan is a Wooble plan with some restrictions
 // NbPkg is the number of packages allowed (0 means infinite)
 // NbCrea is the number of creations per package (0 means infinite)
-// NbDomains is the number of domains per package (0 means infinite)
 type Plan struct {
 	Label      lib.NullString `json:"label" db:"plan.label"`
 	PriceMonth uint64         `json:"pricePerMonth,omitempty" db:"price_per_month"`
 	PriceYear  uint64         `json:"pricePerYear,omitempty" db:"price_per_year"`
 
-	NbPkg     lib.NullInt64 `json:"nbPkg" db:"nb_pkg"`
-	NbCrea    lib.NullInt64 `json:"nbCrea" db:"nb_crea"`
-	NbDomains lib.NullInt64 `json:"nbDomains" db:"nb_domains"`
+	NbPkg  lib.NullInt64 `json:"nbPkg" db:"nb_pkg"`
+	NbCrea lib.NullInt64 `json:"nbCrea" db:"nb_crea"`
 
 	StartDate *lib.NullTime `json:"startDate,omitempty" db:"start_date"`
 	EndDate   *lib.NullTime `json:"endDate,omitempty" db:"end_date"`
@@ -41,8 +39,7 @@ func DefaultPlan() (*Plan, error) {
 		SELECT
       pl.label "plan.label",
       pl.nb_pkg,
-      pl.nb_crea,
-      pl.nb_domains
+      pl.nb_crea
 		FROM plan pl
 		WHERE pl.label = $1
 	`

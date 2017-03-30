@@ -269,7 +269,7 @@ Authorization: <refreshed token if expired>
     {
       "id": <package id>
       "title": <package title>
-      "domains":[<domains associated to the package>]
+      "referer":[<referer associated to the package>]
       "createdAt": <package creation date>
       "updatedAt"?: <package last update date>
       "creations"?: [...]
@@ -295,7 +295,7 @@ Authorization: <refreshed token if expired>
   "data": {
     "id": <package id>
     "title": <package title>
-    "domains":[<domains associated to the package>]
+    "referer":[<referer associated to the package>]
     "createdAt": <package creation date>
     "updatedAt"?: <package last update date>
     "creations"?: [...]
@@ -310,7 +310,7 @@ Authorization: <user token>
 
 {
   "title": <package title>
-  "domains"?: [<domains with which the package will work>]
+  "referer"?: [<referer with which the package will work>]
 }
 ```
 ```js
@@ -327,7 +327,7 @@ Authorization: <user token>
 
 {
   "title": <package title>
-  "domains"?: [<domains with which the package will work>]
+  "referer"?: [<referer with which the package will work>]
 }
 ```
 ```js
@@ -343,7 +343,7 @@ Authorization: <user token>
 
 {
   "title"?: <package title>
-  "domains"?: [<domains with which the package will work>]
+  "referer"?: [<referer with which the package will work>]
   "build"?: <build operation, boolean expected>
 }
 ```

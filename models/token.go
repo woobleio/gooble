@@ -121,7 +121,6 @@ func UserByToken(token interface{}) (*User, error) {
 	labelSrc := planInf["label"]
 	nbPkgSrc := planInf["nbPkg"]
 	nbCreaSrc := planInf["nbCrea"]
-	nbDomainsSrc := planInf["nbDomains"]
 
 	layout := "2006-01-02T15:04:05Z"
 	startDate, err := time.Parse(layout, planInf["startDate"].(string))
@@ -136,17 +135,15 @@ func UserByToken(token interface{}) (*User, error) {
 
 	nbPkg, okPkg := nbPkgSrc.(float64)
 	nbCrea, okCrea := nbCreaSrc.(float64)
-	nbDomains, okDomains := nbDomainsSrc.(float64)
 
-	if !okPkg || !okCrea || !okDomains {
-		return nil, errors.New("Parsing error on nbPkg or nbCrea or nbDomains")
+	if !okPkg || !okCrea {
+		return nil, errors.New("Parsing error on nbPkg or nbCrea")
 	}
 
 	plan := &Plan{
 		Label:     *lib.InitNullString(labelSrc.(string)),
 		NbPkg:     *lib.InitNullInt64(int64(nbPkg)),
 		NbCrea:    *lib.InitNullInt64(int64(nbCrea)),
-		NbDomains: *lib.InitNullInt64(int64(nbDomains)),
 		StartDate: lib.InitNullTime(startDate),
 		EndDate:   lib.InitNullTime(endDate),
 	}

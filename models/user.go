@@ -61,8 +61,7 @@ func UserPrivateByID(id uint64) (*User, error) {
       pu.end_date,
       pl.label "plan.label",
       pl.nb_pkg,
-      pl.nb_crea,
-      pl.nb_domains
+      pl.nb_crea
     FROM app_user u
     LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id)
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
@@ -113,8 +112,7 @@ func UserByEmail(email string) (*User, error) {
       pu.end_date,
       pl.label "plan.label",
       pl.nb_pkg,
-      pl.nb_crea,
-      pl.nb_domains
+      pl.nb_crea
     FROM app_user u
     LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id)
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
