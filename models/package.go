@@ -172,12 +172,13 @@ func UpdatePackage(pkg *Package) error {
 // UpdatePackagePatch updates user informations
 func UpdatePackagePatch(uID uint64, pkgID lib.ID, patch lib.SQLPatch) error {
 	q := patch.GetUpdateQuery("package") +
-		`WHERE id = $` + fmt.Sprintf("%d", patch.Index+1) +
-		` AND user_id = $` + fmt.Sprintf("%d", patch.Index+2)
+		` WHERE user_id = $` + fmt.Sprintf("%d", patch.Index+1) +
+		` AND id = $` + fmt.Sprintf("%d", patch.Index+2)
 
 	patch.Args = append(patch.Args, uID)
 	patch.Args = append(patch.Args, pkgID)
 	_, err := lib.DB.Exec(q, patch.Args...)
+
 	return err
 }
 
