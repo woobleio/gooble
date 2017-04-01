@@ -253,7 +253,7 @@ func GETCreationCode(c *gin.Context) {
 
 	if crea.Script == "" {
 		// TODO put this in wooblizer lib
-		crea.Script = `var woobly = {
+		crea.Script = `woobly = {
   "attribute": "a value (optionnal)",
   "_init": function() {
     // Creation code at runtime

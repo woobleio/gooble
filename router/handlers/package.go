@@ -126,6 +126,7 @@ func PATCHPackage(c *gin.Context) {
 			creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
 			creaVersionStr := fmt.Sprintf("%d", creation.Version)
 			src := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Script)
+
 			script, err = wb.Inject(src, objName)
 
 			if err != nil {
