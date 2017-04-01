@@ -2,7 +2,6 @@ package handler
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -278,11 +277,6 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if crea.State == enum.Draft && crea.Versions[len(crea.Versions)-1] == pkgCreaForm.Version {
-		c.Error(errors.New("Creation not available")).SetMeta(ErrCreaNotAvail.SetParams("id", crea.ID.ValueEncoded+"/v"+creaVersionStr))
-		return
-	}
-
 	user, _ := c.Get("user")
 
 	pkgID := lib.InitID(c.Param("encid"))
@@ -301,7 +295,7 @@ func PushCreation(c *gin.Context) {
 		return
 	}
 
-	if pkgCreaForm.Version == 0 {
+	if pkgCreaForm.Version == 0 || pkgCreaForm.Version > crea.Versions[len(crea.Versions)-1] {
 		pkgCreaForm.Version = crea.Versions[len(crea.Versions)-1]
 	}
 
@@ -312,7 +306,7 @@ func PushCreation(c *gin.Context) {
 
 	c.Header("Location", fmt.Sprintf("/packages/%s", pkg.ID.ValueEncoded))
 
-	c.AbortWithStatus(NoContent)
+	c.JSON(Created, NewRes(crea))
 }
 
 // RemovePackageCreation remove a creation from a package

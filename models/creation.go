@@ -166,8 +166,12 @@ func CreationByIDAndVersion(id lib.ID, version uint64) (*Creation, error) {
 		version = BaseVersion
 	}
 	q := `
-  SELECT id "crea.id", versions, state
-  FROM creation WHERE id = $1
+  SELECT
+		id "crea.id",
+		CASE WHEN state = 'draft' THEN versions[0:array_length(versions, 1)-1] ELSE versions END AS versions,
+		state
+  FROM creation
+	WHERE id = $1
   AND $2 = ANY (versions)
   `
 	return crea, lib.DB.Get(crea, q, id, version)
