@@ -247,9 +247,10 @@ func PUTPackageCreation(c *gin.Context) {
 	pkgCrea := new(model.Package)
 	pkgCrea.ID = lib.InitID(c.Param("encid"))
 	pkgCrea.UserID = user.(*model.User).ID
+	crea.ID = lib.InitID(c.Param("creaid"))
 	crea.Alias = data.Alias
 	crea.Version = data.Version
-	pkgCrea.Creations = []model.Creation{*crea}
+	pkgCrea.Creations = []model.Creation{*crea} // It'll update for only this creation
 
 	if err := model.UpdatePackageCreation(pkgCrea); err != nil {
 		c.Error(err).SetMeta(ErrDB)

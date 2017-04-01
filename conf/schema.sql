@@ -222,7 +222,7 @@ CREATE TABLE package_creation (
     package_id integer NOT NULL,
     creation_id integer NOT NULL,
     alias text,
-    version text DEFAULT '1.0'::text NOT NULL
+    version integer DEFAULT 1::integer NOT NULL
 );
 
 

@@ -30,7 +30,7 @@ func (p *Package) PopulateCreations() error {
 		pc.version,
 		c.title,
     c.creator_id,
-		c.versions,
+		CASE WHEN c.state = 'draft' THEN c.versions[0:array_length(c.versions, 1) - 1] ELSE c.versions END AS versions,
 		c.price,
 		CASE WHEN pc.alias != '' THEN pc.alias ELSE c.alias END AS alias,
 		u.id "user.id",
@@ -131,11 +131,12 @@ func DeletePackage(uID uint64, id lib.ID) error {
 
 // UpdatePackageCreation udpates package creation information
 func UpdatePackageCreation(pkg *Package) error {
+	crea := pkg.Creations[0]
 	q := `
 	UPDATE package_creation
 	SET alias = $3,
-	version = (
-		SELECT $4 FROM creation
+	version =	CASE WHEN (
+		SELECT ` + fmt.Sprintf("%d", crea.Version) + ` FROM creation
 		WHERE ((
 			$4 = ANY (versions[1:array_length(versions, 1)-1])
 			AND state = $5
@@ -144,13 +145,12 @@ func UpdatePackageCreation(pkg *Package) error {
 			$4 = ANY (versions)
 			AND state != $5
 		))
-		AND id = $6
-	)
+		AND id = $6)
+	IS NOT NULL THEN $4 ELSE version END
 	WHERE package_id = (
 		SELECT id FROM package WHERE user_id = $1 AND id = $2
 	)
 	`
-	crea := pkg.Creations[0]
 	_, err := lib.DB.Exec(q, pkg.UserID, pkg.ID, crea.Alias, crea.Version, enum.Draft, crea.ID)
 	return err
 }
