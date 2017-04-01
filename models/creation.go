@@ -188,6 +188,10 @@ func NewCreation(crea *Creation) (*Creation, error) {
 
 	stringSliceVersions := make(lib.StringSlice, 0, 1)
 
+	if crea.Alias == "" {
+		crea.Alias = "woobly"
+	}
+
 	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, fmt.Sprintf("%d", BaseVersion)), crea.Engine.Name, crea.State, crea.Alias).Scan(&crea.ID)
 }
 

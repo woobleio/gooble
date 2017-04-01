@@ -206,7 +206,7 @@ CREATE TABLE package (
     title text NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     updated_at date,
-    referer text[] NOT NULL,
+    referer text,
     source text
 );
 

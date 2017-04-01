@@ -316,16 +316,9 @@ func PushCreation(c *gin.Context) {
 
 // RemovePackageCreation remove a creation from a package
 func RemovePackageCreation(c *gin.Context) {
-	var data form.PackageCreationForm
-
 	user, _ := c.Get("user")
 
-	if err := c.BindJSON(&data); err != nil {
-		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
-		return
-	}
-
-	if err := model.DeletePackageCreation(user.(*model.User).ID, lib.InitID(c.Param("encid")), lib.InitID(data.CreationID)); err != nil {
+	if err := model.DeletePackageCreation(user.(*model.User).ID, lib.InitID(c.Param("encid")), lib.InitID(c.Param("creaid"))); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}

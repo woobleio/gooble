@@ -32,7 +32,7 @@ func (p *Package) PopulateCreations() error {
     c.creator_id,
 		c.versions,
 		c.price,
-		CASE WHEN pc.alias IS NOT NULL THEN pc.alias ELSE c.alias END AS alias,
+		CASE WHEN pc.alias != '' THEN pc.alias ELSE c.alias END AS alias,
 		u.id "user.id",
 		u.name,
     CASE WHEN c.price = 0  THEN 'false'

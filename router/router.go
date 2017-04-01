@@ -88,7 +88,7 @@ func Load() {
 				packages.DELETE("/:encid", handler.DELETEPackage)
 
 				packages.POST("/:encid/creations", handler.PushCreation)
-				packages.DELETE("/:encid/creations", handler.RemovePackageCreation)
+				packages.DELETE("/:encid/creations/:creaid", handler.RemovePackageCreation)
 				packages.PUT("/:encid/creations/:creaid", handler.PUTPackageCreation)
 			}
 		}
