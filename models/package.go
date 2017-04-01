@@ -17,6 +17,7 @@ type Package struct {
 	User      User            `json:"-" db:""`
 	Creations []Creation      `json:"creations,omitempty" db:""`
 	Source    *lib.NullString `json:"source,omitempty" db:"source"`
+	NbCrea    *lib.NullInt64  `json:"nbCreations" db:"nb_creations"`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"pkg.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
@@ -61,7 +62,8 @@ func AllPackages(opt *lib.Option, userID uint64) (*[]Package, error) {
   		pkg.referer,
 			pkg.source,
   		pkg.created_at "pkg.created_at",
-  		pkg.updated_at "pkg.updated_at"
+  		pkg.updated_at "pkg.updated_at",
+			(SELECT COUNT(pc.package_id) FROM package_creation pc WHERE pc.package_id = pkg.id GROUP BY pc.package_id) AS nb_creations
   	FROM package pkg
 		WHERE pkg.user_id = $1
     `,
