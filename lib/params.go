@@ -8,6 +8,7 @@ import (
 
 // Option is query option
 type Option struct {
+	Search string
 	Limit  int64
 	Offset int64
 }
@@ -16,6 +17,7 @@ type Option struct {
 func ParseOptions(c *gin.Context) Option {
 	pPage := c.DefaultQuery("page", "1")
 	pPerPage := c.DefaultQuery("perPage", "15")
+	pSearch := c.DefaultQuery("search", "")
 
 	page, errPage := strconv.ParseInt(pPage, 10, 64)
 	if errPage != nil || page <= 0 {
@@ -27,5 +29,5 @@ func ParseOptions(c *gin.Context) Option {
 		perPage = 15
 	}
 
-	return Option{perPage, ((page - 1) * perPage)}
+	return Option{pSearch, perPage, ((page - 1) * perPage)}
 }

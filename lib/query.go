@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Query is all all query options
@@ -14,6 +15,18 @@ type Query struct {
 func (q *Query) String() string {
 	q.build()
 	return fmt.Sprintf("%s", q.Q)
+}
+
+// SetFilters adds sql filters (LIKE) to the query
+func (q *Query) SetFilters(filters ...string) {
+	if q.Opt.Search != "" {
+		q.Q += " AND ("
+		for _, filter := range filters {
+			q.Q += "LOWER(" + filter + ") LIKE '%" + strings.ToLower(q.Opt.Search) + "%' OR "
+		}
+		q.Q = q.Q[0 : len(q.Q)-4] // Remove last 'OR'
+		q.Q += ")"
+	}
 }
 
 func (q *Query) build() {

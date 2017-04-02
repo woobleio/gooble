@@ -71,14 +71,15 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
-		WHERE c.state = 'public'
+		WHERE (c.state = 'public'
 		OR (
 			c.state = 'draft' AND array_length(c.versions, 1) > 1
-		)
+		))
 		`,
 		Opt: &opt,
 	}
 
+	q.SetFilters("c.title", "u.name")
 	query := q.String()
 
 	return &creations, lib.DB.Select(&creations, query, uID)
