@@ -51,8 +51,7 @@ const BaseVersion uint64 = 1
 // AllCreations returns all creations
 func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	var creations []Creation
-	q := lib.Query{
-		Q: `SELECT
+	q := lib.NewQuery(`SELECT
 	    c.id "crea.id",
 	    c.title,
 			c.description,
@@ -75,21 +74,18 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 		OR (
 			c.state = 'draft' AND array_length(c.versions, 1) > 1
 		))
-		`,
-		Opt: &opt,
-	}
+		`, &opt, 1)
 
-	q.SetFilters("c.title", "u.name")
-	query := q.String()
+	q.AddValues(uID)
+	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
 
-	return &creations, lib.DB.Select(&creations, query, uID)
+	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
 
 // AllPopularCreations returns all popular creations
 func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	var creations []Creation
-	q := lib.Query{
-		Q: `SELECT
+	q := lib.NewQuery(`SELECT
 	    c.id "crea.id",
 	    c.title,
 			c.description,
@@ -111,13 +107,58 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			c.state = 'draft' AND array_length(c.versions, 1) > 1
 		))
 		GROUP BY c.id, u.id ORDER BY nb_crea DESC
-		`,
-		Opt: &opt,
-	}
+		`, &opt, 1)
 
-	query := q.String()
+	q.AddValues(uID)
 
-	return &creations, lib.DB.Select(&creations, query, uID)
+	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
+}
+
+// AllUsedCreations return creations used in some packages
+func AllUsedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+	var creations []Creation
+	q := lib.NewQuery(`SELECT
+			DISTINCT c.id "crea.id",
+			c.title,
+			c.created_at "crea.created_at",
+			c.versions,
+			c.price,
+			u.id "user.id",
+			u.name
+		FROM creation c
+		INNER JOIN app_user u ON (c.creator_id = u.id)
+		INNER JOIN package_creation pc ON (pc.creation_id = c.id)
+    INNER JOIN package p ON (p.id = pc.package_id)
+		WHERE p.user_id = $1
+		`, &opt, 1)
+
+	q.AddValues(uID)
+	q.SetFilters(lib.SEARCH, "c.title")
+
+	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
+}
+
+// AllPurchasedCreations returns all purchased creation by the user 'uID'
+func AllPurchasedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+	var creations []Creation
+	q := lib.NewQuery(`SELECT
+			DISTINCT c.id "crea.id",
+			c.title,
+			c.created_at "crea.created_at",
+			c.versions,
+			c.price,
+			u.id "user.id",
+			u.name
+		FROM creation c
+		INNER JOIN app_user u ON (c.creator_id = u.id)
+		INNER JOIN creation_purchase cp ON (cp.creation_id = c.id)
+		WHERE cp.user_id = $1
+		`, &opt, 1)
+
+	q.AddValues(uID)
+	q.SetFilters(lib.SEARCH, "c.title")
+
+	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
 
 // CreationByID returns a creation with the id "id"

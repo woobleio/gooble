@@ -59,6 +59,15 @@ func GETCreations(c *gin.Context) {
 		case "popular":
 			data, err = model.AllPopularCreations(opts, authUserID)
 			break
+		case "used":
+			if authUserID > 0 {
+				data, err = model.AllUsedCreations(opts, authUserID)
+			}
+			break
+		case "purchased":
+			if authUserID > 0 {
+				data, err = model.AllPurchasedCreations(opts, authUserID)
+			}
 		default:
 			data, err = model.AllCreations(opts, authUserID)
 		}
