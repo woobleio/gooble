@@ -85,6 +85,41 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	return &creations, lib.DB.Select(&creations, query, uID)
 }
 
+// AllPopularCreations returns all popular creations
+func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+	var creations []Creation
+	q := lib.Query{
+		Q: `SELECT
+	    c.id "crea.id",
+	    c.title,
+			c.description,
+	    c.created_at "crea.created_at",
+	    c.updated_at "crea.updated_at",
+	    c.versions,
+			c.price,
+			c.alias,
+			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
+			c.state,
+			COUNT(c.id) AS nb_crea,
+	    u.id "user.id",
+	    u.name
+	  FROM creation c
+	  INNER JOIN app_user u ON (c.creator_id = u.id)
+		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
+		WHERE (c.state = 'public'
+		OR (
+			c.state = 'draft' AND array_length(c.versions, 1) > 1
+		))
+		GROUP BY c.id, u.id ORDER BY nb_crea DESC
+		`,
+		Opt: &opt,
+	}
+
+	query := q.String()
+
+	return &creations, lib.DB.Select(&creations, query, uID)
+}
+
 // CreationByID returns a creation with the id "id"
 func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
 	var crea Creation

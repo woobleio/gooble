@@ -55,7 +55,14 @@ func GETCreations(c *gin.Context) {
 		data.(*model.Creation).PreviewURL = lib.GetAssetURL() + "/" + strings.Join(spltPath[1:], "/")
 
 	} else {
-		data, err = model.AllCreations(opts, authUserID)
+		switch c.DefaultQuery("list", "") {
+		case "popular":
+			data, err = model.AllPopularCreations(opts, authUserID)
+			break
+		default:
+			data, err = model.AllCreations(opts, authUserID)
+		}
+
 		if err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
