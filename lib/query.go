@@ -12,17 +12,15 @@ type Query struct {
 	Opt *Option
 
 	// Total of params contained in the query
-	NbParams uint32
-	Values   []interface{}
+	Values []interface{}
 }
 
 // NewQuery initiates a query
-func NewQuery(query string, opt *Option, nbParams uint32) *Query {
+func NewQuery(query string, opt *Option) *Query {
 	return &Query{
-		Q:        query,
-		Opt:      opt,
-		NbParams: nbParams,
-		Values:   make([]interface{}, 0),
+		Q:      query,
+		Opt:    opt,
+		Values: make([]interface{}, 0),
 	}
 }
 
@@ -42,17 +40,15 @@ func (q *Query) SetFilters(filters ...string) {
 				searchFilters := strings.Split(filters[i+1], "|")
 				q.Q += " AND ("
 				for _, searchFilter := range searchFilters {
-					q.NbParams++
-					q.Q += "LOWER(" + searchFilter + ") LIKE $" + fmt.Sprintf("%d", q.NbParams) + " OR "
 					q.Values = append(q.Values, "%"+filter.Value+"%")
+					q.Q += "LOWER(" + searchFilter + ") LIKE $" + fmt.Sprintf("%d", len(q.Values)) + " OR "
 				}
 				q.Q = q.Q[0 : len(q.Q)-4] // Remove last 'OR'
 				q.Q += ")"
 				break
 			default:
-				q.NbParams++
-				q.Q += " AND " + filters[i+1] + " = $" + fmt.Sprintf("%d", q.NbParams)
 				q.Values = append(q.Values, filter.Value)
+				q.Q += " AND " + filters[i+1] + " = $" + fmt.Sprintf("%d", len(q.Values))
 			}
 		}
 	}
@@ -67,6 +63,12 @@ func (q *Query) build() {
 	if q.Opt == nil {
 		return
 	}
+
+	if q.Opt.Sort != nil {
+		q.Values = append(q.Values, q.Opt.Sort.Field)
+		q.Q += " ORDER BY $" + fmt.Sprintf("%d", len(q.Values)) + " " + q.Opt.Sort.Order
+	}
+
 	var str string
 	if q.Opt.Limit > 0 {
 		str = strconv.FormatInt(q.Opt.Limit, 10)

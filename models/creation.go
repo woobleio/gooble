@@ -74,7 +74,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 		OR (
 			c.state = 'draft' AND array_length(c.versions, 1) > 1
 		))
-		`, &opt, 1)
+		`, &opt)
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
@@ -107,7 +107,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			c.state = 'draft' AND array_length(c.versions, 1) > 1
 		))
 		GROUP BY c.id, u.id ORDER BY nb_crea DESC
-		`, &opt, 1)
+		`, &opt)
 
 	q.AddValues(uID)
 
@@ -130,7 +130,7 @@ func AllUsedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 		INNER JOIN package_creation pc ON (pc.creation_id = c.id)
     INNER JOIN package p ON (p.id = pc.package_id)
 		WHERE p.user_id = $1
-		`, &opt, 1)
+		`, &opt)
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title")
@@ -153,7 +153,29 @@ func AllPurchasedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 		INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN creation_purchase cp ON (cp.creation_id = c.id)
 		WHERE cp.user_id = $1
-		`, &opt, 1)
+		`, &opt)
+
+	q.AddValues(uID)
+	q.SetFilters(lib.SEARCH, "c.title")
+
+	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
+}
+
+// AllDraftCreations returns all creation in draft of authenticated user
+func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+	var creations []Creation
+	q := lib.NewQuery(`SELECT
+			c.id "crea.id",
+			c.title,
+			c.created_at "crea.created_at",
+			c.versions,
+			c.price,
+			u.id "user.id",
+			u.name
+		FROM creation c
+		INNER JOIN app_user u ON (c.creator_id = u.id)
+		WHERE cp.user_id = $1 AND c.state = 'draft'
+		`, &opt)
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title")

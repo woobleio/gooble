@@ -11,6 +11,13 @@ type Option struct {
 	Filters *[]Filter
 	Limit   int64
 	Offset  int64
+	Sort    *Sort
+}
+
+// Sort defines a ordering
+type Sort struct {
+	Field string
+	Order string
 }
 
 // Filter is a query filter
@@ -33,12 +40,23 @@ var filters = []string{
 // ParseOptions parses query options
 func ParseOptions(c *gin.Context) Option {
 	filtersObj := make([]Filter, 0)
+	sort := c.DefaultQuery("sort", "")
 	pPage := c.DefaultQuery("page", "1")
 	pPerPage := c.DefaultQuery("perPage", "15")
 	for _, filter := range filters {
 		qFilter := c.DefaultQuery(filter, "")
 		if qFilter != "" {
 			filtersObj = append(filtersObj, Filter{filter, qFilter})
+		}
+	}
+
+	var sortObj *Sort
+	if sort != "" {
+		switch sort[0] {
+		case '-':
+			sortObj = &Sort{sort[1:len(sort)], "DESC"}
+		default:
+			sortObj = &Sort{sort, "ASC"}
 		}
 	}
 
@@ -52,7 +70,7 @@ func ParseOptions(c *gin.Context) Option {
 		perPage = 15
 	}
 
-	return Option{&filtersObj, perPage, ((page - 1) * perPage)}
+	return Option{&filtersObj, perPage, ((page - 1) * perPage), sortObj}
 }
 
 // GetFilter return true if the options contains the filter

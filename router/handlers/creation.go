@@ -58,15 +58,17 @@ func GETCreations(c *gin.Context) {
 		switch c.DefaultQuery("list", "") {
 		case "popular":
 			data, err = model.AllPopularCreations(opts, authUserID)
-			break
 		case "used":
 			if authUserID > 0 {
 				data, err = model.AllUsedCreations(opts, authUserID)
 			}
-			break
 		case "purchased":
 			if authUserID > 0 {
 				data, err = model.AllPurchasedCreations(opts, authUserID)
+			}
+		case "draft":
+			if authUserID > 0 {
+				data, err = model.AllDraftCreations(opts, authUserID)
 			}
 		default:
 			data, err = model.AllCreations(opts, authUserID)
