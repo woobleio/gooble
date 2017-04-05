@@ -106,10 +106,12 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 		OR (
 			c.state = 'draft' AND array_length(c.versions, 1) > 1
 		))
-		GROUP BY c.id, u.id ORDER BY nb_crea DESC
 		`, &opt)
 
 	q.AddValues(uID)
+	q.SetFilters(lib.CREATOR, "u.name")
+
+	q.Q += "GROUP BY c.id, u.id ORDER BY nb_crea DESC"
 
 	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
@@ -174,7 +176,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			u.name
 		FROM creation c
 		INNER JOIN app_user u ON (c.creator_id = u.id)
-		WHERE cp.user_id = $1 AND c.state = 'draft'
+		WHERE u.id = $1 AND c.state = 'draft'
 		`, &opt)
 
 	q.AddValues(uID)
