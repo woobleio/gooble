@@ -54,6 +54,14 @@ func (q *Query) SetFilters(filters ...string) {
 	}
 }
 
+// SetOrder adds order to the query
+func (q *Query) SetOrder(key string, field string) {
+	sort := q.Opt.GetSort(key)
+	if sort != nil {
+		q.Q += " ORDER BY " + field + " " + sort.Order
+	}
+}
+
 // AddValues add the values for the SQL query
 func (q *Query) AddValues(values ...interface{}) {
 	q.Values = append(q.Values, values...)
@@ -62,11 +70,6 @@ func (q *Query) AddValues(values ...interface{}) {
 func (q *Query) build() {
 	if q.Opt == nil {
 		return
-	}
-
-	if q.Opt.Sort != nil {
-		q.Values = append(q.Values, q.Opt.Sort.Field)
-		q.Q += " ORDER BY $" + fmt.Sprintf("%d", len(q.Values)) + " " + q.Opt.Sort.Order
 	}
 
 	var str string

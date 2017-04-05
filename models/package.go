@@ -151,7 +151,7 @@ func UpdatePackageCreation(pkg *Package) error {
 	IS NOT NULL THEN $4 ELSE version END
 	WHERE package_id = (
 		SELECT id FROM package WHERE user_id = $1 AND id = $2
-	)
+	) AND creation_id = $6
 	`
 	_, err := lib.DB.Exec(q, pkg.UserID, pkg.ID, crea.Alias, crea.Version, enum.Draft, crea.ID)
 	return err

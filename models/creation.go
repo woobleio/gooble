@@ -78,6 +78,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetOrder(lib.CREATED_AT, "c.created_at")
 
 	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }

@@ -16,7 +16,7 @@ type Option struct {
 
 // Sort defines a ordering
 type Sort struct {
-	Field string
+	Key   string
 	Order string
 }
 
@@ -26,13 +26,15 @@ type Filter struct {
 	Value string
 }
 
-// Filters
+// Filters and orders
 const (
-	CREATOR = "creator"
-	SEARCH  = "search"
+	CREATED_AT = "createdAt"
+	CREATOR    = "creator"
+	SEARCH     = "search"
 )
 
 var filters = []string{
+	CREATED_AT,
 	CREATOR,
 	SEARCH,
 }
@@ -73,11 +75,26 @@ func ParseOptions(c *gin.Context) Option {
 	return Option{&filtersObj, perPage, ((page - 1) * perPage), sortObj}
 }
 
-// GetFilter return true if the options contains the filter
+// GetFilter returns the filter object
 func (o *Option) GetFilter(queryFilter string) *Filter {
 	for _, filter := range *o.Filters {
 		if filter.ID == queryFilter {
 			return &filter
+		}
+	}
+	return nil
+}
+
+// GetSort returns the sort object
+// It controls if the sort key exists in the filters, for security reasons
+// so that it only consider known fields
+func (o *Option) GetSort(orderKey string) *Sort {
+	if o.Sort == nil {
+		return nil
+	}
+	for _, filter := range filters {
+		if filter == orderKey && o.Sort.Key == orderKey {
+			return o.Sort
 		}
 	}
 	return nil

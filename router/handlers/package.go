@@ -98,7 +98,7 @@ func PATCHPackage(c *gin.Context) {
 	user, _ := c.Get("user")
 	pkg.ID = lib.InitID(c.Param("encid"))
 
-	if *pkgPatchForm.Build {
+	if pkgPatchForm.Build != nil && *pkgPatchForm.Build {
 		fullPkg, err := model.PackageByID(user.(*model.User).ID, pkg.ID)
 		if err != nil {
 			c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Package", "id", fullPkg.ID.ValueEncoded))
