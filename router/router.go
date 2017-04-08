@@ -66,9 +66,13 @@ func Load() {
 
 				creations.POST("/:encid/versions", handler.POSTCreationVersion)
 				creations.PUT("/:encid/versions", handler.SaveVersion)
+
 			}
 
-			v1.POST("/purchases", handler.BuyCreations)
+			purchases := v1.Group("/purchases")
+			{
+				purchases.POST("", handler.BuyCreations)
+			}
 
 			users := v1.Group("/users")
 			{
