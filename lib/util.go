@@ -41,11 +41,6 @@ func GetPkgURL() string {
 	return viper.GetString("pkg_url")
 }
 
-// GetAssetURL return asset URL
-func GetAssetURL() string {
-	return viper.GetString("asset_url")
-}
-
 // HashID hashes uint64 id and returns a unique string
 func HashID(id int64) (string, error) {
 	hasher := initHasher()

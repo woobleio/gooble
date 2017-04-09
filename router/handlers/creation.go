@@ -52,7 +52,7 @@ func GETCreations(c *gin.Context) {
 		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)
 		previewURL := s.GetPathFor(creatorID, creaID, creaLastVersion, "index.html")
 		spltPath := strings.Split(previewURL, "/")
-		data.(*model.Creation).PreviewURL = lib.GetAssetURL() + "/" + strings.Join(spltPath[1:], "/")
+		data.(*model.Creation).PreviewURL = strings.Join(spltPath[1:], "/")
 
 	} else {
 		switch c.DefaultQuery("list", "") {
