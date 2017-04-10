@@ -15,11 +15,11 @@ type UserForm struct {
 // UserPatchForm is the form for patching users
 type UserPatchForm struct {
 	Email     *string `json:"email" validate:"omitempty,email" db:"email"`
-	Name      *string `json:"name" validate:"omitempty,min=4,max=18,alpha" db:"name"`
+	Name      *string `json:"name" validate:"omitempty,min=2,max=18,alpha" db:"name"`
 	NewSecret *string `json:"newSecret" validate:"omitempty,min=8" db:"passwd"`
 	IsCreator *bool   `json:"isCreator" db:"is_creator"`
 
-	OldSecret *string `json:"oldSecret" validate:"omitempty,min=8"`
+	OldSecret *string `json:"secret" validate:"omitempty,min=8"`
 	BankToken *string `json:"bankToken"`
 	Plan      *string `json:"plan"`
 	CardToken *string `json:"cardToken"`

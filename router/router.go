@@ -57,6 +57,7 @@ func Load() {
 
 		v1.Use(middleware.Authenticate())
 		{
+			v1.POST("/files", handler.POSTFile)
 			creations := v1.Group("/creations")
 			{
 				creations.POST("", handler.POSTCreation)
@@ -66,7 +67,6 @@ func Load() {
 
 				creations.POST("/:encid/versions", handler.POSTCreationVersion)
 				creations.PUT("/:encid/versions", handler.SaveVersion)
-
 			}
 
 			purchases := v1.Group("/purchases")

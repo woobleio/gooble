@@ -11,7 +11,7 @@ type PackageForm struct {
 type PackageCreationForm struct {
 	CreationID string `json:"creationId"`
 	Version    uint64 `json:"version"`
-	Alias      string `json:"alias"`
+	Alias      string `json:"alias" validate:"omitempty,ascii,min=2,max=10,alpha"`
 }
 
 // PackagePatchForm is the form for patching users

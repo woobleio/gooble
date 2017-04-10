@@ -110,7 +110,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.CREATOR, "u.name")
+	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
 
 	q.Q += "GROUP BY c.id, u.id ORDER BY nb_crea DESC"
 

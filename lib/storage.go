@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -16,6 +18,7 @@ const (
 	SrcCreations string = "creations"
 	SrcPackages  string = "packages"
 	SrcPreview   string = "previews"
+	SrcProfile   string = "profiles"
 )
 
 // Storage is Wooble cloud storage interface
@@ -103,15 +106,25 @@ func (s *Storage) GetFileContent(userID string, objID string, version string, fi
 }
 
 // StoreFile stores the file in the cloud
-func (s *Storage) StoreFile(content string, contentType string, userID string, objID string, version string, filename string) string {
+func (s *Storage) StoreFile(content interface{}, contentType string, userID string, objID string, version string, filename string) string {
 	svc := s3.New(s.Session)
 
 	path := s.getFilePath(makeID(userID, objID), version, filename)
 
+	var contentByte []byte
+	switch content.(type) {
+	case string:
+		contentByte = []byte(content.(string))
+	case io.Reader:
+		var buff bytes.Buffer
+		buff.ReadFrom(content.(io.Reader))
+		contentByte = buff.Bytes()
+	}
+
 	obj := &s3.PutObjectInput{
 		Bucket: aws.String(viper.GetString("cloud_repo")),
 
-		Body:        bytes.NewReader([]byte(content)),
+		Body:        bytes.NewReader(contentByte),
 		Key:         aws.String(path),
 		ContentType: aws.String(contentType),
 	}
@@ -172,6 +185,11 @@ func (s *Storage) getFilePath(id []byte, version string, filename string) string
 		path = fmt.Sprintf("%s/%x/%s", s.Source, id, filename)
 	case SrcPreview:
 		path = fmt.Sprintf("public/%s/%x/%s/%s", s.Source, id, version, filename)
+	case SrcProfile:
+		// the filename is the id
+		filenameSplit := strings.Split(filename, ".")
+		ext := filenameSplit[len(filenameSplit)-1]
+		path = fmt.Sprintf("public/%s/%x.%s", s.Source, id, ext)
 	}
 	return path
 }
