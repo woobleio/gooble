@@ -21,12 +21,12 @@ func GETUser(c *gin.Context) {
 
 	tokenUser, _ := model.UserByToken(token)
 
-	username := c.Param("username")
+	username := c.Param("name")
 
 	if tokenUser != nil && username == tokenUser.Name {
 		data, err = model.UserPrivateByID(tokenUser.ID)
 	} else {
-		data, err = model.UserPublicByName(c.Param("username"))
+		data, err = model.UserPublicByName(c.Param("name"))
 	}
 
 	if err != nil {

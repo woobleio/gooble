@@ -47,7 +47,7 @@ func Load() {
 		})
 
 		v1.POST("/users", handler.POSTUser)
-		v1.GET("/users/:username", handler.GETUser)
+		v1.GET("/users/:name", handler.GETUser)
 
 		v1.POST("/tokens", handler.GenerateToken)
 		v1.PUT("/tokens", handler.RefreshToken)

@@ -11,8 +11,9 @@ type User struct {
 	CustomerID string         `json:"-" db:"customer_id"`
 	AccountID  lib.NullString `json:"-" db:"account_id"`
 
-	Email string `json:"email,omitempty" db:"email"`
-	Name  string `json:"name,omitempty" db:"name"`
+	Email   string         `json:"email,omitempty" db:"email"`
+	Name    string         `json:"name,omitempty" db:"name"`
+	PicPath lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
 
 	Plan     *Plan      `json:"plan,omitempty" db:""`
 	Packages *[]Package `json:"packages,omitempty" db:""`
@@ -35,6 +36,7 @@ func UserPublicByName(username string) (*User, error) {
 		SELECT
 			u.name,
 			u.is_creator,
+			u.pic_path,
 			u.created_at "user.created_at"
     FROM app_user u
 		WHERE u.name = $1
@@ -51,6 +53,7 @@ func UserPrivateByID(id uint64) (*User, error) {
 			u.id "user.id",
 			u.email,
 			u.name,
+			u.pic_path,
 			u.is_creator,
 			u.created_at "user.created_at",
 			u.updated_at "user.updated_at",
@@ -102,6 +105,7 @@ func UserByEmail(email string) (*User, error) {
       u.id "user.id",
       u.email,
       u.name,
+			u.pic_path,
       u.passwd,
       u.is_creator,
       u.created_at "user.created_at",
@@ -150,13 +154,6 @@ func DeleteUser(uID uint64) error {
 func SafeDeleteUser(uID uint64) error {
 	q := `UPDATE app_user SET deleted_at = CURRENT_DATE WHERE id = $1`
 	_, err := lib.DB.Exec(q, uID)
-	return err
-}
-
-// UpdateUser updates user form (password not included)
-func UpdateUser(uID uint64, user *User) error {
-	q := `UPDATE app_user SET name=$2, email=$3, is_creator=$4 WHERE id=$1 AND deleted_at IS NULL`
-	_, err := lib.DB.Exec(q, uID, user.Name, user.Email, user.IsCreator)
 	return err
 }
 

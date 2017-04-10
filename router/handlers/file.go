@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"wooble/lib"
 	model "wooble/models"
 
@@ -10,19 +12,23 @@ import (
 
 // POSTFile is a handler to upload a file
 func POSTFile(c *gin.Context) {
+	var res struct {
+		Path string `json:"path"`
+	}
 	file, header, _ := c.Request.FormFile("file")
 	mimeType := header.Header.Get("Content-Type")
 
 	if mimeType != "image/jpeg" && mimeType != "image/gif" && mimeType != "image/png" {
-		// error not good format
+		c.Error(errors.New("File upload is not an image")).SetMeta(ErrBadFileFormat.SetParams("formats", "image/jpeg, image/gif, image/png"))
 		return
 	}
 
 	user, _ := c.Get("user")
 	storage := lib.NewStorage(lib.SrcProfile)
-	storage.StoreFile(file, mimeType, fmt.Sprintf("%d", user.(*model.User).ID), lib.SrcProfile, "", header.Filename)
+	res.Path = storage.StoreFile(file, mimeType, fmt.Sprintf("%d", user.(*model.User).ID), lib.SrcProfile, "", header.Filename)
 
-	// TODO return profile path (build for user on the fly)
+	splPath := strings.Split(res.Path, "/")
+	res.Path = strings.Join(splPath[1:len(splPath)], "/")
 
-	c.AbortWithStatus(NoContent)
+	c.JSON(OK, NewRes(res))
 }

@@ -15,6 +15,7 @@ const (
 	aliasRequired    errCode = "alias_required"
 	alreadyCreaOwner errCode = "already_owner"
 	badCreds         errCode = "bad_credentials"
+	badFileFormat    errCode = "bad_file_format"
 	badForm          errCode = "bad_form"
 	chargeErr        errCode = "charge_fail"
 	creaNotAvail     errCode = "creation_not_available"
@@ -31,6 +32,7 @@ const (
 var (
 	ErrAliasRequired = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package : creation %s should have an alias", http.StatusBadRequest)
 	ErrBadCreds      = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
+	ErrBadFileFormat = NewAPIError(badFileFormat, "Server can't handle this file", "Allowed formats are : %s", http.StatusBadRequest)
 	ErrBadForm       = NewAPIError(badForm, "Form not valid", "", http.StatusBadRequest)
 	ErrCantBuy       = NewAPIError(alreadyCreaOwner, "Purchase failed", "Can't buy the creation %s because you already own it", http.StatusBadRequest)
 	ErrCharge        = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)

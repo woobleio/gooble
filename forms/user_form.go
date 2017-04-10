@@ -16,12 +16,12 @@ type UserForm struct {
 type UserPatchForm struct {
 	Email     *string `json:"email" validate:"omitempty,email" db:"email"`
 	Name      *string `json:"name" validate:"omitempty,min=2,max=18,alpha" db:"name"`
+	PicPath   *string `json:"profilePath" validate:"omitempty" db:"pic_path"`
 	NewSecret *string `json:"newSecret" validate:"omitempty,min=8" db:"passwd"`
 	IsCreator *bool   `json:"isCreator" db:"is_creator"`
 
 	OldSecret *string `json:"secret" validate:"omitempty,min=8"`
 	BankToken *string `json:"bankToken"`
-	Plan      *string `json:"plan"`
 	CardToken *string `json:"cardToken"`
 
 	Salt *string `json:"-" db:"salt_key"`
