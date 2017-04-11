@@ -11,15 +11,15 @@ type User struct {
 	CustomerID string         `json:"-" db:"customer_id"`
 	AccountID  lib.NullString `json:"-" db:"account_id"`
 
-	Email   string         `json:"email,omitempty" db:"email"`
-	Name    string         `json:"name,omitempty" db:"name"`
-	PicPath lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
+	Email   string          `json:"email,omitempty" db:"email"`
+	Name    string          `json:"name,omitempty" db:"name"`
+	PicPath *lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
 
-	Website      lib.NullString `json:"website,omitempty" db:"website"`
-	CodepenName  lib.NullString `json:"codepenName,omitempty" db:"codepen_name"`
-	DribbbleName lib.NullString `json:"dribbbleName,omitempty" db:"dribbble_name"`
-	GithubName   lib.NullString `json:"githubName,omitempty" db:"github_name"`
-	TwitterName  lib.NullString `json:"twitterName,omitempty" db:"twitter_name"`
+	Website      *lib.NullString `json:"website,omitempty" db:"website"`
+	CodepenName  *lib.NullString `json:"codepenName,omitempty" db:"codepen_name"`
+	DribbbleName *lib.NullString `json:"dribbbleName,omitempty" db:"dribbble_name"`
+	GithubName   *lib.NullString `json:"githubName,omitempty" db:"github_name"`
+	TwitterName  *lib.NullString `json:"twitterName,omitempty" db:"twitter_name"`
 
 	Plan     *Plan      `json:"plan,omitempty" db:""`
 	Packages *[]Package `json:"packages,omitempty" db:""`

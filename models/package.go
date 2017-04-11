@@ -72,7 +72,17 @@ func AllPackages(opt *lib.Option, userID uint64) (*[]Package, error) {
 
 	query := q.String()
 
-	return &packages, lib.DB.Select(&packages, query, userID)
+	if err := lib.DB.Select(&packages, query, userID); err != nil {
+		return nil, err
+	}
+
+	if q.Opt.HasPopulate("creations") {
+		for i := range packages {
+			packages[i].PopulateCreations()
+		}
+	}
+
+	return &packages, nil
 }
 
 // PackageByID returns package with id "id"

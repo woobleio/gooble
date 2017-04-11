@@ -2,16 +2,18 @@ package lib
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Option is query option
 type Option struct {
-	Filters *[]Filter
-	Limit   int64
-	Offset  int64
-	Sort    *Sort
+	Filters   *[]Filter
+	Limit     int64
+	Offset    int64
+	Sort      *Sort
+	Populates []string
 }
 
 // Sort defines a ordering
@@ -72,7 +74,9 @@ func ParseOptions(c *gin.Context) Option {
 		perPage = 15
 	}
 
-	return Option{&filtersObj, perPage, ((page - 1) * perPage), sortObj}
+	populates := strings.Split(c.DefaultQuery("populate", ""), ",")
+
+	return Option{&filtersObj, perPage, ((page - 1) * perPage), sortObj, populates}
 }
 
 // GetFilter returns the filter object
@@ -98,4 +102,14 @@ func (o *Option) GetSort(orderKey string) *Sort {
 		}
 	}
 	return nil
+}
+
+// HasPopulate return true if it contains populate "key"
+func (o *Option) HasPopulate(key string) bool {
+	for _, populate := range o.Populates {
+		if populate == key {
+			return true
+		}
+	}
+	return false
 }

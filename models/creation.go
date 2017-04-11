@@ -213,7 +213,8 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
 		e.extension,
 		e.content_type,
     u.id "user.id",
-    u.name
+    u.name,
+		u.pic_path
   FROM creation c
   INNER JOIN app_user u ON (c.creator_id = u.id)
 	INNER JOIN engine e ON (c.engine=e.name)
