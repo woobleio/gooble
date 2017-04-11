@@ -15,6 +15,12 @@ type User struct {
 	Name    string         `json:"name,omitempty" db:"name"`
 	PicPath lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
 
+	Website       lib.NullString `json:"website,omitempty" db:"website"`
+	CodepenioName lib.NullString `json:"codepenioName,omitempty" db:"codepenio_name"`
+	DribbbleName  lib.NullString `json:"dribbbleName,omitempty" db:"dribbble_name"`
+	GithubName    lib.NullString `json:"githubName,omitempty" db:"github_name"`
+	TwitterName   lib.NullString `json:"twitterName,omitempty" db:"twitter_name"`
+
 	Plan     *Plan      `json:"plan,omitempty" db:""`
 	Packages *[]Package `json:"packages,omitempty" db:""`
 
@@ -37,6 +43,11 @@ func UserPublicByName(username string) (*User, error) {
 			u.name,
 			u.is_creator,
 			u.pic_path,
+			u.website,
+			u.codepenio_name,
+			u.dribbble_name,
+			u.github_name,
+			u.twitter_name,
 			u.created_at "user.created_at"
     FROM app_user u
 		WHERE u.name = $1
@@ -54,6 +65,11 @@ func UserPrivateByID(id uint64) (*User, error) {
 			u.email,
 			u.name,
 			u.pic_path,
+			u.website,
+			u.codepenio_name,
+			u.dribbble_name,
+			u.github_name,
+			u.twitter_name,
 			u.is_creator,
 			u.created_at "user.created_at",
 			u.updated_at "user.updated_at",
@@ -105,11 +121,8 @@ func UserByEmail(email string) (*User, error) {
       u.id "user.id",
       u.email,
       u.name,
-			u.pic_path,
       u.passwd,
       u.is_creator,
-      u.created_at "user.created_at",
-      u.updated_at "user.updated_at",
       u.salt_key,
       u.customer_id,
       pu.start_date,
