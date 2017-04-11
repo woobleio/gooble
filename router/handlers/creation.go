@@ -303,6 +303,7 @@ func PUTCreation(c *gin.Context) {
 	crea.CreatorID = user.(*model.User).ID
 	crea.Title = creaForm.Title
 	crea.Description = lib.InitNullString(creaForm.Description)
+	crea.ThumbPath = lib.InitNullString(creaForm.ThumbPath)
 	crea.Price = creaForm.Price
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias

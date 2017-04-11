@@ -12,6 +12,7 @@ type Creation struct {
 
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
+	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
 	Creator     User            `json:"creator,omitempty" db:""`
 	Versions    lib.UintSlice   `json:"versions,omitempty" db:"versions"`
 	Alias       string          `json:"alias,omitempty" db:"alias"`
@@ -55,6 +56,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	    c.id "crea.id",
 	    c.title,
 			c.description,
+			c.thumb_path,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    c.versions,
@@ -90,6 +92,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	    c.id "crea.id",
 	    c.title,
 			c.description,
+			c.thumb_path,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    c.versions,
@@ -123,8 +126,10 @@ func AllUsedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	q := lib.NewQuery(`SELECT
 			DISTINCT c.id "crea.id",
 			c.title,
+			c.thumb_path,
 			c.created_at "crea.created_at",
 			c.versions,
+			c.thumb_path,
 			c.price,
 			u.id "user.id",
 			u.name
@@ -147,6 +152,7 @@ func AllPurchasedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	q := lib.NewQuery(`SELECT
 			DISTINCT c.id "crea.id",
 			c.title,
+			c.thumb_path,
 			c.created_at "crea.created_at",
 			c.versions,
 			c.price,
@@ -170,6 +176,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	q := lib.NewQuery(`SELECT
 			c.id "crea.id",
 			c.title,
+			c.thumb_path,
 			c.created_at "crea.created_at",
 			c.versions,
 			c.price,
@@ -193,6 +200,7 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
   SELECT
     c.id "crea.id",
     c.title,
+		c.thumb_path,
 		c.description,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
@@ -231,6 +239,7 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 		c.id "crea.id",
 		c.title,
 		c.description,
+		c.thumb_path,
 		c.alias,
 		c.creator_id,
 		c.created_at "crea.created_at",
@@ -253,11 +262,11 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, price = $5, state = $6, alias = $7
+  SET title = $3, description = $4, price = $5, state = $6, alias = $7, thumb_path = $8
   WHERE id = $1
   AND creator_id = $2
   `
-	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price, crea.State, crea.Alias)
+	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.Price, crea.State, crea.Alias, crea.ThumbPath)
 	return err
 }
 

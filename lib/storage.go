@@ -19,6 +19,7 @@ const (
 	SrcPackages  string = "packages"
 	SrcPreview   string = "previews"
 	SrcProfile   string = "profiles"
+	SrcCreaThumb string = "crea_thumb"
 )
 
 // Storage is Wooble cloud storage interface
@@ -190,6 +191,10 @@ func (s *Storage) getFilePath(id []byte, version string, filename string) string
 		filenameSplit := strings.Split(filename, ".")
 		ext := filenameSplit[len(filenameSplit)-1]
 		path = fmt.Sprintf("public/%s/%x.%s", s.Source, id, ext)
+	case SrcCreaThumb:
+		filenameSplit := strings.Split(filename, ".")
+		ext := filenameSplit[len(filenameSplit)-1]
+		path = fmt.Sprintf("public/thumbnails/%x.%s", id, ext)
 	}
 	return path
 }
