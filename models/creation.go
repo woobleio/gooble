@@ -180,6 +180,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			c.created_at "crea.created_at",
 			c.versions,
 			c.price,
+			c.state,
 			u.id "user.id",
 			u.name
 		FROM creation c
