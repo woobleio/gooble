@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	form "wooble/forms"
@@ -59,7 +60,7 @@ func POSTUser(c *gin.Context) {
 	}
 
 	// Saves the customer in third party (Stripe for now)
-	customer, errCust := model.NewCustomer(data.Email, data.Plan, data.CardToken)
+	customer, errCust := model.NewCustomer(data.Email, data.Plan.Label, data.CardToken)
 	if errCust != nil {
 		model.DeleteUser(uID)
 		c.Error(errCust).SetMeta(ErrDB)
@@ -72,7 +73,7 @@ func POSTUser(c *gin.Context) {
 	model.UpdateCustomerID(uID, customer.ID)
 
 	// Logs customer subscription in the DB
-	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {
+	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan.Label, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {
 		// TODO when fail stripe should't charge
 		c.Error(err).SetMeta(ErrIntServ)
 		return
@@ -132,7 +133,6 @@ func PATCHUser(c *gin.Context) {
 
 	user, _ := c.Get("user")
 
-	// Check the password if is in the patch
 	if userPatchForm.NewSecret != nil {
 		if !user.(*model.User).IsPasswordValid(*userPatchForm.OldSecret) {
 			c.Error(nil).SetMeta(ErrBadCreds)
@@ -141,6 +141,50 @@ func PATCHUser(c *gin.Context) {
 		userPatchForm.Salt = new(string)
 		*userPatchForm.Salt = lib.GenKey()
 		*userPatchForm.NewSecret, _ = lib.Encrypt(*userPatchForm.NewSecret, []byte(*userPatchForm.Salt))
+	}
+
+	if userPatchForm.Plan != nil {
+		privUser, err := model.UserPrivateByID(user.(*model.User).ID)
+		if err != nil {
+			c.Error(err).SetMeta(ErrServ)
+			return
+		}
+
+		// Stipe uses "label_period" id style, so let's split to get the label
+		planLabel := strings.Split(userPatchForm.Plan.Label, "_")[0]
+		plan, err := model.PlanByLabel(planLabel)
+		if err != nil {
+			c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "plan", "label", planLabel))
+			// return error, plan not known
+			return
+		}
+
+		if planLabel != model.Free {
+			// Means that the user has currently a better plan
+			if privUser.Plan.Level.Int64 > plan.Level.Int64 {
+				c.Error(errors.New("Already has a better plan")).SetMeta(ErrBetterPlan.SetParams("currentPlan", privUser.Plan.Label.String, "reqPlan", plan.Label))
+				return
+			}
+			// Unsub the precedent plan if it wasn't a free one and not already unsubbed
+			if privUser.Plan.UnsubDate == nil && privUser.Plan.Level.Int64 > 0 {
+				if err = model.UnsubCustomer(privUser.CustomerID); err != nil {
+					c.Error(err).SetMeta(ErrIntServ)
+					return
+				}
+			}
+			sub, err := model.SubCustomer(privUser.CustomerID, userPatchForm.Plan.Label, *userPatchForm.CardToken)
+			if err != nil {
+				c.Error(err).SetMeta(ErrIntServ)
+				return
+			}
+			model.NewPlanUser(privUser.ID, planLabel, sub.PeriodEnd)
+		} else if planLabel == model.Free && privUser.Plan.UnsubDate == nil {
+			if err := model.UnsubCustomer(privUser.CustomerID); err != nil {
+				c.Error(err).SetMeta(ErrIntServ)
+				return
+			}
+			model.UnsubUserPlan(uint64(privUser.PlanID.Int64))
+		}
 	}
 
 	if err := model.UpdateUserPatch(user.(*model.User).ID, lib.SQLPatches(userPatchForm)); err != nil {

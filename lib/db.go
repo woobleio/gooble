@@ -377,6 +377,9 @@ func SQLPatches(resource interface{}) SQLPatch {
 
 // GetUpdateQuery build and return a db query string
 func (sqlPatch *SQLPatch) GetUpdateQuery(table string) string {
+	if len(sqlPatch.Fields) == 0 {
+		return ""
+	}
 	query := "UPDATE " + table + " SET "
 	for _, field := range sqlPatch.Fields {
 		query = query + field + ","

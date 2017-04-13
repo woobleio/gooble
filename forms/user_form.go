@@ -5,7 +5,9 @@ type UserForm struct {
 	Email  string `json:"email" validate:"required,email"`
 	Name   string `json:"name" validate:"required,min=4,max=18,alpha"`
 	Secret string `json:"secret" validate:"required,min=8"`
-	Plan   string `json:"plan" validate:"required"`
+	Plan   struct {
+		Label string `json:"label" validate:"required,alpha"`
+	} `json:"plan" validate:"required"`
 
 	CardToken string `json:"cardToken"`
 
@@ -19,6 +21,11 @@ type UserPatchForm struct {
 	NewSecret *string `json:"newSecret" validate:"omitempty,min=8" db:"passwd"`
 	IsCreator *bool   `json:"isCreator" db:"is_creator"`
 
+	Plan *struct {
+		Label string `json:"label"`
+	} `json:"plan" validate:"omitempty"`
+	CardToken *string `json:"cardToken"`
+
 	PicPath      *string `json:"profilePath" validate:"omitempty" db:"pic_path"`
 	Website      *string `json:"website" validate:"omitempty" db:"website"`
 	CodepenName  *string `json:"codepenName" validate:"omitempty,ascii,max=30" db:"codepen_name"`
@@ -28,10 +35,9 @@ type UserPatchForm struct {
 
 	OldSecret *string `json:"secret" validate:"omitempty,min=8"`
 	BankToken *string `json:"bankToken"`
-	CardToken *string `json:"cardToken"`
 
 	Salt *string `json:"-" db:"salt_key"`
 
-	// Operation withdraw
+	// Operations
 	Withdraw *bool `json:"withdraw"`
 }

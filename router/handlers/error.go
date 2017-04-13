@@ -17,6 +17,7 @@ const (
 	badCreds         errCode = "bad_credentials"
 	badFileFormat    errCode = "bad_file_format"
 	badForm          errCode = "bad_form"
+	betterPlan       errCode = "better_plan"
 	chargeErr        errCode = "charge_fail"
 	creaNotAvail     errCode = "creation_not_available"
 	creaVersion      errCode = "creation_version"
@@ -34,6 +35,7 @@ var (
 	ErrBadCreds      = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
 	ErrBadFileFormat = NewAPIError(badFileFormat, "Server can't handle this file", "Allowed formats are : %s", http.StatusBadRequest)
 	ErrBadForm       = NewAPIError(badForm, "Form not valid", "", http.StatusBadRequest)
+	ErrBetterPlan    = NewAPIError(betterPlan, "Already has a better plan", "Current plan %s and requested plan is %s", http.StatusConflict)
 	ErrCantBuy       = NewAPIError(alreadyCreaOwner, "Purchase failed", "Can't buy the creation %s because you already own it", http.StatusBadRequest)
 	ErrCharge        = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)
 	ErrCreaNotAvail  = NewAPIError(creaNotAvail, "Creation not available", "The creation %s is not available", http.StatusConflict)

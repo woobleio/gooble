@@ -21,8 +21,9 @@ type User struct {
 	GithubName   *lib.NullString `json:"githubName,omitempty" db:"github_name"`
 	TwitterName  *lib.NullString `json:"twitterName,omitempty" db:"twitter_name"`
 
-	Plan     *Plan      `json:"plan,omitempty" db:""`
-	Packages *[]Package `json:"packages,omitempty" db:""`
+	PlanID   *lib.NullInt64 `json:"-" db:"plan_user.id"`
+	Plan     *Plan          `json:"plan,omitempty" db:""`
+	Packages *[]Package     `json:"packages,omitempty" db:""`
 
 	IsCreator bool   `json:"isCreator,omitempty" db:"is_creator"`
 	Fund      uint64 `json:"fund,omitempty" db:"fund"`
@@ -57,6 +58,7 @@ func UserPublicByName(username string) (*User, error) {
 }
 
 // UserPrivateByID returns user with id "id"
+// It'll select the most recent plan but ignore it if the end_date expired
 func UserPrivateByID(id uint64) (*User, error) {
 	var user User
 	q := `
@@ -76,24 +78,27 @@ func UserPrivateByID(id uint64) (*User, error) {
 			u.salt_key,
       u.customer_id,
 			u.account_id,
+			pu.id "plan_user.id",
       pu.start_date,
       pu.end_date,
+			pu.unsub_date,
       pl.label "plan.label",
+			pl.level,
       pl.nb_pkg,
       pl.nb_crea
     FROM app_user u
-    LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id)
+    LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id AND pu.end_date > now())
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
 		WHERE u.id = $1
 		AND u.deleted_at IS NULL
-    ORDER BY u.id, pu.start_date DESC
+    ORDER BY u.id, pu.start_date, pl.level DESC
 	`
 
 	if err := lib.DB.Get(&user, q, id); err != nil {
 		return nil, err
 	}
 
-	if user.Plan == nil {
+	if user.Plan.Label == nil {
 		user.Plan, _ = DefaultPlan()
 	}
 
@@ -172,7 +177,11 @@ func SafeDeleteUser(uID uint64) error {
 
 // UpdateUserPatch updates user informations
 func UpdateUserPatch(uID uint64, patch lib.SQLPatch) error {
-	q := patch.GetUpdateQuery("app_user") +
+	builtQ := patch.GetUpdateQuery("app_user")
+	if builtQ == "" {
+		return nil
+	}
+	q := builtQ +
 		`WHERE id = $` + fmt.Sprintf("%d", patch.Index+1) +
 		` AND deleted_at IS NULL`
 

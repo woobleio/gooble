@@ -95,6 +95,19 @@ func PayUser(accID string, amount uint64) (*stripe.Transfer, error) {
 	return transfer.New(tParams)
 }
 
+// SubCustomer subscribes the customer "custID" to the plan "plan"
+func SubCustomer(custID string, plan string, token string) (*stripe.Sub, error) {
+	subParams := &stripe.SubParams{
+		Customer: custID,
+		Plan:     plan,
+		Card: &stripe.CardParams{
+			Token: token,
+		},
+	}
+
+	return sub.New(subParams)
+}
+
 // UnsubCustomer unsubscribes customer from his current plan
 func UnsubCustomer(custID string) error {
 	cust, err := customer.Get(custID, nil)

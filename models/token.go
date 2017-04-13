@@ -29,7 +29,7 @@ func NewToken(user *User, refreshToken string) *jwt.Token {
 	}
 
 	// Set default plan if the user has no plan (this isn't an exceptionnal case)
-	if !user.Plan.Label.Valid {
+	if user.Plan.Label == nil || !user.Plan.Label.Valid {
 		user.Plan, _ = DefaultPlan()
 		user.Plan.StartDate = lib.InitNullTime(time.Now())
 		user.Plan.EndDate = lib.InitNullTime(time.Now())
@@ -123,14 +123,28 @@ func UserByToken(token interface{}) (*User, error) {
 	nbCreaSrc := planInf["nbCrea"]
 
 	layout := "2006-01-02T15:04:05Z"
-	startDate, err := time.Parse(layout, planInf["startDate"].(string))
-	if err != nil {
-		return nil, err
+	var startDate time.Time
+	var endDate time.Time
+	var dateErr error
+
+	switch planInf["startDate"].(type) {
+	case interface{}:
+		startDate, _ = time.Parse(layout, time.Now().String())
+	case string:
+		startDate, dateErr = time.Parse(layout, planInf["startDate"].(string))
+		if dateErr != nil {
+			return nil, dateErr
+		}
 	}
 
-	endDate, err := time.Parse(layout, planInf["endDate"].(string))
-	if err != nil {
-		return nil, err
+	switch planInf["endDate"].(type) {
+	case interface{}:
+		endDate, _ = time.Parse(layout, time.Now().String())
+	case string:
+		endDate, dateErr = time.Parse(layout, planInf["endDate"].(string))
+		if dateErr != nil {
+			return nil, dateErr
+		}
 	}
 
 	nbPkg, okPkg := nbPkgSrc.(float64)
@@ -141,9 +155,9 @@ func UserByToken(token interface{}) (*User, error) {
 	}
 
 	plan := &Plan{
-		Label:     *lib.InitNullString(labelSrc.(string)),
-		NbPkg:     *lib.InitNullInt64(int64(nbPkg)),
-		NbCrea:    *lib.InitNullInt64(int64(nbCrea)),
+		Label:     lib.InitNullString(labelSrc.(string)),
+		NbPkg:     lib.InitNullInt64(int64(nbPkg)),
+		NbCrea:    lib.InitNullInt64(int64(nbCrea)),
 		StartDate: lib.InitNullTime(startDate),
 		EndDate:   lib.InitNullTime(endDate),
 	}
