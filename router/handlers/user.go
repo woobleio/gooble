@@ -63,9 +63,7 @@ func GETSells(c *gin.Context) {
 		return
 	}
 
-	err = u.PopulateSells()
-
-	fmt.Print(err)
+	u.PopulateSells()
 
 	c.JSON(OK, NewRes(u.Sells))
 }
