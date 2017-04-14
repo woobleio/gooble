@@ -16,7 +16,7 @@ type PackageCreationForm struct {
 
 // PackagePatchForm is the form for patching users
 type PackagePatchForm struct {
-	Title  *string `json:"title" validate:"omitempty,ascii,max=15" db:"title"`
+	Title  *string `json:"title" validate:"omitempty,ascii,max=25" db:"title"`
 	Source *string `json:"-" db:"source"`
 
 	// Operation build

@@ -222,8 +222,7 @@ func BuyCreations(c *gin.Context) {
 
 	model.CaptureCharge(chargeID)
 
-	// TODO location to mycreations
-	// c.Header("Location", fmt.Sprintf("/creations/%s/code", buyForm.Creations[0]))
+	c.Header("Location", "/creations")
 
 	c.AbortWithStatus(NoContent)
 }

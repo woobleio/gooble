@@ -70,9 +70,7 @@ func AllPackages(opt *lib.Option, userID uint64) (*[]Package, error) {
 		Opt: opt,
 	}
 
-	query := q.String()
-
-	if err := lib.DB.Select(&packages, query, userID); err != nil {
+	if err := lib.DB.Select(&packages, q.String(), userID); err != nil {
 		return nil, err
 	}
 

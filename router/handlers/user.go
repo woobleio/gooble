@@ -38,6 +38,38 @@ func GETUser(c *gin.Context) {
 	c.JSON(OK, NewRes(data))
 }
 
+// GETPurchases returns all user's pucharses
+func GETPurchases(c *gin.Context) {
+	user, _ := c.Get("user")
+
+	u, err := model.UserPrivateByID(user.(*model.User).ID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "user", "name", user.(*model.User).Name))
+		return
+	}
+
+	u.PopulatePurchases()
+
+	c.JSON(OK, NewRes(u.Purchases))
+}
+
+// GETSells returns all user's sells
+func GETSells(c *gin.Context) {
+	user, _ := c.Get("user")
+
+	u, err := model.UserPrivateByID(user.(*model.User).ID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "user", "name", user.(*model.User).Name))
+		return
+	}
+
+	err = u.PopulateSells()
+
+	fmt.Print(err)
+
+	c.JSON(OK, NewRes(u.Sells))
+}
+
 // POSTUser saves a new user in the database
 func POSTUser(c *gin.Context) {
 	var data form.UserForm
@@ -73,11 +105,7 @@ func POSTUser(c *gin.Context) {
 	model.UpdateCustomerID(uID, customer.ID)
 
 	// Logs customer subscription in the DB
-	if _, err := model.NewPlanUser(uID, strings.Split(data.Plan.Label, "_")[0], customer.Subs.Values[0].PeriodEnd); err != nil {
-		// TODO when fail stripe should't charge
-		c.Error(err).SetMeta(ErrIntServ)
-		return
-	}
+	model.NewPlanUser(uID, strings.Split(data.Plan.Label, "_")[0], customer.Subs.Values[0].PeriodEnd)
 
 	c.Header("Location", "/tokens")
 

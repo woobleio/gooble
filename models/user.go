@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 	"wooble/lib"
 )
 
@@ -21,6 +22,9 @@ type User struct {
 	GithubName   *lib.NullString `json:"githubName,omitempty" db:"github_name"`
 	TwitterName  *lib.NullString `json:"twitterName,omitempty" db:"twitter_name"`
 
+	Purchases *[]Purchase `json:"purchases" db:""`
+	Sells     *[]Sell     `json:"sells" db:""`
+
 	PlanID   *lib.NullInt64 `json:"-" db:"plan_user.id"`
 	Plan     *Plan          `json:"plan,omitempty" db:""`
 	Packages *[]Package     `json:"packages,omitempty" db:""`
@@ -34,6 +38,61 @@ type User struct {
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"user.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
 	DeletedAt *lib.NullTime `json:"deletedAt,omitempty" db:"user.deleted_at"`
+}
+
+// Purchase is user's purchase
+type Purchase struct {
+	Creation *Creation `json:"creation" db:""`
+
+	Price        uint64    `json:"price" db:"price"`
+	PurchaseDate time.Time `json:"purchaseDate" db:"purchased_at"`
+}
+
+// Sell is user's sell
+type Sell struct {
+	Creation *Creation `json:"creation" db:""`
+
+	Quantity uint64 `json:"quantity" db:"quantity"`
+}
+
+// PopulatePurchases populates user's purchases
+func (u *User) PopulatePurchases() error {
+	q := `
+	SELECT
+		cp.price,
+		cp.purchased_at,
+		c.title,
+		c.id "crea.id"
+	FROM creation_purchase cp
+	INNER JOIN creation c ON (c.id = cp.creation_id)
+	WHERE cp.user_id = $1`
+
+	purchases := make([]Purchase, 0)
+	err := lib.DB.Select(&purchases, q, u.ID)
+
+	u.Purchases = &purchases
+
+	return err
+}
+
+// PopulateSells populates user's sells
+func (u *User) PopulateSells() error {
+	q := `
+	SELECT
+		c.id "crea.id",
+		COUNT(c.id) AS quantity,
+		c.title
+	FROM creation c
+	INNER JOIN creation_purchase cp ON (c.id = cp.creation_id)
+	WHERE c.creator_id = $1
+	GROUP BY c.id`
+
+	sells := make([]Sell, 0)
+	err := lib.DB.Select(&sells, q, u.ID)
+
+	u.Sells = &sells
+
+	return err
 }
 
 // UserPublicByName returns user public profile with the name "username"
@@ -61,8 +120,7 @@ func UserPublicByName(username string) (*User, error) {
 // It'll select the most recent plan but ignore it if the end_date expired
 func UserPrivateByID(id uint64) (*User, error) {
 	var user User
-	q := `
-		SELECT DISTINCT ON (u.id)
+	q := `SELECT DISTINCT ON (u.id)
 			u.id "user.id",
 			u.email,
 			u.name,
@@ -91,8 +149,7 @@ func UserPrivateByID(id uint64) (*User, error) {
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
 		WHERE u.id = $1
 		AND u.deleted_at IS NULL
-    ORDER BY u.id, pu.start_date, pl.level DESC
-	`
+    ORDER BY u.id, pu.start_date, pl.level DESC`
 
 	if err := lib.DB.Get(&user, q, id); err != nil {
 		return nil, err

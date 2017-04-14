@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	form "wooble/forms"
 	"wooble/lib"
@@ -79,6 +80,8 @@ func POSTPackage(c *gin.Context) {
 		c.Error(errPkg).SetMeta(ErrDB)
 		return
 	}
+
+	pkg.CreatedAt = lib.InitNullTime(time.Now())
 
 	c.Header("Location", fmt.Sprintf("/packages/%v", pkg.ID.ValueEncoded))
 
