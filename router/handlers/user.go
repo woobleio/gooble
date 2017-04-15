@@ -38,36 +38,6 @@ func GETUser(c *gin.Context) {
 	c.JSON(OK, NewRes(data))
 }
 
-// GETPurchases returns all user's pucharses
-func GETPurchases(c *gin.Context) {
-	user, _ := c.Get("user")
-
-	u, err := model.UserPrivateByID(user.(*model.User).ID)
-	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "user", "name", user.(*model.User).Name))
-		return
-	}
-
-	u.PopulatePurchases()
-
-	c.JSON(OK, NewRes(u.Purchases))
-}
-
-// GETSells returns all user's sells
-func GETSells(c *gin.Context) {
-	user, _ := c.Get("user")
-
-	u, err := model.UserPrivateByID(user.(*model.User).ID)
-	if err != nil {
-		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "user", "name", user.(*model.User).Name))
-		return
-	}
-
-	u.PopulateSells()
-
-	c.JSON(OK, NewRes(u.Sells))
-}
-
 // POSTUser saves a new user in the database
 func POSTUser(c *gin.Context) {
 	var data form.UserForm
@@ -250,36 +220,6 @@ func POSTUserBank(c *gin.Context) {
 	}
 
 	if err := model.UpdateUserAccountID(privateUser.ID, acc.ID); err != nil {
-		c.Error(err).SetMeta(ErrDB)
-		return
-	}
-
-	c.AbortWithStatus(NoContent)
-}
-
-// WithdrawFunds withdraws users fund to a registered bank account
-func WithdrawFunds(c *gin.Context) {
-	user, _ := c.Get("user")
-
-	var errUser error
-	privateUser := new(model.User)
-	privateUser, errUser = model.UserPrivateByID(user.(*model.User).ID)
-	if errUser != nil {
-		c.Error(errUser).SetMeta(ErrDB)
-		return
-	}
-
-	if privateUser.Fund <= 0 {
-		// Error nothing to withdraw TODO
-		return
-	}
-
-	if _, err := model.PayUser(privateUser.AccountID.String, privateUser.Fund); err != nil {
-		c.Error(err).SetMeta(ErrIntServ)
-		return
-	}
-
-	if err := model.UserSubFund(privateUser.ID, privateUser.Fund); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}

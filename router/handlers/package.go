@@ -108,14 +108,6 @@ func PATCHPackage(c *gin.Context) {
 			return
 		}
 
-		// Check if at least one creation should be bought to be build in the package
-		for _, creation := range fullPkg.Creations {
-			if creation.IsToBuy {
-				c.Error(nil).SetMeta(ErrMustBuy)
-				return
-			}
-		}
-
 		storage := lib.NewStorage(lib.SrcCreations)
 
 		wb := wbzr.New(wbzr.JSES5)

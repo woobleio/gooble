@@ -32,19 +32,12 @@ func (p *Package) PopulateCreations() error {
 		c.title,
     c.creator_id,
 		CASE WHEN c.state = 'draft' THEN c.versions[0:array_length(c.versions, 1) - 1] ELSE c.versions END AS versions,
-		c.price,
 		CASE WHEN pc.alias != '' THEN pc.alias ELSE c.alias END AS alias,
 		u.id "user.id",
-		u.name,
-    CASE WHEN c.price = 0  THEN 'false'
-         WHEN u.id = $2 THEN 'false'
-         WHEN cp.purchased_at IS NULL THEN 'true'
-         ELSE 'false'
-    END AS is_to_buy
+		u.name
 	FROM package_creation pc
 	INNER JOIN creation c ON (pc.creation_id = c.id)
 	INNER JOIN app_user u ON (c.creator_id = u.id)
-  LEFT OUTER JOIN creation_purchase cp ON (cp.user_id = $2 AND cp.creation_id = c.id)
 	WHERE pc.package_id = $1
 	`
 

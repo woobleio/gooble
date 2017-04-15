@@ -22,7 +22,6 @@ const (
 	creaNotAvail     errCode = "creation_not_available"
 	creaVersion      errCode = "creation_version"
 	dbFail           errCode = "db_failed_save"
-	mustBuy          errCode = "must_buy"
 	planLimit        errCode = "plan_limit"
 	resNotFound      errCode = "res_not_found"
 	servErr          errCode = "server_error"
@@ -36,13 +35,10 @@ var (
 	ErrBadFileFormat = NewAPIError(badFileFormat, "Server can't handle this file", "Allowed formats are : %s", http.StatusBadRequest)
 	ErrBadForm       = NewAPIError(badForm, "Form not valid", "", http.StatusBadRequest)
 	ErrBetterPlan    = NewAPIError(betterPlan, "Already has a better plan", "Current plan %s and requested plan is %s", http.StatusConflict)
-	ErrCantBuy       = NewAPIError(alreadyCreaOwner, "Purchase failed", "Can't buy the creation %s because you already own it", http.StatusBadRequest)
-	ErrCharge        = NewAPIError(chargeErr, "Charge failed", "Couldn't charge", http.StatusBadRequest)
 	ErrCreaNotAvail  = NewAPIError(creaNotAvail, "Creation not available", "The creation %s is not available", http.StatusConflict)
 	ErrCreaVersion   = NewAPIError(creaVersion, "Bad version", "Version %s can't be created", http.StatusBadRequest)
 	ErrDB            = NewAPIError(dbFail, "Database error", "Database failed to process the request", http.StatusConflict)
 	ErrIntServ       = NewAPIError(servIntErr, "Internal server error", "Something wrong happened", http.StatusInternalServerError)
-	ErrMustBuy       = NewAPIError(mustBuy, "Must purchase before doing this", "One or some creations must be purchased to do this", http.StatusUnauthorized)
 	ErrPlanLimit     = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
 	ErrResNotFound   = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)
 	ErrServ          = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError)

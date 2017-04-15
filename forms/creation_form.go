@@ -9,8 +9,6 @@ type CreationForm struct {
 	State       string `json:"state" validate:"omitempty,alpha"`
 	Description string `json:"description" validate:"ascii"`
 	ThumbPath   string `json:"thumbPath" validate:"omitempty,max=300"`
-
-	Price uint64 `json:"price,omitempty"`
 }
 
 // CreationCodeForm is a form for creation code

@@ -62,10 +62,6 @@ func GETCreations(c *gin.Context) {
 			if authUserID > 0 {
 				data, err = model.AllUsedCreations(opts, authUserID)
 			}
-		case "purchased":
-			if authUserID > 0 {
-				data, err = model.AllPurchasedCreations(opts, authUserID)
-			}
 		case "draft":
 			if authUserID > 0 {
 				data, err = model.AllDraftCreations(opts, authUserID)
@@ -99,7 +95,6 @@ func POSTCreation(c *gin.Context) {
 	crea.State = enum.Draft
 	crea.Title = data.Title
 	crea.Description = lib.InitNullString(data.Description)
-	crea.Price = data.Price
 	crea.Alias = data.Alias
 	if data.Engine == "" {
 		data.Engine = "JSES5"
@@ -158,71 +153,6 @@ func DELETECreation(c *gin.Context) {
 			c.Error(storage.Error()) // log error
 		}
 	}
-
-	c.AbortWithStatus(NoContent)
-}
-
-// BuyCreations is a handler that purchases creations
-func BuyCreations(c *gin.Context) {
-	var buyForm struct {
-		Creations []string `json:"creations,omitempty" validate:"required"`
-		CardToken string   `json:"cardToken"`
-	}
-
-	if err := c.BindJSON(&buyForm); err != nil {
-		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
-		return
-	}
-
-	user, _ := c.Get("user")
-	userID := user.(*model.User).ID
-	customerID, err := model.UserCustomerID(userID)
-	if err != nil || customerID == "" {
-		c.Error(err).SetMeta(ErrDB)
-		return
-	}
-
-	totalAmount := uint64(0)
-	creas := make([]model.Creation, 0)
-	for _, creaID := range buyForm.Creations {
-		crea, err := model.CreationByID(lib.InitID(creaID), 0)
-		if err != nil {
-			c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
-			return
-		}
-		if crea.CreatorID == userID {
-			c.Error(nil).SetMeta(ErrCantBuy.SetParams("id", crea.ID.ValueEncoded))
-			return
-		}
-		totalAmount = totalAmount + crea.Price
-		creas = append(creas, *crea)
-	}
-
-	var chargeID string
-	if buyForm.CardToken == "" {
-		charge, chargeErr := model.ChargeCustomerForCreations(customerID, totalAmount, buyForm.Creations)
-		if chargeErr != nil {
-			c.Error(chargeErr).SetMeta(ErrCharge)
-			return
-		}
-		chargeID = charge.ID
-	} else {
-		charge, chargeErr := model.ChargeOneTimeForCreations(totalAmount, buyForm.Creations, buyForm.CardToken)
-		if chargeErr != nil {
-			c.Error(chargeErr).SetMeta(ErrCharge)
-			return
-		}
-		chargeID = charge.ID
-	}
-
-	if err := model.NewCreationPurchases(userID, chargeID, &creas); err != nil {
-		c.Error(err).SetMeta(ErrDB)
-		return
-	}
-
-	model.CaptureCharge(chargeID)
-
-	c.Header("Location", "/creations")
 
 	c.AbortWithStatus(NoContent)
 }
@@ -303,7 +233,6 @@ func PUTCreation(c *gin.Context) {
 	crea.Title = creaForm.Title
 	crea.Description = lib.InitNullString(creaForm.Description)
 	crea.ThumbPath = lib.InitNullString(creaForm.ThumbPath)
-	crea.Price = creaForm.Price
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias
 
