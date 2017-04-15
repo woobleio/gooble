@@ -41,7 +41,7 @@ func (p *Package) PopulateCreations() error {
 	WHERE pc.package_id = $1
 	`
 
-	return lib.DB.Select(&p.Creations, q, p.ID.ValueDecoded, p.UserID)
+	return lib.DB.Select(&p.Creations, q, p.ID.ValueDecoded)
 }
 
 // AllPackages returns all packages
