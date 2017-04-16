@@ -164,6 +164,9 @@ func PATCHPackage(c *gin.Context) {
 
 		pkgPatchForm.Source = new(string)
 		*pkgPatchForm.Source = lib.GetPkgURL() + strings.Join(spltPath, "/")
+
+		pkgPatchForm.BuiltAt = new(string)
+		*pkgPatchForm.BuiltAt = time.Now().Format("2006-01-02 15:04:05 -07:00")
 	}
 
 	if err := model.UpdatePackagePatch(user.(*model.User).ID, pkg.ID, lib.SQLPatches(pkgPatchForm)); err != nil {
@@ -172,6 +175,7 @@ func PATCHPackage(c *gin.Context) {
 	}
 
 	pkg.Source = lib.InitNullString(*pkgPatchForm.Source)
+	pkg.BuiltAt = lib.InitNullTime(time.Now())
 
 	c.JSON(OK, NewRes(pkg))
 }

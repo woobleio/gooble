@@ -12,15 +12,17 @@ type Package struct {
 
 	Title string `json:"title" validate:"required" db:"pkg.title"`
 
-	Referer   *lib.NullString `json:"referer,omitempty" db:"referer"`
-	UserID    uint64          `json:"-" db:"pkg.user_id"`
-	User      User            `json:"-" db:""`
-	Creations []Creation      `json:"creations,omitempty" db:""`
-	Source    *lib.NullString `json:"source,omitempty" db:"source"`
-	NbCrea    *lib.NullInt64  `json:"nbCreations" db:"nb_creations"`
+	Referer       *lib.NullString `json:"referer,omitempty" db:"referer"`
+	UserID        uint64          `json:"-" db:"pkg.user_id"`
+	User          User            `json:"-" db:""`
+	Creations     []Creation      `json:"creations,omitempty" db:""`
+	Source        *lib.NullString `json:"source,omitempty" db:"source"`
+	BuildRequired bool            `json:"buildRequired" db:"build_required"`
+	NbCrea        *lib.NullInt64  `json:"nbCreations" db:"nb_creations"`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"pkg.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"pkg.updated_at"`
+	BuiltAt   *lib.NullTime `json:"builtAt,omitempty" db:"built_at"`
 }
 
 // PopulateCreations populates creations in the package
@@ -39,6 +41,7 @@ func (p *Package) PopulateCreations() error {
 	INNER JOIN creation c ON (pc.creation_id = c.id)
 	INNER JOIN app_user u ON (c.creator_id = u.id)
 	WHERE pc.package_id = $1
+	ORDER BY c.title
 	`
 
 	return lib.DB.Select(&p.Creations, q, p.ID.ValueDecoded)
@@ -86,7 +89,9 @@ func PackageByID(uID uint64, id lib.ID) (*Package, error) {
 		pkg.title "pkg.title",
 		pkg.referer,
 		pkg.source,
+		pkg.build_required,
 		pkg.created_at "pkg.created_at",
+		pkg.built_at,
 		pkg.updated_at "pkg.updated_at"
 	FROM package pkg
 	WHERE pkg.id = $2
@@ -180,6 +185,7 @@ func UpdatePackagePatch(uID uint64, pkgID lib.ID, patch lib.SQLPatch) error {
 
 	patch.Args = append(patch.Args, uID)
 	patch.Args = append(patch.Args, pkgID)
+
 	_, err := lib.DB.Exec(q, patch.Args...)
 
 	return err
@@ -187,7 +193,7 @@ func UpdatePackagePatch(uID uint64, pkgID lib.ID, patch lib.SQLPatch) error {
 
 // BulkUpdatePackageSource updates somes packages "ids" source
 func BulkUpdatePackageSource(ids lib.StringSlice, source string) error {
-	q := `UPDATE package SET source = $2 WHERE id = ANY($1)`
+	q := `UPDATE package SET source = $2, built_at = now() WHERE id = ANY($1)`
 	_, err := lib.DB.Exec(q, ids, source)
 	return err
 }
