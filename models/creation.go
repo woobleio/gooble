@@ -19,6 +19,8 @@ type Creation struct {
 	State       string          `json:"state,omitempty" db:"state"`
 	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
 
+	NbUse uint64 `json:"nbUse" db:"nb_use"`
+
 	PreviewURL string `json:"previewUrl,omitempty"`
 	Version    uint64 `json:"version,omitempty"`
 
@@ -26,7 +28,7 @@ type Creation struct {
 	Document string `json:"document,omitempty"`
 	Style    string `json:"style,omitempty"`
 
-	CreatorID uint64 `json:"-"       db:"creator_id"`
+	CreatorID uint64 `json:"-" db:"creator_id"`
 	Engine    Engine `json:"-" db:""`
 
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"crea.created_at"`
@@ -41,6 +43,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	var creations []Creation
 	q := lib.NewQuery(`SELECT
 	    c.id "crea.id",
+			COUNT(pc.creation_id) AS nb_use,
 	    c.title,
 			c.description,
 			c.thumb_path,
@@ -58,6 +61,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
+		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE (c.state = 'public'
 		OR (
 			c.state = 'draft' AND array_length(c.versions, 1) > 1
@@ -66,6 +70,9 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+
+	q.Q += "GROUP BY c.id, u.id, e.name"
+
 	q.SetOrder(lib.CREATED_AT, "c.created_at")
 
 	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
@@ -85,7 +92,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			c.alias,
 			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
 			c.state,
-			COUNT(c.id) AS nb_crea,
+			COUNT(pc.creation_id) AS nb_use,
 	    u.id "user.id",
 	    u.name
 	  FROM creation c
@@ -100,7 +107,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
 
-	q.Q += "GROUP BY c.id, u.id ORDER BY nb_crea DESC"
+	q.Q += "GROUP BY c.id, u.id ORDER BY nb_use DESC"
 
 	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
@@ -110,6 +117,7 @@ func AllUsedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	var creations []Creation
 	q := lib.NewQuery(`SELECT
 			DISTINCT c.id "crea.id",
+			COUNT(pcc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
 			c.created_at "crea.created_at",
@@ -120,12 +128,15 @@ func AllUsedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 		FROM creation c
 		INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN package_creation pc ON (pc.creation_id = c.id)
+		LEFT JOIN package_creation pcc ON (pcc.creation_id = c.id)
     INNER JOIN package p ON (p.id = pc.package_id)
 		WHERE p.user_id = $1
 		`, &opt)
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title")
+
+	q.Q += "GROUP BY c.id, u.id"
 
 	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
@@ -135,6 +146,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	var creations []Creation
 	q := lib.NewQuery(`SELECT
 			c.id "crea.id",
+			COUNT(pc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
 			c.created_at "crea.created_at",
@@ -144,11 +156,14 @@ func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			u.name
 		FROM creation c
 		INNER JOIN app_user u ON (c.creator_id = u.id)
+		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE u.id = $1 AND c.state = 'draft'
 		`, &opt)
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title")
+
+	q.Q += "GROUP BY c.id, u.id"
 
 	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
