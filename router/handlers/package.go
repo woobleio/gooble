@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/woobleio/wooblizer/wbzr"
-	"github.com/woobleio/wooblizer/wbzr/engine"
 )
 
 // GETPackages is a handler that returns one or more packages
@@ -111,35 +110,35 @@ func PATCHPackage(c *gin.Context) {
 		storage := lib.NewStorage(lib.SrcCreations)
 
 		wb := wbzr.New(wbzr.JSES5)
-		for _, creation := range fullPkg.Creations {
-			var script engine.Script
 
+		for _, creation := range fullPkg.Creations {
 			creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
 
 			objName := creation.Alias
 
 			creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
 			creaVersionStr := fmt.Sprintf("%d", creation.Version)
+
 			src := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Script)
 
-			script, err = wb.Inject(src, objName)
+			script, errScript := wb.Inject(src, objName)
 
-			if err != nil {
-				if err == wbzr.ErrUniqueName {
-					c.Error(err).SetMeta(ErrAliasRequired.SetParams("name", creation.Title))
+			if errScript != nil {
+				if errScript == wbzr.ErrUniqueName {
+					c.Error(errScript).SetMeta(ErrAliasRequired.SetParams("name", creation.Title))
 					return
 				}
-				panic(err)
+				panic(errScript)
 			}
 
 			docSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Document)
 			if docSrc != "" {
-				err = script.IncludeHtml(src)
+				err = script.IncludeHtml(docSrc)
 			}
 
 			styleSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Style)
 			if styleSrc != "" {
-				err = script.IncludeCss(src)
+				err = script.IncludeCss(styleSrc)
 			}
 
 			if err != nil {
