@@ -38,7 +38,7 @@ func POSTFile(c *gin.Context) {
 	user, _ := c.Get("user")
 	res.Path = storage.StoreFile(file, mimeType, fmt.Sprintf("%d", user.(*model.User).ID), source, "", header.Filename)
 
-	fmt.Errorf("%s", storage.Error())
+	fmt.Print(storage.Error())
 
 	splPath := strings.Split(res.Path, "/")
 	res.Path = strings.Join(splPath[1:len(splPath)], "/")
