@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -47,7 +48,9 @@ func getDBUrl() string {
 
 	dbURL += "/" + dbName
 
-	dbURL += "?sslmode=disable"
+	if os.Getenv("GOENV") != "prod" {
+		dbURL += "?sslmode=disable"
+	}
 
 	return dbURL
 }
