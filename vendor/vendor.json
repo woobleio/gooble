@@ -1,46 +1,59 @@
 {
-  "comment": "",
-  "ignore": "dev",
-  "package": [
-    {
-      "path": "github.com/gin-gonic/gin"
-    },
-    {
-      "path": "github.com/aws/aws-sdk-go/..."
-    },
-    {
-      "path": "github.com/dgrijalva/jwt-go"
-    },
-    {
-      "path": "github.com/jmoiron/sqlx"
-    },
-    {
-      "path": "github.com/lib/pq"
-    },
-    {
-      "path": "github.com/speps/go-hashids"
-    },
-    {
-      "path": "github.com/spf13/viper"
-    },
-    {
-      "path": "github.com/stripe/stripe-go"
-    },
-    {
-      "path": "github.com/tdewolff/minify"
-    },
-    {
-      "path": "github.com/woobleio/wooblizer"
-    },
-    {
-      "path": "golang.org/x/crypto/scrypt"
-    },
-    {
-      "path": "gopkg.in/gin-contrib/cors.v1"
-    },
-    {
-      "path": "gopkg.in/go-playground/validator.v9"
-    }
-  ],
-  "rootPath": "bitbucket.org/woobleio/wooble-service"
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "github.com/aws/aws-sdk-go/...",
+			"revision": ""
+		},
+		{
+			"path": "github.com/dgrijalva/jwt-go",
+			"revision": ""
+		},
+		{
+			"path": "github.com/gin-gonic/gin",
+			"revision": ""
+		},
+		{
+			"path": "github.com/jmoiron/sqlx",
+			"revision": ""
+		},
+		{
+			"path": "github.com/lib/pq",
+			"revision": ""
+		},
+		{
+			"path": "github.com/speps/go-hashids",
+			"revision": ""
+		},
+		{
+			"path": "github.com/spf13/viper",
+			"revision": ""
+		},
+		{
+			"path": "github.com/stripe/stripe-go",
+			"revision": ""
+		},
+		{
+			"path": "github.com/tdewolff/minify",
+			"revision": ""
+		},
+		{
+			"path": "github.com/woobleio/wooblizer",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/crypto/scrypt",
+			"revision": ""
+		},
+		{
+			"path": "gopkg.in/gin-contrib/cors.v1",
+			"revision": ""
+		},
+		{
+			"path": "gopkg.in/go-playground/validator.v9",
+			"revision": ""
+		}
+	],
+	"rootPath": "wooble"
 }
