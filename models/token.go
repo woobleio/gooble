@@ -11,7 +11,6 @@ import (
 	"golang.org/x/crypto/scrypt"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/spf13/viper"
 )
 
 // CustomClaims is wooble token claims
@@ -98,7 +97,7 @@ func RefreshToken(token *jwt.Token) (*jwt.Token, error) {
 
 // TokenKey returns token private key
 func TokenKey() []byte {
-	return []byte(viper.GetString("token_key"))
+	return []byte(lib.GetTokenKey())
 }
 
 // UserByToken return the user whom the token belong to

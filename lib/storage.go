@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/spf13/viper"
 )
 
 // AWS S3 storage locations
@@ -71,7 +70,7 @@ func (s *Storage) CopyAndStoreFile(userID string, objID string, prevVersion stri
 	path := s.getFilePath(makeID(userID, objID), prevVersion, filename)
 	newPath := s.getFilePath(makeID(userID, objID), version, filename)
 
-	bucket := viper.GetString("cloud_repo")
+	bucket := GetCloudRepo()
 
 	obj := &s3.CopyObjectInput{
 		Bucket: aws.String(bucket),
@@ -92,7 +91,7 @@ func (s *Storage) GetFileContent(userID string, objID string, version string, fi
 	path := s.getFilePath(makeID(userID, objID), version, filename)
 
 	obj := &s3.GetObjectInput{
-		Bucket: aws.String(viper.GetString("cloud_repo")),
+		Bucket: aws.String(GetCloudRepo()),
 
 		Key: aws.String(path),
 	}
@@ -123,7 +122,7 @@ func (s *Storage) StoreFile(content interface{}, contentType string, userID stri
 	}
 
 	obj := &s3.PutObjectInput{
-		Bucket: aws.String(viper.GetString("cloud_repo")),
+		Bucket: aws.String(GetCloudRepo()),
 
 		Body:        bytes.NewReader(contentByte),
 		Key:         aws.String(path),
@@ -140,7 +139,7 @@ func (s *Storage) BulkDeleteFiles() {
 	svc := s3.New(s.Session)
 
 	params := &s3.DeleteObjectsInput{
-		Bucket: aws.String(viper.GetString("cloud_repo")),
+		Bucket: aws.String(GetCloudRepo()),
 		Delete: &s3.Delete{
 			Objects: s.bulkObjects,
 		},
@@ -157,7 +156,7 @@ func (s *Storage) DeleteFile(userID string, objID string, version string, filena
 	path := s.getFilePath(makeID(userID, objID), version, filename)
 
 	obj := &s3.DeleteObjectInput{
-		Bucket: aws.String(viper.GetString("cloud_repo")),
+		Bucket: aws.String(GetCloudRepo()),
 
 		Key: aws.String(path),
 	}

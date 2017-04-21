@@ -3,6 +3,8 @@ package lib
 import (
 	"encoding/hex"
 	"math/rand"
+	"os"
+	"strconv"
 
 	"golang.org/x/crypto/scrypt"
 
@@ -12,7 +14,12 @@ import (
 
 // GenKey generates random key
 func GenKey() string {
-	keyRange := viper.GetString("keygen_range")
+	var keyRange string
+	if isProd() {
+		keyRange = os.Getenv("KEYGEN_RANGE")
+	} else {
+		keyRange = viper.GetString("keygen_range")
+	}
 	b := make([]byte, 15)
 	for i := range b {
 		b[i] = keyRange[rand.Intn(len(keyRange))]
@@ -28,16 +35,50 @@ func Encrypt(toEncrypt string, salt []byte) (string, error) {
 
 // GetTokenLifetime returns token lifetime
 func GetTokenLifetime() int {
+	if isProd() {
+		time, err := strconv.Atoi(os.Getenv("TOKEN_LIFETIME"))
+		if err != nil {
+			panic(err)
+		}
+		return time
+	}
+
 	return viper.GetInt("token_lifetime")
+}
+
+// GetTokenKey returns the token's salt key
+func GetTokenKey() string {
+	if isProd() {
+		return os.Getenv("TOKEN_KEY")
+	}
+
+	return viper.GetString("token_key")
+}
+
+// GetCloudRepo returns the cloud repository name
+func GetCloudRepo() string {
+	if isProd() {
+		return os.Getenv("CLOUD_REPO")
+	}
+
+	return viper.GetString("cloud_repo")
 }
 
 // GetOrigins returns origins for cors
 func GetOrigins() []string {
+	if isProd() {
+		return []string{os.Getenv("ALLOW_ORIGIN")}
+	}
+
 	return viper.GetStringSlice("allow_origin")
 }
 
 // GetPkgURL returns packages URL
 func GetPkgURL() string {
+	if isProd() {
+		return os.Getenv("PKG_URL")
+	}
+
 	return viper.GetString("pkg_url")
 }
 
@@ -59,7 +100,15 @@ func DecodeHash(hash string) (int64, error) {
 
 func initHasher() *hashids.HashID {
 	hashConf := hashids.NewData()
-	hashConf.Salt = viper.GetString("salt_for_id")
+	if isProd() {
+		hashConf.Salt = os.Getenv("SALT_FOR_ID")
+	} else {
+		hashConf.Salt = viper.GetString("salt_for_id")
+	}
 	hashConf.MinLength = 8
 	return hashids.NewWithData(hashConf)
+}
+
+func isProd() bool {
+	return os.Getenv("GOENV") == "prod"
 }

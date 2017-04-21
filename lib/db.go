@@ -27,32 +27,34 @@ func LoadDB() {
 }
 
 func getDBUrl() string {
-	var host, dbName, port, username, passwd = viper.GetString("db_host"),
-		viper.GetString("db_name"),
-		viper.GetString("db_port"),
-		viper.GetString("db_username"),
-		viper.GetString("db_password")
+	if !isProd() {
+		var host, dbName, port, username, passwd = viper.GetString("db_host"),
+			viper.GetString("db_name"),
+			viper.GetString("db_port"),
+			viper.GetString("db_username"),
+			viper.GetString("db_password")
 
-	var dbURL = "postgres://"
+		var dbURL = "postgres://"
 
-	if username != "" {
-		dbURL += username
-		dbURL += ":" + passwd + "@"
-	}
+		if username != "" {
+			dbURL += username
+			dbURL += ":" + passwd + "@"
+		}
 
-	dbURL += host
+		dbURL += host
 
-	if port != "" {
-		dbURL += ":" + port
-	}
+		if port != "" {
+			dbURL += ":" + port
+		}
 
-	dbURL += "/" + dbName
+		dbURL += "/" + dbName
 
-	if os.Getenv("GOENV") != "prod" {
 		dbURL += "?sslmode=disable"
+
+		return dbURL
 	}
 
-	return dbURL
+	return os.Getenv("DATABASE_URL")
 }
 
 // NullTime is psql null for time.Time

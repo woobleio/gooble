@@ -11,17 +11,20 @@ import (
 )
 
 func init() {
-	viper.SetConfigName(os.Getenv("GOENV"))
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(os.Getenv("CONFPATH"))
+	if os.Getenv("GOENV") == "prod" {
+		stripe.Key = os.Getenv("STRIPE_KEY")
+	} else {
+		viper.SetConfigName(os.Getenv("GOENV"))
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(os.Getenv("CONFPATH"))
 
-	if err := viper.ReadInConfig(); err != nil {
-		panic(err)
+		if err := viper.ReadInConfig(); err != nil {
+			panic(err)
+		}
+		stripe.Key = viper.GetString("stripe_key")
 	}
 
 	lib.LoadDB()
-
-	stripe.Key = viper.GetString("stripe_key")
 }
 
 func main() {
