@@ -199,7 +199,7 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
 		return nil, err
 	}
 
-	if len(crea.Versions) > 1 {
+	if len(crea.Versions) > 1 && crea.State == enum.Draft {
 		crea.Versions = crea.Versions[:len(crea.Versions)-1]
 	}
 

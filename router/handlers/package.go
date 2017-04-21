@@ -12,6 +12,8 @@ import (
 	enum "wooble/models/enums"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/js"
 	"github.com/woobleio/wooblizer/wbzr"
 )
 
@@ -111,6 +113,9 @@ func PATCHPackage(c *gin.Context) {
 
 		wb := wbzr.New(wbzr.JSES5)
 
+		minifier := minify.New()
+		minifier.AddFunc("text/javascript", js.Minify)
+
 		for _, creation := range fullPkg.Creations {
 			creatorIDStr := fmt.Sprintf("%d", creation.CreatorID)
 
@@ -120,6 +125,9 @@ func PATCHPackage(c *gin.Context) {
 			creaVersionStr := fmt.Sprintf("%d", creation.Version)
 
 			src := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Script)
+
+			// Minify to remove comments and white spaces
+			src, _ = minifier.String("text/javascript", src)
 
 			script, errScript := wb.Inject(src, objName)
 
@@ -155,8 +163,15 @@ func PATCHPackage(c *gin.Context) {
 			return
 		}
 
+		wbSrc, minErr := minifier.String("text/javascript", bf.String())
+
+		if minErr != nil {
+			c.Error(minErr).SetMeta(ErrServ.SetParams("source", "minifier"))
+			return
+		}
+
 		// TODO if multitype allowed, package should have an engine too
-		path := storage.StoreFile(bf.String(), "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", fullPkg.ID.ValueDecoded), "", enum.Wooble)
+		path := storage.StoreFile(wbSrc, "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", fullPkg.ID.ValueDecoded), "", enum.Wooble)
 
 		spltPath := strings.Split(path, "/")
 		spltPath[0] = ""

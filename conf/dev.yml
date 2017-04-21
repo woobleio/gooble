@@ -15,4 +15,4 @@ token_lifetime: 30 # minutes
 keygen_range: abcdefghijklmnopqrstuvwxyz0123456789
 salt_for_id: hello
 allow_origin: http://localhost:4000
-pkg_url: https://pkg.wooble.io
+pkg_url: https://d2ncq0durb0run.cloudfront.net

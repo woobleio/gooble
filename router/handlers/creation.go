@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
+	"github.com/woobleio/wooblizer/wbzr"
 
 	"wooble/forms"
 	"wooble/lib"
@@ -200,15 +201,7 @@ func GETCreationCode(c *gin.Context) {
 
 	if crea.Script == "" {
 		// TODO put this in wooblizer lib
-		crea.Script = `woobly = {
-  "attribute": "a value (optionnal)",
-  "_init": function() {
-    // Creation code at runtime
-  },
-  "method": function(a, b) {
-    // a method (optionnal)
-  }
-}`
+		crea.Script = wbzr.WooblyJSES5
 	}
 
 	c.JSON(OK, NewRes(crea))
