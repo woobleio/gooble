@@ -56,10 +56,10 @@ type AccountParams struct {
 	Params
 	Country, Email, DefaultCurrency, Statement, BusinessName, BusinessUrl,
 	BusinessPrimaryColor, SupportPhone, SupportEmail, SupportUrl,
-	FromRecipient, PayoutStatement string
+	FromRecipient string
 	ExternalAccount                               *AccountExternalAccountParams
 	LegalEntity                                   *LegalEntity
-	PayoutSchedule                                *PayoutScheduleParams
+	TransferSchedule                              *TransferScheduleParams
 	Managed, DebitNegativeBal, NoDebitNegativeBal bool
 	TOSAcceptance                                 *TOSAcceptanceParams
 }
@@ -77,8 +77,8 @@ type AccountExternalAccountParams struct {
 	Account, Country, Currency, Routing, Token string
 }
 
-// PayoutScheduleParams are the parameters allowed for payout schedules.
-type PayoutScheduleParams struct {
+// TransferScheduleParams are the parameters allowed for transfer schedules.
+type TransferScheduleParams struct {
 	Delay, MonthAnchor uint64
 	WeekAnchor         string
 	Interval           Interval
@@ -93,12 +93,11 @@ type Account struct {
 	Country              string               `json:"country"`
 	DefaultCurrency      string               `json:"default_currency"`
 	DetailsSubmitted     bool                 `json:"details_submitted"`
-	PayoutsEnabled       bool                 `json:"payouts_enabled"`
+	TransfersEnabled     bool                 `json:"transfers_enabled"`
 	Name                 string               `json:"display_name"`
 	Email                string               `json:"email"`
 	ExternalAccounts     *ExternalAccountList `json:"external_accounts"`
 	Statement            string               `json:"statement_descriptor"`
-	PayoutStatement      string               `json:"payout_statement_descriptor"`
 	Timezone             string               `json:"timezone"`
 	BusinessName         string               `json:"business_name"`
 	BusinessPrimaryColor string               `json:"business_primary_color"`
@@ -119,9 +118,9 @@ type Account struct {
 		Due            *int64   `json:"due_by"`
 		DisabledReason string   `json:"disabled_reason"`
 	} `json:"verification"`
-	LegalEntity    *LegalEntity    `json:"legal_entity"`
-	PayoutSchedule *PayoutSchedule `json:"payout_schedule"`
-	TOSAcceptance  *struct {
+	LegalEntity      *LegalEntity      `json:"legal_entity"`
+	TransferSchedule *TransferSchedule `json:"transfer_schedule"`
+	TOSAcceptance    *struct {
 		Date      int64  `json:"date"`
 		IP        string `json:"ip"`
 		UserAgent string `json:"user_agent"`
@@ -199,14 +198,7 @@ func (ea *ExternalAccount) UnmarshalJSON(b []byte) error {
 
 // LegalEntity is the structure for properties related to an account's legal state.
 type LegalEntity struct {
-	Type LegalEntityType `json:"type"`
-
-	AdditionalOwners []Owner `json:"additional_owners"`
-
-	// AdditionalOwnersEmpty can be set to clear a legal entity's additional
-	// owners.
-	AdditionalOwnersEmpty bool
-
+	Type                  LegalEntityType      `json:"type"`
 	BusinessName          string               `json:"business_name"`
 	BusinessNameKana      string               `json:"business_name_kana"`
 	BusinessNameKanji     string               `json:"business_name_kanji"`
@@ -226,6 +218,7 @@ type LegalEntity struct {
 	PersonalAddressKanji  Address              `json:"personal_address_kanji"`
 	PhoneNumber           string               `json:"phone_number"`
 	DOB                   DOB                  `json:"dob"`
+	AdditionalOwners      []Owner              `json:"additional_owners"`
 	Verification          IdentityVerification `json:"verification"`
 	SSN                   string               `json:"ssn_last_4"`
 	SSNProvided           bool                 `json:"ssn_last_4_provided"`
@@ -314,8 +307,8 @@ type IdentityDocument struct {
 	Size    int64  `json:"size"`
 }
 
-// PayoutSchedule is the structure for an account's payout schedule.
-type PayoutSchedule struct {
+// TransferSchedule is the structure for an account's transfer schedule.
+type TransferSchedule struct {
 	Delay       uint64   `json:"delay_days"`
 	Interval    Interval `json:"interval"`
 	WeekAnchor  string   `json:"weekly_anchor"`
@@ -428,53 +421,44 @@ func (l *LegalEntity) AppendDetails(values *RequestValues) {
 	l.PersonalAddressKana.AppendDetails(values, "legal_entity[personal_address_kana]")
 	l.PersonalAddressKanji.AppendDetails(values, "legal_entity[personal_address_kanji]")
 
-	// sending an empty value unsets additional owners
-	if l.AdditionalOwnersEmpty {
-		values.Add("legal_entity[additional_owners]", "")
-	} else {
-		for i, owner := range l.AdditionalOwners {
-			if len(owner.First) > 0 {
-				values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][first_name]", i), owner.First)
-			}
-
-			if len(owner.Last) > 0 {
-				values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][last_name]", i), owner.Last)
-			}
-
-			if owner.DOB.Day > 0 {
-				values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][dob][day]", i), strconv.Itoa(owner.DOB.Day))
-			}
-
-			if owner.DOB.Month > 0 {
-				values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][dob][month]", i), strconv.Itoa(owner.DOB.Month))
-			}
-
-			if owner.DOB.Year > 0 {
-				values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][dob][year]", i), strconv.Itoa(owner.DOB.Year))
-			}
-
-			owner.Address.AppendDetails(values, fmt.Sprintf("legal_entity[additional_owners][%v][address]", i))
-
-			if owner.Verification.Document != nil {
-				values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][verification][document]", i), owner.Verification.Document.ID)
-			}
+	for i, owner := range l.AdditionalOwners {
+		if len(owner.First) > 0 {
+			values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][first_name]", i), owner.First)
 		}
+
+		if len(owner.Last) > 0 {
+			values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][last_name]", i), owner.Last)
+		}
+
+		if owner.DOB.Day > 0 {
+			values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][dob][day]", i), strconv.Itoa(owner.DOB.Day))
+		}
+
+		if owner.DOB.Month > 0 {
+			values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][dob][month]", i), strconv.Itoa(owner.DOB.Month))
+		}
+
+		if owner.DOB.Year > 0 {
+			values.Add(fmt.Sprintf("legal_entity[additional_owners][%v][dob][year]", i), strconv.Itoa(owner.DOB.Year))
+		}
+
+		owner.Address.AppendDetails(values, fmt.Sprintf("legal_entity[additional_owners][%v][address]", i))
 	}
 }
 
-// AppendDetails adds the payout schedule to the query string.
-func (t *PayoutScheduleParams) AppendDetails(values *RequestValues) {
+// AppendDetails adds the transfer schedule to the query string.
+func (t *TransferScheduleParams) AppendDetails(values *RequestValues) {
 	if t.Delay > 0 {
-		values.Add("payout_schedule[delay_days]", strconv.FormatUint(t.Delay, 10))
+		values.Add("transfer_schedule[delay_days]", strconv.FormatUint(t.Delay, 10))
 	} else if t.MinimumDelay {
-		values.Add("payout_schedule[delay_days]", "minimum")
+		values.Add("transfer_schedule[delay_days]", "minimum")
 	}
 
-	values.Add("payout_schedule[interval]", string(t.Interval))
+	values.Add("transfer_schedule[interval]", string(t.Interval))
 	if t.Interval == Week && len(t.WeekAnchor) > 0 {
-		values.Add("payout_schedule[weekly_anchor]", t.WeekAnchor)
+		values.Add("transfer_schedule[weekly_anchor]", t.WeekAnchor)
 	} else if t.Interval == Month && t.MonthAnchor > 0 {
-		values.Add("payout_schedule[monthly_anchor]", strconv.FormatUint(t.MonthAnchor, 10))
+		values.Add("transfer_schedule[monthly_anchor]", strconv.FormatUint(t.MonthAnchor, 10))
 	}
 }
 

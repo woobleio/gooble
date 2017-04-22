@@ -17,7 +17,6 @@ const (
 
 type OrderParams struct {
 	Params
-	Coupon   string
 	Currency Currency
 	Customer string
 	Email    string

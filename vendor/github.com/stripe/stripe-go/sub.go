@@ -3,7 +3,7 @@ package stripe
 import "encoding/json"
 
 // SubStatus is the list of allowed values for the subscription's status.
-// Allowed values are "trialing", "active", "past_due", "canceled", "unpaid", "all".
+// Allowed values are "trialing", "active", "past_due", "canceled", "unpaid".
 type SubStatus string
 
 // SubBilling is the type of billing method for this subscription's invoices.
@@ -16,7 +16,6 @@ type SubParams struct {
 	Params
 	Customer, Plan                                  string
 	Coupon, Token                                   string
-	CouponEmpty                                     bool
 	TrialEnd, TrialPeriod                           int64
 	Card                                            *CardParams
 	Quantity                                        uint64

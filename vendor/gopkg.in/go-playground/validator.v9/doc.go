@@ -238,7 +238,7 @@ slices, arrays, and maps, validates the number of items.
 
 	Usage: max=10
 
-Minimum
+Mininum
 
 For numbers, min will ensure that the value is
 greater or equal to the parameter given. For strings, it checks that
