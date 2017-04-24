@@ -285,7 +285,7 @@ func SaveVersion(c *gin.Context) {
 	preview := `<html>
 		<head>
 			<script type="text/javascript">` + codeForm.Script + `</script>
-			<script type="text/javascript">(function(){woobly._init()})()</script>
+			<script type="text/javascript">window.onload = function(){woobly._init()}</script>
 			<style>` + codeForm.Style + `</style>
 		</head>
 		<body>
