@@ -70,7 +70,7 @@ func (s *Storage) CopyAndStoreFile(userID string, objID string, prevVersion stri
 	path := s.getFilePath(makeID(userID, objID), prevVersion, filename)
 	newPath := s.getFilePath(makeID(userID, objID), version, filename)
 
-	bucket := GetCloudRepo()
+	bucket := s.getBucket()
 
 	obj := &s3.CopyObjectInput{
 		Bucket: aws.String(bucket),
@@ -91,7 +91,7 @@ func (s *Storage) GetFileContent(userID string, objID string, version string, fi
 	path := s.getFilePath(makeID(userID, objID), version, filename)
 
 	obj := &s3.GetObjectInput{
-		Bucket: aws.String(GetCloudRepo()),
+		Bucket: aws.String(s.getBucket()),
 
 		Key: aws.String(path),
 	}
@@ -122,7 +122,7 @@ func (s *Storage) StoreFile(content interface{}, contentType string, userID stri
 	}
 
 	obj := &s3.PutObjectInput{
-		Bucket: aws.String(GetCloudRepo()),
+		Bucket: aws.String(s.getBucket()),
 
 		Body:        bytes.NewReader(contentByte),
 		Key:         aws.String(path),
@@ -139,7 +139,7 @@ func (s *Storage) BulkDeleteFiles() {
 	svc := s3.New(s.Session)
 
 	params := &s3.DeleteObjectsInput{
-		Bucket: aws.String(GetCloudRepo()),
+		Bucket: aws.String(s.getBucket()),
 		Delete: &s3.Delete{
 			Objects: s.bulkObjects,
 		},
@@ -156,7 +156,7 @@ func (s *Storage) DeleteFile(userID string, objID string, version string, filena
 	path := s.getFilePath(makeID(userID, objID), version, filename)
 
 	obj := &s3.DeleteObjectInput{
-		Bucket: aws.String(GetCloudRepo()),
+		Bucket: aws.String(s.getBucket()),
 
 		Key: aws.String(path),
 	}
@@ -176,13 +176,27 @@ func (s *Storage) GetPathFor(userID string, objID string, version string, filena
 	return s.getFilePath(makeID(userID, objID), version, filename)
 }
 
+func (s *Storage) getBucket() string {
+	var bucket string
+	if s.Source == SrcPackages {
+		if isProd() {
+			bucket = "wooble-pkg"
+		} else {
+			bucket = "wooble-pkg-dev"
+		}
+	} else {
+		bucket = GetCloudRepo()
+	}
+	return bucket
+}
+
 func (s *Storage) getFilePath(id []byte, version string, filename string) string {
 	var path string
 	switch s.Source {
 	case SrcCreations:
 		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, id, version, filename)
 	case SrcPackages:
-		path = fmt.Sprintf("%s/%x/%s", s.Source, id, filename)
+		path = fmt.Sprintf("%x/%s", id, filename)
 	case SrcPreview:
 		path = fmt.Sprintf("public/%s/%x/%s/%s", s.Source, id, version, filename)
 	case SrcProfile:

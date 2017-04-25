@@ -3,7 +3,6 @@ package handler
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	form "wooble/forms"
@@ -173,11 +172,9 @@ func PATCHPackage(c *gin.Context) {
 		// TODO if multitype allowed, package should have an engine too
 		path := storage.StoreFile(wbSrc, "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", fullPkg.ID.ValueDecoded), "", enum.Wooble)
 
-		spltPath := strings.Split(path, "/")
-		spltPath[0] = ""
-
+		fmt.Print(path)
 		pkgPatchForm.Source = new(string)
-		*pkgPatchForm.Source = lib.GetPkgURL() + strings.Join(spltPath, "/")
+		*pkgPatchForm.Source = lib.GetPkgURL() + "/" + path
 
 		pkgPatchForm.BuiltAt = new(string)
 		*pkgPatchForm.BuiltAt = time.Now().Format("2006-01-02 15:04:05 -07:00")
