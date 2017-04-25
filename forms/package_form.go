@@ -19,6 +19,7 @@ type PackagePatchForm struct {
 	Title *string `json:"title" validate:"omitempty,ascii,max=25" db:"title"`
 
 	Source  *string `json:"-" db:"source"`
+	NbBuild *uint64 `json:"-" db:"nb_build"`
 	BuiltAt *string `json:"-" db:"built_at"`
 
 	// Operation build

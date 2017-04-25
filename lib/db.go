@@ -366,6 +366,8 @@ func SQLPatches(resource interface{}) SQLPatch {
 		switch val.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			sqlPatch.Args = append(sqlPatch.Args, val.Int())
+		case reflect.Uint, reflect.Uint64:
+			sqlPatch.Args = append(sqlPatch.Args, val.Uint())
 		case reflect.String:
 			sqlPatch.Args = append(sqlPatch.Args, val.String())
 		case reflect.Bool:

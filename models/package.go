@@ -10,7 +10,8 @@ import (
 type Package struct {
 	ID lib.ID `json:"id" db:"pkg.id"`
 
-	Title string `json:"title" validate:"required" db:"pkg.title"`
+	Title   string `json:"title" validate:"required" db:"pkg.title"`
+	NbBuild uint64 `json:"nbBuild" db:"nb_build"`
 
 	Referer       *lib.NullString `json:"referer,omitempty" db:"referer"`
 	UserID        uint64          `json:"-" db:"pkg.user_id"`
@@ -87,6 +88,7 @@ func PackageByID(uID uint64, id lib.ID) (*Package, error) {
 		pkg.id "pkg.id",
 		pkg.user_id "pkg.user_id",
 		pkg.title "pkg.title",
+		pkg.nb_build,
 		pkg.referer,
 		pkg.source,
 		pkg.build_required,
@@ -126,7 +128,7 @@ func PackageNbCrea(id lib.ID) uint64 {
 
 // NewPackage creates a new package
 func NewPackage(pkg *Package) (*Package, error) {
-	q := `INSERT INTO package(title, user_id, referer) VALUES ($1, $2, $3) RETURNING id`
+	q := `INSERT INTO package(title, user_id, referer, nb_build) VALUES ($1, $2, $3, 0) RETURNING id`
 	return pkg, lib.DB.QueryRow(q, pkg.Title, pkg.UserID, pkg.Referer).Scan(&pkg.ID)
 }
 

@@ -196,7 +196,7 @@ func (s *Storage) getFilePath(id []byte, version string, filename string) string
 	case SrcCreations:
 		path = fmt.Sprintf("%s/%x/%s/%s", s.Source, id, version, filename)
 	case SrcPackages:
-		path = fmt.Sprintf("%x/%s", id, filename)
+		path = fmt.Sprintf("%x-%s/%s", id, version, filename)
 	case SrcPreview:
 		path = fmt.Sprintf("public/%s/%x/%s/%s", s.Source, id, version, filename)
 	case SrcProfile:

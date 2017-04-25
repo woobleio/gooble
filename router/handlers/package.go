@@ -169,12 +169,23 @@ func PATCHPackage(c *gin.Context) {
 			return
 		}
 
-		// TODO if multitype allowed, package should have an engine too
-		path := storage.StoreFile(wbSrc, "application/javascript", fmt.Sprintf("%d", user.(*model.User).ID), fmt.Sprintf("%d", fullPkg.ID.ValueDecoded), "", enum.Wooble)
+		fullPkg.NbBuild += 1
 
-		fmt.Print(path)
+		// TODO if multitype allowed, package should have an engine too
+		path := storage.StoreFile(
+			wbSrc,
+			"application/javascript",
+			fmt.Sprintf("%d", user.(*model.User).ID),
+			fmt.Sprintf("%d", fullPkg.ID.ValueDecoded),
+			fmt.Sprintf("%d", fullPkg.NbBuild),
+			enum.Wooble,
+		)
+
 		pkgPatchForm.Source = new(string)
 		*pkgPatchForm.Source = lib.GetPkgURL() + "/" + path
+
+		pkgPatchForm.NbBuild = new(uint64)
+		*pkgPatchForm.NbBuild = fullPkg.NbBuild
 
 		pkgPatchForm.BuiltAt = new(string)
 		*pkgPatchForm.BuiltAt = time.Now().Format("2006-01-02 15:04:05 -07:00")
