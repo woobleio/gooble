@@ -128,6 +128,7 @@ func (s *Storage) StoreFile(content interface{}, contentType string, userID stri
 		Key:         aws.String(path),
 		ContentType: aws.String(contentType),
 	}
+
 	if _, err := svc.PutObject(obj); err != nil {
 		s.errs = append(s.errs, err)
 	}

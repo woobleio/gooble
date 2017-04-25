@@ -7,7 +7,7 @@ type CreationForm struct {
 	Alias       string `json:"alias" validate:"omitempty,alpha,max=10"`
 	Engine      string `json:"engine" validate:"omitempty,alphanum"`
 	State       string `json:"state" validate:"omitempty,alpha"`
-	Description string `json:"description" validate:"ascii"`
+	Description string `json:"description" validate:"omitempty"`
 	ThumbPath   string `json:"thumbPath" validate:"omitempty,max=300"`
 }
 

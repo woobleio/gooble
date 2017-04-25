@@ -169,7 +169,7 @@ func PATCHPackage(c *gin.Context) {
 			return
 		}
 
-		fullPkg.NbBuild += 1
+		fullPkg.NbBuild++
 
 		// TODO if multitype allowed, package should have an engine too
 		path := storage.StoreFile(
@@ -209,13 +209,24 @@ func DELETEPackage(c *gin.Context) {
 	uID := user.(*model.User).ID
 	pkgID := lib.InitID(c.Param("encid"))
 
+	pkg, err := model.PackageByID(uID, pkgID)
+	if err != nil {
+		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "package", "id", pkgID.ValueEncoded))
+		return
+	}
+
 	if err := model.DeletePackage(uID, pkgID); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
 
 	storage := lib.NewStorage(lib.SrcPackages)
-	storage.DeleteFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkgID.ValueDecoded), "", enum.Wooble)
+
+	for v := pkg.NbBuild; v > 0; v-- {
+		storage.PushBulkFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), fmt.Sprintf("%d", v), enum.Wooble)
+	}
+
+	storage.BulkDeleteFiles()
 
 	if storage.Error() != nil {
 		c.Error(storage.Error())
