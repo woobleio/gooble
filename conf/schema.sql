@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.6
 -- Dumped by pg_dump version 9.5.6
 
--- Started on 2017-04-21 21:12:12 UTC
+-- Started on 2017-04-25 22:06:30 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -198,7 +198,8 @@ CREATE TABLE package (
     source text,
     referer text,
     build_required boolean DEFAULT true,
-    built_at timestamp with time zone
+    built_at timestamp with time zone,
+    nb_build integer
 );
 
 
@@ -378,7 +379,7 @@ COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt
 -- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('app_user_id_seq', 102, true);
+SELECT pg_catalog.setval('app_user_id_seq', 103, true);
 
 
 --
@@ -397,7 +398,7 @@ COPY creation (id, title, creator_id, updated_at, engine, thumb_path, descriptio
 -- Name: creation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('creation_id_seq', 226, true);
+SELECT pg_catalog.setval('creation_id_seq', 237, true);
 
 
 --
@@ -417,7 +418,7 @@ JSES5	.js	application/javascript
 -- Data for Name: package; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY package (id, user_id, title, created_at, updated_at, source, referer, build_required, built_at) FROM stdin;
+COPY package (id, user_id, title, created_at, updated_at, source, referer, build_required, built_at, nb_build) FROM stdin;
 \.
 
 
@@ -437,7 +438,7 @@ COPY package_creation (package_id, creation_id, alias, version) FROM stdin;
 -- Name: package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('package_id_seq', 79, true);
+SELECT pg_catalog.setval('package_id_seq', 83, true);
 
 
 --
@@ -469,7 +470,7 @@ COPY plan_user (id, user_id, nb_renew, created_at, start_date, end_date, plan_la
 -- Name: plan_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('plan_user_id_seq', 53, true);
+SELECT pg_catalog.setval('plan_user_id_seq', 54, true);
 
 
 --
@@ -717,7 +718,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-04-21 21:12:12 UTC
+-- Completed on 2017-04-25 22:06:31 UTC
 
 --
 -- PostgreSQL database dump complete

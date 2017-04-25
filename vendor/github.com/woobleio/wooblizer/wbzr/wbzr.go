@@ -104,7 +104,13 @@ func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
 		}
 	}
 
-	tmpl := template.Must(template.New("WbJSES5").Parse(wbJses5))
+	fns := template.FuncMap{
+		"plus1": func(x int) int {
+			return x + 1
+		},
+	}
+
+	tmpl := template.Must(template.New("WbJSES5").Funcs(fns).Parse(wbJses5))
 
 	var out bytes.Buffer
 	if err := tmpl.Execute(&out, wb); err != nil {
@@ -131,7 +137,8 @@ var WooblyJSES5 = `woobly = {
 var wbJses5 = `
 function Wb(id) {
 	{{if .DomainsSec}}
-	var ah = [{{range $i, $o := .DomainsSec}}"{{$o}}"{{if not $i}},{{end}}{{end}}];
+	{{$lenDoms := len .DomainsSec}}
+	var ah = [{{range $i, $o := .DomainsSec}}"{{$o}}"{{if ne (plus1 $i) $lenDoms}},{{end}}{{end}}];
   var xx = ah.indexOf(window.location.hostname);
   if(ah.indexOf(window.location.hostname) == -1) {
   	console.log("Wooble error : domain restricted");
@@ -144,7 +151,8 @@ function Wb(id) {
   }
 
   var cs = {
-  	{{range $i, $o := .Scripts}}"{{$o.GetName}}":{{"{"}}{{$o.GetSource}}{{"}"}}{{if not $i}},{{end}}{{end}}
+		{{$lenScripts := len .Scripts}}
+  	{{range $i, $o := .Scripts}}"{{$o.GetName}}":{{"{"}}{{$o.GetSource}}{{"}"}}{{if ne (plus1 $i) $lenScripts}},{{end}}{{end}}
   }
 
   var c = cs[id];

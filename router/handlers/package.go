@@ -155,7 +155,7 @@ func PATCHPackage(c *gin.Context) {
 
 		storage.Source = lib.SrcPackages
 
-		bf, err := wb.SecureAndWrap([]string{fullPkg.Referer.String}...)
+		bf, err := wb.SecureAndWrap([]string{fullPkg.Referer.String, "localhost"}...)
 
 		if err != nil || storage.Error() != nil {
 			c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "package"))
