@@ -135,7 +135,7 @@ func (js *jses5) IncludeCss(css string) error {
 	jsw.makeFunction()
 	jsw.affectVar("a", "")
 	jsw.createElement("", "style")
-	jsw.affectAttr("a", "innerHTML", "\""+sanitize(css)+"\"")
+	jsw.affectAttr("a", "innerHTML", "'"+sanitize(sanitizeString(css))+"'")
 
 	jsw.appendChild("this."+jsw.doc, "a")
 	jsw.closeExpr()
@@ -232,7 +232,7 @@ func formatVar(pVar otto.Value) (string, error) {
 
 	switch {
 	case pVar.IsString():
-		formatVar = "\"" + formatVar + "\""
+		formatVar = "'" + sanitizeString(formatVar) + "'"
 	case pVar.IsFunction():
 		formatVar = sanitize(formatVar)
 	}
@@ -242,6 +242,11 @@ func formatVar(pVar otto.Value) (string, error) {
 
 func sanitize(src string) string {
 	rpcer := strings.NewReplacer("\n", "", "\t", "", "\r", "")
+	return rpcer.Replace(src)
+}
+
+func sanitizeString(src string) string {
+	rpcer := strings.NewReplacer("'", "\\'")
 	return rpcer.Replace(src)
 }
 
