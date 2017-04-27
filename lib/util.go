@@ -82,6 +82,15 @@ func GetPkgURL() string {
 	return viper.GetString("pkg_url")
 }
 
+// GetPkgRepo returns the package repository
+func GetPkgRepo() string {
+	if isProd() {
+		return os.Getenv("PKG_REPO")
+	}
+
+	return viper.GetString("pkg_repo")
+}
+
 // HashID hashes uint64 id and returns a unique string
 func HashID(id int64) (string, error) {
 	hasher := initHasher()

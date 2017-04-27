@@ -180,11 +180,7 @@ func (s *Storage) GetPathFor(userID string, objID string, version string, filena
 func (s *Storage) getBucket() string {
 	var bucket string
 	if s.Source == SrcPackages {
-		if isProd() {
-			bucket = "wooble-pkg"
-		} else {
-			bucket = "wooble-pkg-dev"
-		}
+		bucket = GetPkgRepo()
 	} else {
 		bucket = GetCloudRepo()
 	}

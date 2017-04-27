@@ -7,6 +7,7 @@ db_password: w00b
 
 # Third parties config
 cloud_repo: wooble-dev
+pkg_repo: wooble-pkg-dev
 stripe_key: <stripe key>
 
 # Server config
