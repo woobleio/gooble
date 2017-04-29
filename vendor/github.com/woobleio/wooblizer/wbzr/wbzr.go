@@ -167,7 +167,20 @@ function Wb(id) {
       return;
     }
 
-    if("_buildDoc" in c) c._buildDoc(target);
+    if("_buildDoc" in c) {
+			if (!document.head.attachShadow) {
+				// Browsers shadow dom support with polyfill
+				var s = document.createElement('script');
+				s.type = 'text/javascript';
+				s.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js';
+				document.getElementsByTagName('head')[0].appendChild(s);
+				s.onload = function() {
+					c._buildDoc(target);
+				}
+			} else {
+				c._buildDoc(target);
+			}
+		}
     if("_buildStyle" in c) c._buildStyle();
     if("_init" in c) c._init();
 
