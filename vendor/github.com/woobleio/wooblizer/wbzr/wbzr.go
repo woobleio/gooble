@@ -167,25 +167,32 @@ function Wb(id) {
       return;
     }
 
-    if("_buildDoc" in c) {
-			if (!document.head.attachShadow) {
-				// Browsers shadow dom support with polyfill
-				var s = document.createElement('script');
-				s.type = 'text/javascript';
-				s.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js';
-				document.getElementsByTagName('head')[0].appendChild(s);
-				s.onload = function() {
-					c._buildDoc(target);
-				}
-			} else {
-				c._buildDoc(target);
-			}
-		}
-    if("_buildStyle" in c) c._buildStyle();
-    if("_init" in c) c._init();
-
-		return c;
+		var t = this;
+    return new Promise(function(r, e) {
+    	if("_buildDoc" in c) {
+        if (!document.head.attachShadow) {
+          // Browsers shadow dom support with polyfill
+          var s = document.createElement('script');
+          s.type = 'text/javascript';
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js';
+          document.getElementsByTagName('head')[0].appendChild(s);
+          s.onload = function() {
+            t._build(target);
+            r(c);
+          }
+        } else {
+          t._build(target);
+          r(c);
+        }
+      }
+    });
   }
+
+	this._build = function(target) {
+		c._buildDoc(target);
+		if("_buildStyle" in c) c._buildStyle();
+		if("_init" in c) c._init();
+	}
 
   this.get = function() {
   	return c;
