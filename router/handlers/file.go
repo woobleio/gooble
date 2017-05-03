@@ -56,9 +56,11 @@ func POSTFile(c *gin.Context) {
 		return
 	}
 
+	id := c.Query("id")
+
 	storage := lib.NewStorage(source)
 	user, _ := c.Get("user")
-	res.Path = storage.StoreFile(buff, mimeType, fmt.Sprintf("%d", user.(*model.User).ID), source, "", header.Filename)
+	res.Path = storage.StoreFile(buff, mimeType, fmt.Sprintf("%d", user.(*model.User).ID), source+id, "", header.Filename)
 
 	fmt.Print(storage.Error())
 
