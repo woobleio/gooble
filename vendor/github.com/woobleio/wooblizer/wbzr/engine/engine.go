@@ -1,15 +1,11 @@
 package engine
 
-import (
-	"text/template"
-)
+// StdName is the name standard for a wooble object
+const StdName string = "Woobly"
 
+// Script is an interface for script langage
 type Script interface {
-	AddAttr(name string, val interface{}) error
-	AddMethod(name string, src string) error
 	GetName() string
 	GetSource() string
-	Build() (*template.Template, error)
-	IncludeCss(css string) error
-	IncludeHtml(src string) error
+	IncludeHTMLCSS(srcHTML string, srcCSS string) error
 }

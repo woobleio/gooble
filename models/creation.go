@@ -24,9 +24,10 @@ type Creation struct {
 	PreviewURL string `json:"previewUrl,omitempty"`
 	Version    uint64 `json:"version,omitempty"`
 
-	Script   string `json:"script,omitempty"`
-	Document string `json:"document,omitempty"`
-	Style    string `json:"style,omitempty"`
+	Script       string `json:"script,omitempty"`
+	ParsedScript string `json:"parsedScript,omitempty"`
+	Document     string `json:"document,omitempty"`
+	Style        string `json:"style,omitempty"`
 
 	CreatorID uint64 `json:"-" db:"creator_id"`
 	Engine    Engine `json:"-" db:""`

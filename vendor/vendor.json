@@ -511,26 +511,26 @@
 		{
 			"checksumSHA1": "L3YyiuhowX/qKqgzj/7kkMZCgFo=",
 			"path": "github.com/woobleio/wooblizer",
-			"revision": "82c8caafe9a72d241d56b2ac54ccabdbdfb8508f",
-			"revisionTime": "2017-04-29T23:08:53Z"
+			"revision": "8637fa3c8f197c382695e2fb7155b69d53805566",
+			"revisionTime": "2017-05-13T20:38:09Z"
 		},
 		{
-			"checksumSHA1": "SgXnRd4q+MM/8ufGHHkVcfv9/0k=",
+			"checksumSHA1": "L8Wl09Yoe84UuFiNVCGrmiEiSbE=",
 			"path": "github.com/woobleio/wooblizer/wbzr",
-			"revision": "82c8caafe9a72d241d56b2ac54ccabdbdfb8508f",
-			"revisionTime": "2017-04-29T23:08:53Z"
+			"revision": "8637fa3c8f197c382695e2fb7155b69d53805566",
+			"revisionTime": "2017-05-13T20:38:09Z"
 		},
 		{
-			"checksumSHA1": "Cu2n5TC91oOQ9jVuyiFmqkjW6CY=",
+			"checksumSHA1": "BjwaAl04D/UheO/TZgMOAFQOzeY=",
 			"path": "github.com/woobleio/wooblizer/wbzr/engine",
-			"revision": "82c8caafe9a72d241d56b2ac54ccabdbdfb8508f",
-			"revisionTime": "2017-04-29T23:08:53Z"
+			"revision": "8637fa3c8f197c382695e2fb7155b69d53805566",
+			"revisionTime": "2017-05-13T20:38:09Z"
 		},
 		{
 			"checksumSHA1": "zSSoxQj0g60RvSQDhsFll/7xKAg=",
 			"path": "github.com/woobleio/wooblizer/wbzr/engine/doc",
-			"revision": "82c8caafe9a72d241d56b2ac54ccabdbdfb8508f",
-			"revisionTime": "2017-04-29T23:08:53Z"
+			"revision": "8637fa3c8f197c382695e2fb7155b69d53805566",
+			"revisionTime": "2017-05-13T20:38:09Z"
 		},
 		{
 			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
@@ -547,20 +547,20 @@
 		{
 			"checksumSHA1": "Y+HGqEkYM15ir+J93MEaHdyFy0c=",
 			"path": "golang.org/x/net/context",
-			"revision": "d379faa25cbdc04d653984913a2ceb43b0bc46d7",
-			"revisionTime": "2017-01-16T00:30:03Z"
+			"revision": "84f0e6f92b10139f986b1756e149a7d9de270cdc",
+			"revisionTime": "2017-05-12T21:27:43Z"
 		},
 		{
 			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
 			"path": "golang.org/x/net/html",
-			"revision": "d379faa25cbdc04d653984913a2ceb43b0bc46d7",
-			"revisionTime": "2017-01-16T00:30:03Z"
+			"revision": "84f0e6f92b10139f986b1756e149a7d9de270cdc",
+			"revisionTime": "2017-05-12T21:27:43Z"
 		},
 		{
 			"checksumSHA1": "00eQaGynDYrv3tL+C7l9xH0IDZg=",
 			"path": "golang.org/x/net/html/atom",
-			"revision": "d379faa25cbdc04d653984913a2ceb43b0bc46d7",
-			"revisionTime": "2017-01-16T00:30:03Z"
+			"revision": "84f0e6f92b10139f986b1756e149a7d9de270cdc",
+			"revisionTime": "2017-05-12T21:27:43Z"
 		},
 		{
 			"checksumSHA1": "YWwdhFrXGamORGZLqsCqNTIQHlY=",
@@ -617,8 +617,58 @@
 			"revisionTime": "2017-02-08T14:18:51Z"
 		},
 		{
-			"path": "gothub.com/woobleio/wooblizer",
-			"revision": ""
+			"checksumSHA1": "wF6hFlxAFJpb/sMYzv9T0yBQXg8=",
+			"path": "wooble",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "1j4z7/0/sKUAwMPLG8lT9H9wuzU=",
+			"path": "wooble/forms",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "e/0M/+Oi+uRcDuFwNDWaLy5QtZc=",
+			"path": "wooble/lib",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "4nv7LxoHHvn++zjvuAv4jFwgXJw=",
+			"path": "wooble/models",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "cEqHYXpIhQz5MLJpKvTzqcfGNS8=",
+			"path": "wooble/models/enums",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "hzCSHLXwUZL4GkxT91vvPhQM3IA=",
+			"path": "wooble/router",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "wjKDkEht3bo7ihzKF2De/lHs8Ik=",
+			"path": "wooble/router/handlers",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "tPSe7iX9nOHLPLMxUNtjarlDgn0=",
+			"path": "wooble/router/helpers",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
+		},
+		{
+			"checksumSHA1": "E7ukQVioh+9GgUuvxMl8iuiqqkg=",
+			"path": "wooble/router/middlewares",
+			"revision": "cb7938dc5f8099cb1dd98d2f0297da2019f1c0d1",
+			"revisionTime": "2017-05-03T20:33:26Z"
 		}
 	],
 	"rootPath": "wooble"

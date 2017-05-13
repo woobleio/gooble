@@ -1,10 +1,12 @@
-// Package Wbzr provides tool to create a wooble in a given language and to package
+// Package wbzr provides tool to create a wooble in a given language and to package
 // (wrap) some woobles.
 package wbzr
 
 import (
 	"bytes"
 	"io/ioutil"
+	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/woobleio/wooblizer/wbzr/engine"
@@ -13,8 +15,9 @@ import (
 // ScriptLang are constants for implemented script languages.
 type ScriptLang int
 
+// Supported engines
 const (
-	JSES5 ScriptLang = iota
+	JS ScriptLang = iota
 )
 
 type Wbzr struct {
@@ -29,8 +32,8 @@ type Wbzr struct {
 func New(sl ScriptLang) *Wbzr {
 	var skeleton string
 	switch sl {
-	case JSES5:
-		skeleton = wbJses5
+	case JS:
+		skeleton = wbJS
 	default:
 		panic("Language not supported")
 	}
@@ -63,8 +66,14 @@ func (wb *Wbzr) Inject(src string, name string) (engine.Script, error) {
 	var err error
 
 	switch wb.lang {
-	case JSES5:
-		sc, err = engine.NewJSES5(src, name)
+	case JS:
+		rmVar := regexp.MustCompile(`^var Woobly[ ]?=`)
+		src = rmVar.ReplaceAllString(src, "")
+		src = strings.TrimRight(src, ";")
+		sc = &engine.JS{
+			Src:  src,
+			Name: name,
+		}
 	}
 
 	if err != nil {
@@ -98,19 +107,13 @@ func (wb *Wbzr) SecureAndWrap(domains ...string) (*bytes.Buffer, error) {
 // Wrap packages some woobles (all the woobles injected in the Wbzr)
 // and build a file which contains the wooble library.
 func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
-	for _, sc := range wb.Scripts {
-		if _, err := sc.Build(); err != nil {
-			return nil, err
-		}
-	}
-
 	fns := template.FuncMap{
 		"plus1": func(x int) int {
 			return x + 1
 		},
 	}
 
-	tmpl := template.Must(template.New("WbJSES5").Funcs(fns).Parse(wbJses5))
+	tmpl := template.Must(template.New("wbJS").Funcs(fns).Parse(wbJS))
 
 	var out bytes.Buffer
 	if err := tmpl.Execute(&out, wb); err != nil {
@@ -120,21 +123,30 @@ func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
 	return &out, nil
 }
 
-// WooblyJSES5 is a Wooble creation template for JSES5
-var WooblyJSES5 = `woobly = {
-  // Use this attribute instead of document. Ex: this._doc.stuff
-  // Use 'document' to access parent's document
-  _doc: function() {return document},
-  _init: function() {
-    // Creation code at runtime
-  },
-  attribute: "a value (optionnal)",
-  method: function(a, b) {
-    // a method (optionnal)
-  }
+// WooblyJS is a Wooble creation template for JS
+var WooblyJS = `class Woobly {
+
+	constructor() {
+		// This is mandatory. Use this.document to query elements in your creation
+		// (this.document.queryAll('div')), use document for manipulating the
+		// document parent (document.createElement('div'))
+		this.document = document;
+
+		/*
+		 * Your creation start-up code
+		 */
+	}
+
+	/*
+	 * You can create all methods you need
+	 */
 }`
 
-var wbJses5 = `
+var wbJS = `
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 function Wb(id) {
 	{{if .DomainsSec}}
 	{{$lenDoms := len .DomainsSec}}
@@ -152,7 +164,7 @@ function Wb(id) {
 
   var cs = {
 		{{$lenScripts := len .Scripts}}
-  	{{range $i, $o := .Scripts}}"{{$o.GetName}}":{{"{"}}{{$o.GetSource}}{{"}"}}{{if ne (plus1 $i) $lenScripts}},{{end}}{{end}}
+  	{{range $i, $o := .Scripts}}"{{$o.GetName}}":{{$o.GetSource}}{{if ne (plus1 $i) $lenScripts}},{{end}}{{end}}
   }
 
   var c = cs[id];
@@ -161,41 +173,27 @@ function Wb(id) {
     return undefined;
   }
 
-  this.init = function (target) {
-    if(document.querySelector(target) == null) {
+  this.init = function (tar) {
+    if(document.querySelector(tar) == null) {
     	console.log("Wooble error : Element", target, "not found in the document");
       return;
     }
 
 		var t = this;
     return new Promise(function(r, e) {
-    	if("_buildDoc" in c) {
-        if (!document.head.attachShadow) {
-          // Browsers shadow dom support with polyfill
-          var s = document.createElement('script');
-          s.type = 'text/javascript';
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js';
-          document.getElementsByTagName('head')[0].appendChild(s);
-          s.onload = function() {
-            t._build(target);
-            r(c);
-          }
-        } else {
-          t._build(target);
-          r(c);
+      if (!document.head.attachShadow) {
+        // Browsers shadow dom support with polyfill
+        var s = document.createElement('script');
+        s.type = 'text/javascript';
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js';
+        document.getElementsByTagName('head')[0].appendChild(s);
+        s.onload = function() {
+          r(new c(tar));
         }
+      } else {
+        r(new c(tar));
       }
     });
-  }
-
-	this._build = function(target) {
-		c._buildDoc(target);
-		if("_buildStyle" in c) c._buildStyle();
-		if("_init" in c) c._init();
-	}
-
-  this.get = function() {
-  	return c;
   }
 
   return this;

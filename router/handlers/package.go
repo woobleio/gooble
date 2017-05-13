@@ -110,7 +110,7 @@ func PATCHPackage(c *gin.Context) {
 
 		storage := lib.NewStorage(lib.SrcCreations)
 
-		wb := wbzr.New(wbzr.JSES5)
+		wb := wbzr.New(wbzr.JS)
 
 		minifier := minify.New()
 		minifier.AddFunc("text/javascript", js.Minify)
@@ -123,7 +123,7 @@ func PATCHPackage(c *gin.Context) {
 			creaIDStr := fmt.Sprintf("%d", creation.ID.ValueDecoded)
 			creaVersionStr := fmt.Sprintf("%d", creation.Version)
 
-			src := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Script)
+			src := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.ParsedScript)
 
 			// Minify to remove comments and white spaces
 			src, _ = minifier.String("text/javascript", src)
@@ -139,14 +139,8 @@ func PATCHPackage(c *gin.Context) {
 			}
 
 			docSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Document)
-			if docSrc != "" {
-				err = script.IncludeHtml(docSrc)
-			}
-
 			styleSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Style)
-			if styleSrc != "" {
-				err = script.IncludeCss(styleSrc)
-			}
+			err = script.IncludeHTMLCSS(docSrc, styleSrc)
 
 			if err != nil {
 				panic(err)

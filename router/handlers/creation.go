@@ -98,7 +98,7 @@ func POSTCreation(c *gin.Context) {
 	crea.Description = lib.InitNullString(data.Description)
 	crea.Alias = data.Alias
 	if data.Engine == "" {
-		data.Engine = "JSES5"
+		data.Engine = "JS"
 	}
 	crea.Engine = model.Engine{Name: data.Engine}
 
@@ -201,7 +201,7 @@ func GETCreationCode(c *gin.Context) {
 
 	if crea.Script == "" {
 		// TODO put this in wooblizer lib
-		crea.Script = wbzr.WooblyJSES5
+		crea.Script = wbzr.WooblyJS
 	}
 
 	c.JSON(OK, NewRes(crea))
@@ -269,6 +269,7 @@ func SaveVersion(c *gin.Context) {
 
 	storage.StoreFile(codeForm.Document, "text/html", userIDStr, creaIDStr, version, enum.Document)
 	storage.StoreFile(codeForm.Script, "application/javascript", userIDStr, creaIDStr, version, enum.Script)
+	storage.StoreFile(codeForm.ParsedScript, "application/javascript", userIDStr, creaIDStr, version, enum.ParsedScript)
 	storage.StoreFile(codeForm.Style, "text/css", userIDStr, creaIDStr, version, enum.Style)
 
 	minifier := minify.New()
