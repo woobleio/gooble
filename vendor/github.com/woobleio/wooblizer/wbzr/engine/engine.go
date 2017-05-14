@@ -7,5 +7,10 @@ const StdName string = "Woobly"
 type Script interface {
 	GetName() string
 	GetSource() string
+
+	// IncludeHTMLCSS includes HTML and CSS code into the script object
 	IncludeHTMLCSS(srcHTML string, srcCSS string) error
+
+	// Control controles wether the object is valid or not
+	Control() []error
 }

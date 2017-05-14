@@ -17,6 +17,9 @@ const (
 	badCreds         errCode = "bad_credentials"
 	badFileFormat    errCode = "bad_file_format"
 	badForm          errCode = "bad_form"
+	badScriptDoc     errCode = "bad_script_document"
+	badScriptClass   errCode = "bad_script_class"
+	badScriptConst   errCode = "bad_script_constructor"
 	betterPlan       errCode = "better_plan"
 	chargeErr        errCode = "charge_fail"
 	creaNotAvail     errCode = "creation_not_available"
@@ -30,18 +33,21 @@ const (
 
 // API errors
 var (
-	ErrAliasRequired = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package : creation %s should have an alias", http.StatusBadRequest)
-	ErrBadCreds      = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
-	ErrBadFileFormat = NewAPIError(badFileFormat, "Server can't handle this file", "Allowed formats are : %s", http.StatusBadRequest)
-	ErrBadForm       = NewAPIError(badForm, "Form not valid", "", http.StatusBadRequest)
-	ErrBetterPlan    = NewAPIError(betterPlan, "Already has a better plan", "Current plan %s and requested plan is %s", http.StatusConflict)
-	ErrCreaNotAvail  = NewAPIError(creaNotAvail, "Creation not available", "The creation %s is not available", http.StatusConflict)
-	ErrCreaVersion   = NewAPIError(creaVersion, "Bad version", "Version %s can't be created", http.StatusBadRequest)
-	ErrDB            = NewAPIError(dbFail, "Database error", "Database failed to process the request", http.StatusConflict)
-	ErrIntServ       = NewAPIError(servIntErr, "Internal server error", "Something wrong happened", http.StatusInternalServerError)
-	ErrPlanLimit     = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
-	ErrResNotFound   = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)
-	ErrServ          = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError)
+	ErrAliasRequired  = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package : creation %s should have an alias", http.StatusBadRequest)
+	ErrBadCreds       = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
+	ErrBadFileFormat  = NewAPIError(badFileFormat, "Server can't handle this file", "Allowed formats are : %s", http.StatusBadRequest)
+	ErrBadForm        = NewAPIError(badForm, "Form invalid", "", http.StatusBadRequest)
+	ErrBadScriptDoc   = NewAPIError(badScriptDoc, "Missing document initializer", "Document initializer is required and shloud be in the constructor : %s", http.StatusBadRequest)
+	ErrBadScriptClass = NewAPIError(badScriptClass, "Missing class", "Class Woobly is mandatory", http.StatusBadRequest)
+	ErrBadScriptConst = NewAPIError(badScriptConst, "Missing constructor", "A constructor is mandatory : %s", http.StatusBadRequest)
+	ErrBetterPlan     = NewAPIError(betterPlan, "Already has a better plan", "Current plan %s and requested plan is %s", http.StatusConflict)
+	ErrCreaNotAvail   = NewAPIError(creaNotAvail, "Creation not available", "The creation %s is not available", http.StatusConflict)
+	ErrCreaVersion    = NewAPIError(creaVersion, "Bad version", "Version %s can't be created", http.StatusBadRequest)
+	ErrDB             = NewAPIError(dbFail, "Database error", "Database failed to process the request", http.StatusConflict)
+	ErrIntServ        = NewAPIError(servIntErr, "Internal server error", "Something wrong happened", http.StatusInternalServerError)
+	ErrPlanLimit      = NewAPIError(planLimit, "Plan limit exceeded", "Number of %s limited by actual plan %s", http.StatusUnauthorized)
+	ErrResNotFound    = NewAPIError(resNotFound, "Resource not found", "%s %v not found", http.StatusNotFound)
+	ErrServ           = NewAPIError(servErr, "Internal server error", "Something wrong happened while processing %s", http.StatusInternalServerError)
 )
 
 // APIError is a struct that standardize a Wooble error

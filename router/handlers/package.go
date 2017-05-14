@@ -128,14 +128,14 @@ func PATCHPackage(c *gin.Context) {
 			// Minify to remove comments and white spaces
 			src, _ = minifier.String("text/javascript", src)
 
-			script, errScript := wb.Inject(src, objName)
+			script, errsScript := wb.Inject(src, objName)
 
-			if errScript != nil {
-				if errScript == wbzr.ErrUniqueName {
-					c.Error(errScript).SetMeta(ErrAliasRequired.SetParams("name", creation.Title))
+			if len(errsScript) > 0 {
+				if errsScript[0] == wbzr.ErrUniqueName {
+					c.Error(errsScript[0]).SetMeta(ErrAliasRequired.SetParams("name", creation.Title))
 					return
 				}
-				panic(errScript)
+				panic(errsScript)
 			}
 
 			docSrc := storage.GetFileContent(creatorIDStr, creaIDStr, creaVersionStr, enum.Document)

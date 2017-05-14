@@ -9,6 +9,7 @@ import (
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
 	"github.com/woobleio/wooblizer/wbzr"
+	"github.com/woobleio/wooblizer/wbzr/engine"
 
 	"wooble/forms"
 	"wooble/lib"
@@ -300,6 +301,20 @@ func SaveVersion(c *gin.Context) {
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
 		return
+	}
+
+	if codeForm.ParsedScript != "" {
+		if _, errs := engine.NewJS("control", codeForm.ParsedScript); len(errs) > 0 {
+			switch errs[0] {
+			case engine.ErrNoClassFound:
+				c.Error(errs[0]).SetMeta(ErrBadScriptClass)
+			case engine.ErrNoConstructor:
+				c.Error(errs[0]).SetMeta(ErrBadScriptConst.SetParams("example", "constructor() { }"))
+			case engine.ErrNoDocInit:
+				c.Error(errs[0]).SetMeta(ErrBadScriptDoc.SetParams("example", "this.document = document"))
+			}
+			return
+		}
 	}
 
 	c.Header("Location", fmt.Sprintf("/creations/%s", creaID.ValueEncoded))

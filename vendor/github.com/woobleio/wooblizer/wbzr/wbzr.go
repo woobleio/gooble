@@ -5,8 +5,6 @@ package wbzr
 import (
 	"bytes"
 	"io/ioutil"
-	"regexp"
-	"strings"
 	"text/template"
 
 	"github.com/woobleio/wooblizer/wbzr/engine"
@@ -20,6 +18,7 @@ const (
 	JS ScriptLang = iota
 )
 
+// Wbzr is the wooblizer system
 type Wbzr struct {
 	DomainsSec []string
 	Scripts    []engine.Script
@@ -58,37 +57,35 @@ func (wb *Wbzr) Get(name string) (engine.Script, error) {
 
 // Inject injects a source code to be wooblized. It takes a name which must be
 // unique. Src can be empty, it'll create a default object
-func (wb *Wbzr) Inject(src string, name string) (engine.Script, error) {
+func (wb *Wbzr) Inject(src string, name string) (engine.Script, []error) {
+	errs := make([]error, 0)
 	if _, err := wb.Get(name); err == nil {
-		return nil, ErrUniqueName
+		errs = append(errs, err)
+		return nil, errs
 	}
 	var sc engine.Script
-	var err error
 
 	switch wb.lang {
 	case JS:
-		rmVar := regexp.MustCompile(`^var Woobly[ ]?=`)
-		src = rmVar.ReplaceAllString(src, "")
-		src = strings.TrimRight(src, ";")
-		sc = &engine.JS{
-			Src:  src,
-			Name: name,
-		}
+		sc, errs = engine.NewJS(name, src)
 	}
 
-	if err != nil {
-		return nil, err
+	if len(errs) > 0 {
+		return sc, errs
 	}
 
 	wb.Scripts = append(wb.Scripts, sc)
-	return sc, nil
+
+	return sc, errs
 }
 
 // InjectFile injects a source from a file.
-func (wb *Wbzr) InjectFile(path string, name string) (engine.Script, error) {
+func (wb *Wbzr) InjectFile(path string, name string) (engine.Script, []error) {
+	errs := make([]error, 0)
 	c, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		errs = append(errs, err)
+		return nil, errs
 	}
 
 	return wb.Inject(string(c[:]), name)
@@ -99,6 +96,7 @@ func (wb *Wbzr) Secure(domains ...string) {
 	wb.DomainsSec = domains
 }
 
+// SecureAndWrap wrap all scripts in the wooblizer and secure it with domains
 func (wb *Wbzr) SecureAndWrap(domains ...string) (*bytes.Buffer, error) {
 	wb.Secure(domains...)
 	return wb.Wrap()

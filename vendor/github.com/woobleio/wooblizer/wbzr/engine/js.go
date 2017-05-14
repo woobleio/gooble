@@ -19,6 +19,28 @@ type JS struct {
 
 const docVar string = "this.document"
 
+const (
+	docRegex         string = `this.document[ ]?=[ ]?document[;]?`
+	constructorRegex string = `.*function Woobly\(`
+	classRegex       string = `var Woobly[ ]?=`
+)
+
+// NewJS initializes a JS and returns errors if the class isn't in the standard
+func NewJS(name string, src string) (*JS, []error) {
+	js := &JS{
+		Name: name,
+		Src:  src,
+	}
+
+	errs := js.Control()
+
+	rmVar := regexp.MustCompile(classRegex)
+	src = rmVar.ReplaceAllString(src, "")
+	src = strings.TrimRight(src, ";")
+
+	return js, errs
+}
+
 // GetName returns obj name
 func (js *JS) GetName() string { return js.Name }
 
@@ -33,7 +55,7 @@ func (js *JS) IncludeHTMLCSS(srcHTML string, srcCSS string) error {
 		return errors.New("DOM error : " + err.Error())
 	}
 
-	initDocRegex := regexp.MustCompile(`this.document[ ]?=[ ]?document[;]?`)
+	initDocRegex := regexp.MustCompile(docRegex)
 	if !initDocRegex.MatchString(js.Src) {
 		return errors.New("No document initilization found. this.document = document is required in the object consctructor")
 	}
@@ -41,7 +63,7 @@ func (js *JS) IncludeHTMLCSS(srcHTML string, srcCSS string) error {
 	sRootVar := "_sr_" // Shadow root element
 	jsw := newJsWriter(sRootVar)
 	if srcHTML != "" {
-		constructorRegex := regexp.MustCompile(`.*function Woobly\(`)
+		constructorRegex := regexp.MustCompile(constructorRegex)
 		constructorIdx := constructorRegex.FindIndex([]byte(js.Src))
 		srcToBytes := []byte(js.Src)
 		index := constructorIdx[1]
@@ -76,6 +98,27 @@ func (js *JS) IncludeHTMLCSS(srcHTML string, srcCSS string) error {
 	js.Src = string(initDocRegex.ReplaceAll([]byte(js.Src), jsw.bf.Bytes()))
 
 	return nil
+}
+
+// Control checks if the class is valid
+func (js *JS) Control() []error {
+	docR := regexp.MustCompile(docRegex)
+	constR := regexp.MustCompile(constructorRegex)
+	classR := regexp.MustCompile(classRegex + "[ ]?function.*")
+
+	errs := make([]error, 0)
+
+	if !classR.MatchString(js.GetSource()) {
+		errs = append(errs, ErrNoClassFound)
+	}
+	if !constR.MatchString(js.GetSource()) {
+		errs = append(errs, ErrNoConstructor)
+	}
+	if !docR.MatchString(js.GetSource()) {
+		errs = append(errs, ErrNoDocInit)
+	}
+
+	return errs
 }
 
 func sanitize(src string) string {
