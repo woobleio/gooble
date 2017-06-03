@@ -18,6 +18,7 @@ type Creation struct {
 	Alias       string          `json:"alias,omitempty" db:"alias"`
 	State       string          `json:"state,omitempty" db:"state"`
 	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
+	IsFeatured  bool            `json:"-" db:"is_featured"`
 
 	NbUse uint64 `json:"nbUse" db:"nb_use"`
 
@@ -108,7 +109,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
 
-	q.Q += "GROUP BY c.id, u.id ORDER BY nb_use DESC"
+	q.Q += "GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
 
 	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
