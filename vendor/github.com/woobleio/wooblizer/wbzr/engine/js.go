@@ -38,6 +38,8 @@ func NewJS(name string, src string) (*JS, []error) {
 	src = rmVar.ReplaceAllString(src, "")
 	src = strings.TrimRight(src, ";")
 
+	js.Src = src
+
 	return js, errs
 }
 
