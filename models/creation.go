@@ -22,8 +22,9 @@ type Creation struct {
 
 	NbUse uint64 `json:"nbUse" db:"nb_use"`
 
-	PreviewURL string `json:"previewUrl,omitempty"`
-	Version    uint64 `json:"version,omitempty"`
+	PreviewParams *lib.StringSlice `json:"previewParams" db:"preview_params"`
+	PreviewURL    string           `json:"previewUrl,omitempty"`
+	Version       uint64           `json:"version,omitempty"`
 
 	Script       string `json:"script,omitempty"`
 	ParsedScript string `json:"parsedScript,omitempty"`
@@ -39,6 +40,29 @@ type Creation struct {
 
 // BaseVersion is creation default version
 const BaseVersion uint64 = 1
+
+// RetrieveSourceCode request the source files in the cloud and set the content to the Creation
+func (c *Creation) RetrieveSourceCode(version string, files ...string) error {
+	uIDStr := fmt.Sprintf("%d", c.CreatorID)
+	creaIDStr := fmt.Sprintf("%d", c.ID.ValueDecoded)
+
+	storage := lib.NewStorage(lib.SrcCreations)
+	for _, f := range files {
+		source := storage.GetFileContent(uIDStr, creaIDStr, version, f)
+		switch f {
+		case enum.Script:
+			c.Script = source
+		case enum.Document:
+			c.Document = source
+		case enum.Style:
+			c.Style = source
+		case enum.ParsedScript:
+			c.ParsedScript = source
+		}
+	}
+
+	return storage.Error()
+}
 
 // AllCreations returns all creations
 func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
@@ -183,6 +207,7 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
     c.updated_at "crea.updated_at",
     c.versions,
 		c.alias,
+		c.preview_params,
 		CASE WHEN c.creator_id = $2 THEN true ELSE false END "is_owner",
 		c.state,
 		e.name "eng.name",
@@ -218,6 +243,7 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 		c.description,
 		c.thumb_path,
 		c.alias,
+		c.preview_params,
 		c.creator_id,
 		c.created_at "crea.created_at",
 		c.updated_at "crea.updated_at",
@@ -238,11 +264,11 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7
+  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, preview_params = $8
   WHERE id = $1
   AND creator_id = $2
   `
-	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath)
+	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.PreviewParams)
 	return err
 }
 
@@ -262,6 +288,14 @@ func CreationByIDAndVersion(id lib.ID, version uint64) (*Creation, error) {
   AND $2 = ANY (versions)
   `
 	return crea, lib.DB.Get(crea, q, id, version)
+}
+
+// CreationLastVersion gets creation's last version
+func CreationLastVersion(id lib.ID) int64 {
+	var version int64
+	q := `SELECT versions[array_length(versions,1)] AS version FROM creation WHERE id = $1`
+	lib.DB.Get(&version, q, id)
+	return version
 }
 
 // NewCreation creates a creation

@@ -170,34 +170,25 @@ func GETCreationCode(c *gin.Context) {
 		return
 	}
 
-	storage := lib.NewStorage(lib.SrcCreations)
-
-	latestVersion := fmt.Sprintf("%d", crea.Versions[len(crea.Versions)-1])
-	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
-	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
-
 	filter := c.Query("filter")
+	latestVersion := fmt.Sprintf("%d", crea.Versions[len(crea.Versions)-1])
 	if filter != "" {
 		fFields := strings.Split(filter, ",")
 		for _, field := range fFields {
 			switch field {
 			case "script":
-				crea.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
+				crea.RetrieveSourceCode(latestVersion, enum.Script)
 			case "document":
-				crea.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
+				crea.RetrieveSourceCode(latestVersion, enum.Document)
 			case "style":
-				crea.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
+				crea.RetrieveSourceCode(latestVersion, enum.Style)
 			}
 		}
 	} else {
-		crea.Script = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Script)
-		crea.Document = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Document)
-		crea.Style = storage.GetFileContent(uIDStr, creaIDStr, latestVersion, enum.Style)
-	}
-
-	if storage.Error() != nil { // TODO manage storage errors better
-		c.Error(storage.Error())
-		crea.Script = ""
+		if storErr := crea.RetrieveSourceCode(latestVersion, enum.Script, enum.Document, enum.Style); storErr != nil {
+			c.Error(storErr)
+			crea.Script = ""
+		}
 	}
 
 	if crea.Script == "" {
@@ -229,11 +220,18 @@ func PUTCreation(c *gin.Context) {
 	crea.ThumbPath = lib.InitNullString(creaForm.ThumbPath)
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias
+	crea.PreviewParams = &creaForm.PreviewParams
 
 	if err := model.UpdateCreation(&crea); err != nil {
 		c.Error(err).SetMeta(ErrDB)
 		return
 	}
+
+	version := fmt.Sprintf("%d", model.CreationLastVersion(crea.ID))
+	if err := crea.RetrieveSourceCode(version, enum.Script, enum.Document, enum.Style); err != nil {
+		c.Error(err)
+	}
+	buildPreview(&crea, fmt.Sprintf("%d", crea.CreatorID), version)
 
 	c.Header("Location", fmt.Sprintf("/creations/%s", creaID))
 
@@ -284,19 +282,11 @@ func SaveVersion(c *gin.Context) {
 		return
 	}
 
-	preview := `<html>
-		<head>
-			<script type="text/javascript">` + codeForm.Script + `</script>
-			<script type="text/javascript">window.onload = function(){new Woobly();}</script>
-			<style>` + codeForm.Style + `</style>
-		</head>
-		<body>
-			` + codeForm.Document + `
-		</body>
-	</html>`
+	crea.Script = codeForm.Script
+	crea.Document = codeForm.Document
+	crea.Style = codeForm.Style
 
-	storage.SetSource(lib.SrcPreview)
-	storage.StoreFile(preview, "text/html", userIDStr, creaIDStr, version, enum.Preview)
+	buildPreview(crea, userIDStr, version)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
@@ -360,4 +350,30 @@ func POSTCreationVersion(c *gin.Context) {
 	c.Header("Location", fmt.Sprintf("/creations/%s/code", c.Param("encid")))
 
 	c.AbortWithStatus(NoContent)
+}
+
+func buildPreview(crea *model.Creation, userID string, version string) {
+	params := ""
+	for _, p := range *crea.PreviewParams {
+		params += p + ","
+	}
+	params = strings.Trim(params, ",")
+	preview := `<html>
+		<head>
+			<script type="text/javascript">` + crea.Script + `</script>
+			<script type="text/javascript">window.onload = function(){new Woobly(` + params + `);}</script>
+			<style>` + crea.Style + `</style>
+		</head>
+		<body>
+			` + crea.Document + `
+		</body>
+	</html>`
+
+	fmt.Printf("Build for %s - %d", version, crea.ID.ValueDecoded)
+
+	storage := lib.NewStorage(lib.SrcPreview)
+
+	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
+
+	storage.StoreFile(preview, "text/html", userID, creaIDStr, version, enum.Preview)
 }
