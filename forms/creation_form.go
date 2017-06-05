@@ -16,8 +16,8 @@ type CreationForm struct {
 
 // CreationCodeForm is a form for creation code
 type CreationCodeForm struct {
-	Script        string   `json:"script" validate:"required"`
-	PreviewParams []string `json:"previewParams" validate:"omitempty"`
+	Script        string          `json:"script" validate:"required"`
+	PreviewParams lib.StringSlice `json:"previewParams" validate:"omitempty"`
 
 	Title        string `json:"title"`
 	Style        string `json:"style"`
