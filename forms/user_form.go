@@ -2,10 +2,11 @@ package form
 
 // UserForm is the form for users
 type UserForm struct {
-	Email  string `json:"email" validate:"required,email"`
-	Name   string `json:"name" validate:"required,min=4,max=18,alpha"`
-	Secret string `json:"secret" validate:"required,min=8"`
-	Plan   struct {
+	Email    string `json:"email" validate:"required,email"`
+	Name     string `json:"name" validate:"required,ascii,min=4,max=18,alphanum"`
+	Fullname string `json:"fullname" validate:"required,ascii,min=4,max=50"`
+	Secret   string `json:"secret" validate:"required,min=8"`
+	Plan     struct {
 		Label string `json:"label" validate:"required,alpha"`
 	} `json:"plan" validate:"required"`
 
@@ -17,12 +18,13 @@ type UserForm struct {
 // UserPatchForm is the form for patching users
 type UserPatchForm struct {
 	Email     *string `json:"email" validate:"omitempty,email" db:"email"`
-	Name      *string `json:"name" validate:"omitempty,min=2,max=18,alpha" db:"name"`
+	Name      *string `json:"name" validate:"omitempty,ascii,min=4,max=18,alphanum" db:"name"`
+	Fullname  *string `json:"fullname" validate:"omitempty,ascii,min=4,max=50" db:"fullname"`
 	NewSecret *string `json:"newSecret" validate:"omitempty,min=8" db:"passwd"`
 	IsCreator *bool   `json:"isCreator" db:"is_creator"`
 
 	Plan *struct {
-		Label string `json:"label"`
+		Label string `json:"label" validate:"required,alpha"`
 	} `json:"plan" validate:"omitempty"`
 	CardToken *string `json:"cardToken"`
 
