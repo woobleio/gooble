@@ -353,11 +353,9 @@ func POSTCreationVersion(c *gin.Context) {
 }
 
 func buildPreview(crea *model.Creation, userID string, version string) {
-	params := ""
-	for _, p := range *crea.PreviewParams {
-		params += p + ","
-	}
-	params = strings.Trim(params, ",")
+	params := crea.PreviewParams.String()
+	params = params[1 : len(params)-1] // Removes '[' and ']'
+
 	preview := `<html>
 		<head>
 			<script type="text/javascript">` + crea.Script + `</script>
@@ -368,8 +366,6 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 			` + crea.Document + `
 		</body>
 	</html>`
-
-	fmt.Printf("Build for %s - %d", version, crea.ID.ValueDecoded)
 
 	storage := lib.NewStorage(lib.SrcPreview)
 

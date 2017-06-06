@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.6
 -- Dumped by pg_dump version 9.5.6
 
--- Started on 2017-06-03 19:08:21 UTC
+-- Started on 2017-06-06 13:33:53 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -93,7 +93,8 @@ CREATE TABLE app_user (
     dribbble_name text,
     github_name text,
     twitter_name text,
-    website text
+    website text,
+    fullname text NOT NULL
 );
 
 
@@ -141,7 +142,8 @@ CREATE TABLE creation (
     old_creator_id integer,
     versions integer[],
     created_at timestamp with time zone DEFAULT ('now'::text)::timestamp without time zone,
-    is_featured boolean DEFAULT false
+    is_featured boolean DEFAULT false,
+    preview_params text[]
 );
 
 
@@ -370,7 +372,7 @@ ALTER TABLE ONLY plan_user ALTER COLUMN id SET DEFAULT nextval('plan_user_id_seq
 -- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, fund, deleted_at, account_id, pic_path, codepen_name, dribbble_name, github_name, twitter_name, website) FROM stdin;
+COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, fund, deleted_at, account_id, pic_path, codepen_name, dribbble_name, github_name, twitter_name, website, fullname) FROM stdin;
 \.
 
 
@@ -380,7 +382,7 @@ COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt
 -- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('app_user_id_seq', 106, true);
+SELECT pg_catalog.setval('app_user_id_seq', 108, true);
 
 
 --
@@ -389,7 +391,7 @@ SELECT pg_catalog.setval('app_user_id_seq', 106, true);
 -- Data for Name: creation; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation (id, title, creator_id, updated_at, engine, thumb_path, description, alias, state, old_creator_id, versions, created_at, is_featured) FROM stdin;
+COPY creation (id, title, creator_id, updated_at, engine, thumb_path, description, alias, state, old_creator_id, versions, created_at, is_featured, preview_params) FROM stdin;
 \.
 
 
@@ -399,7 +401,7 @@ COPY creation (id, title, creator_id, updated_at, engine, thumb_path, descriptio
 -- Name: creation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('creation_id_seq', 257, true);
+SELECT pg_catalog.setval('creation_id_seq', 272, true);
 
 
 --
@@ -439,7 +441,7 @@ COPY package_creation (package_id, creation_id, alias, version) FROM stdin;
 -- Name: package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('package_id_seq', 87, true);
+SELECT pg_catalog.setval('package_id_seq', 102, true);
 
 
 --
@@ -471,7 +473,7 @@ COPY plan_user (id, user_id, nb_renew, created_at, start_date, end_date, plan_la
 -- Name: plan_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('plan_user_id_seq', 57, true);
+SELECT pg_catalog.setval('plan_user_id_seq', 59, true);
 
 
 --
@@ -719,7 +721,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-06-03 19:08:22 UTC
+-- Completed on 2017-06-06 13:33:53 UTC
 
 --
 -- PostgreSQL database dump complete
