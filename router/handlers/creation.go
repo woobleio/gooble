@@ -353,8 +353,11 @@ func POSTCreationVersion(c *gin.Context) {
 }
 
 func buildPreview(crea *model.Creation, userID string, version string) {
-	params := crea.PreviewParams.String()
-	params = params[1 : len(params)-1] // Removes '[' and ']'
+	params := ""
+	if crea.PreviewParams != nil {
+		params = crea.PreviewParams.String()
+		params = params[1 : len(params)-1] // Removes '[' and ']'
+	}
 
 	preview := `<html>
 		<head>
