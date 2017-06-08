@@ -190,7 +190,13 @@ function Wb(id) {
     }
 
 		if(typeof tar === 'object') p = tar;
-		p = p || cs['__'+id];
+		if (p) {
+			var _ = cs['__'+id];
+			for (prop in p) {
+				if (_.hasOwnProperty(prop)) _[prop] = p[prop];
+			}
+			p = _;
+		} else p = cs['__'+id];
 
 		var t = this;
     return new Promise(function(r, e) {
