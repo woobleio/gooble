@@ -223,11 +223,12 @@ func DELETEPackage(c *gin.Context) {
 
 	storage := lib.NewStorage(lib.SrcPackages)
 
-	for v := pkg.NbBuild; v > 0; v-- {
-		storage.PushBulkFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), fmt.Sprintf("%d", v), enum.Wooble)
+	if pkg.NbBuild > 0 {
+		for v := pkg.NbBuild; v > 0; v-- {
+			storage.PushBulkFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), fmt.Sprintf("%d", v), enum.Wooble)
+		}
+		storage.BulkDeleteFiles()
 	}
-
-	storage.BulkDeleteFiles()
 
 	if storage.Error() != nil {
 		c.Error(storage.Error())
