@@ -1,23 +1,26 @@
 package form
 
-import "wooble/lib"
+import (
+	model "wooble/models"
+)
 
 // CreationForm is a form for creation
 type CreationForm struct {
 	Title string `json:"title" validate:"required,min=3,max=30"`
 
-	Alias         string          `json:"alias" validate:"omitempty,alpha,max=10"`
-	Engine        string          `json:"engine" validate:"omitempty,alphanum"`
-	State         string          `json:"state" validate:"omitempty,alpha"`
-	Description   string          `json:"description" validate:"omitempty"`
-	ThumbPath     string          `json:"thumbPath" validate:"omitempty,max=300"`
-	PreviewParams lib.StringSlice `json:"previewParams" validate:"omitempty"`
+	Alias       string                `json:"alias" validate:"omitempty,alpha,max=10"`
+	Engine      string                `json:"engine" validate:"omitempty,alphanum"`
+	State       string                `json:"state" validate:"omitempty,alpha"`
+	Description string                `json:"description" validate:"omitempty"`
+	ThumbPath   string                `json:"thumbPath" validate:"omitempty,max=300"`
+	Params      []model.CreationParam `json:"params" validate:"omitempty"`
+	Version     int                   `json:"version" validate:"omitempty"`
 }
 
 // CreationCodeForm is a form for creation code
 type CreationCodeForm struct {
-	Script        string          `json:"script" validate:"required"`
-	PreviewParams lib.StringSlice `json:"previewParams" validate:"omitempty"`
+	Script string                `json:"script" validate:"required"`
+	Params []model.CreationParam `json:"params" validate:"omitempty"`
 
 	Title        string `json:"title"`
 	Style        string `json:"style"`
