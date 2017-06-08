@@ -2,11 +2,12 @@ package model
 
 import (
 	"fmt"
+	"strings"
 	"wooble/lib"
 	enum "wooble/models/enums"
 )
 
-// Creation is a Wooble creation
+// Creation is a Wooble object
 type Creation struct {
 	ID lib.ID `json:"id"      db:"crea.id"`
 
@@ -22,9 +23,9 @@ type Creation struct {
 
 	NbUse uint64 `json:"nbUse" db:"nb_use"`
 
-	PreviewParams *lib.StringSlice `json:"previewParams" db:"preview_params"`
-	PreviewURL    string           `json:"previewUrl,omitempty"`
-	Version       uint64           `json:"version,omitempty"`
+	Params     []CreationParam `json:"params,omitempty" db:""`
+	PreviewURL string          `json:"previewUrl,omitempty"`
+	Version    uint64          `json:"version,omitempty"`
 
 	Script       string `json:"script,omitempty"`
 	ParsedScript string `json:"parsedScript,omitempty"`
@@ -38,8 +39,32 @@ type Creation struct {
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"crea.updated_at"`
 }
 
+// CreationParam is a creation parameter
+type CreationParam struct {
+	Field string `json:"field" db:"field"`
+	Value string `json:"value" db:"value"`
+}
+
 // BaseVersion is creation default version
 const BaseVersion uint64 = 1
+
+const lastVersionQuery = `SELECT
+CASE WHEN state = 'draft' THEN versions[array_length(versions, 1)-1]
+ELSE versions[array_length(versions, 1)]
+END AS version
+FROM creation WHERE id = $1`
+
+// PopulateParams populates creation's parameters (for previewing and building into package)
+func (c *Creation) PopulateParams() {
+	q := `SELECT field, value FROM creation_param WHERE creation_id = $1 AND version`
+	if c.Version == 0 {
+		q += `(` + lastVersionQuery + `)`
+		lib.DB.Select(&c.Params, q, c.ID)
+	} else {
+		q += `= $2`
+		lib.DB.Select(&c.Params, q, c.ID, c.Version)
+	}
+}
 
 // RetrieveSourceCode request the source files in the cloud and set the content to the Creation
 func (c *Creation) RetrieveSourceCode(version string, files ...string) error {
@@ -207,7 +232,6 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
     c.updated_at "crea.updated_at",
     c.versions,
 		c.alias,
-		c.preview_params,
 		CASE WHEN c.creator_id = $2 THEN true ELSE false END "is_owner",
 		c.state,
 		e.name "eng.name",
@@ -230,11 +254,12 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
 		crea.Versions = crea.Versions[:len(crea.Versions)-1]
 	}
 
+	crea.PopulateParams()
 	return &crea, nil
 }
 
 // CreationPrivateByID returns a creation as private
-func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
+func CreationPrivateByID(uID uint64, creaID lib.ID, version string) (*Creation, error) {
 	var crea Creation
 	q := `
 	SELECT
@@ -243,11 +268,11 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 		c.description,
 		c.thumb_path,
 		c.alias,
-		c.preview_params,
 		c.creator_id,
 		c.created_at "crea.created_at",
 		c.updated_at "crea.updated_at",
 		c.versions,
+		CASE WHEN c.state = 'draft' THEN versions[array_length(c.versions, 1)-$3] ELSE versions[array_length(c.versions, 1)] END AS version,
 		c.state,
 		e.name "eng.name",
 		e.extension,
@@ -257,18 +282,71 @@ func CreationPrivateByID(uID uint64, creaID lib.ID) (*Creation, error) {
 	WHERE creator_id = $1 AND c.id = $2 AND c.state != 'delete'
 	`
 
-	return &crea, lib.DB.Get(&crea, q, uID, creaID)
+	// decVersion 0 means it'll get the latest version,
+	// decVersion 1 means it'll get the latest version - 1,
+	decVersion := 1
+	if version == "latest" {
+		decVersion = 0
+	}
+
+	if err := lib.DB.Get(&crea, q, uID, creaID, decVersion); err != nil {
+		return nil, err
+	}
+
+	crea.PopulateParams()
+
+	return &crea, nil
 }
 
 // UpdateCreation update creation's information
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, preview_params = $8
+  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7
   WHERE id = $1
   AND creator_id = $2
   `
-	_, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.PreviewParams)
+
+	if _, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath); err != nil {
+		return err
+	}
+
+	if len(crea.Params) > 0 {
+		return UpdateCreationParams(crea)
+	}
+	return nil
+}
+
+// UpdateCreationParams update all creation params for a given version (crea.Version)
+func UpdateCreationParams(crea *Creation) error {
+	lastVersion := crea.Version
+	if lastVersion == 0 {
+		if err := lib.DB.Get(&lastVersion, lastVersionQuery, crea.ID); err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Update for %d with params %s", lastVersion, crea.Params)
+
+	q := `
+	DELETE FROM creation_param
+	WHERE creation_id = $1
+	AND version = $2
+	`
+	lib.DB.Exec(q, crea.ID, lastVersion)
+
+	// Bulk insert
+	index := 3
+	vals := []interface{}{crea.ID, lastVersion}
+	q = `INSERT INTO creation_param(creation_id, version, field, value) VALUES`
+	for _, p := range crea.Params {
+		q += `($1, $2, $` + fmt.Sprintf("%d", index) + `, $` + fmt.Sprintf("%d", index+1) + `),`
+		vals = append(vals, p.Field, p.Value)
+		index += 2
+	}
+	q = strings.TrimRight(q, ",")
+
+	_, err := lib.DB.Exec(q, vals...)
 	return err
 }
 
@@ -320,6 +398,21 @@ func NewCreation(crea *Creation) (*Creation, error) {
 	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, fmt.Sprintf("%d", BaseVersion)), crea.Engine.Name, crea.State, crea.Alias).Scan(&crea.ID)
 }
 
+// CopyCreationParams copie creation parameters from current version to a new version
+func CopyCreationParams(id lib.ID, curVersion uint64, newVersion uint64) error {
+	q := `
+	INSERT INTO creation_param(creation_id, version, field, value)
+	SELECT creation_id, $3 AS version, field, value
+	FROM creation_param
+	WHERE creation_id = $1 AND version = $2
+	`
+	if _, err := lib.DB.Exec(q, id, curVersion, newVersion); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DeleteCreation deletes a creation
 func DeleteCreation(uID uint64, creaID lib.ID) error {
 	q := `
@@ -344,10 +437,14 @@ func SafeDeleteCreation(uID uint64, creaID lib.ID) error {
 }
 
 // NewCreationVersion create a new version
-func NewCreationVersion(uID uint64, creaID lib.ID, version lib.UintSlice) error {
+func NewCreationVersion(crea *Creation, newVersion uint64) error {
+	crea.Versions = append(crea.Versions, newVersion)
 	q := `UPDATE creation SET versions = $4, state = $5 WHERE id = $2 AND creator_id = $1 AND state = $3`
-	_, err := lib.DB.Exec(q, uID, creaID, enum.Public, version, enum.Draft)
-	return err
+	if _, err := lib.DB.Exec(q, crea.CreatorID, crea.ID, enum.Public, crea.Versions, enum.Draft); err != nil {
+		return err
+	}
+
+	return CopyCreationParams(crea.ID, crea.Version, newVersion)
 }
 
 // CreationInUse returns true if the creation is used by anyone

@@ -14,6 +14,7 @@ import (
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
 	"github.com/woobleio/wooblizer/wbzr"
+	"github.com/woobleio/wooblizer/wbzr/engine"
 )
 
 // GETPackages is a handler that returns one or more packages
@@ -128,7 +129,12 @@ func PATCHPackage(c *gin.Context) {
 			// Minify to remove comments and white spaces
 			src, _ = minifier.String("text/javascript", src)
 
-			script, errsScript := wb.Inject(src, objName)
+			var jsParams = make([]interface{}, len(creation.Params))
+			for i, p := range creation.Params {
+				jsParams[i] = engine.JSParam(p)
+			}
+
+			script, errsScript := wb.Inject(src, objName, jsParams)
 
 			if len(errsScript) > 0 {
 				if errsScript[0] == wbzr.ErrUniqueName {

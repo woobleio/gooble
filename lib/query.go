@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Query is all all query options
+// Query are query options
 type Query struct {
 	Q   string
 	Opt *Option

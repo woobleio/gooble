@@ -45,7 +45,16 @@ func (p *Package) PopulateCreations() error {
 	ORDER BY c.title
 	`
 
-	return lib.DB.Select(&p.Creations, q, p.ID.ValueDecoded)
+	if err := lib.DB.Select(&p.Creations, q, p.ID.ValueDecoded); err != nil {
+		return err
+	}
+
+	for i, crea := range p.Creations {
+		crea.PopulateParams()
+		p.Creations[i] = crea
+	}
+
+	return nil
 }
 
 // AllPackages returns all packages
