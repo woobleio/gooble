@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.6
 -- Dumped by pg_dump version 9.5.6
 
--- Started on 2017-06-07 14:53:35 UTC
+-- Started on 2017-06-08 09:45:36 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -180,7 +180,8 @@ ALTER SEQUENCE creation_id_seq OWNED BY creation.id;
 CREATE TABLE creation_param (
     creation_id integer NOT NULL,
     field text NOT NULL,
-    value text
+    value text,
+    version integer NOT NULL
 );
 
 
@@ -395,7 +396,7 @@ COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt
 -- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('app_user_id_seq', 109, true);
+SELECT pg_catalog.setval('app_user_id_seq', 110, true);
 
 
 --
@@ -414,7 +415,7 @@ COPY creation (id, title, creator_id, updated_at, engine, thumb_path, descriptio
 -- Name: creation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('creation_id_seq', 280, true);
+SELECT pg_catalog.setval('creation_id_seq', 286, true);
 
 
 --
@@ -423,7 +424,7 @@ SELECT pg_catalog.setval('creation_id_seq', 280, true);
 -- Data for Name: creation_param; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY creation_param (creation_id, field, value) FROM stdin;
+COPY creation_param (creation_id, field, value, version) FROM stdin;
 \.
 
 
@@ -464,7 +465,7 @@ COPY package_creation (package_id, creation_id, alias, version) FROM stdin;
 -- Name: package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('package_id_seq', 104, true);
+SELECT pg_catalog.setval('package_id_seq', 105, true);
 
 
 --
@@ -496,7 +497,7 @@ COPY plan_user (id, user_id, nb_renew, created_at, start_date, end_date, plan_la
 -- Name: plan_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('plan_user_id_seq', 60, true);
+SELECT pg_catalog.setval('plan_user_id_seq', 61, true);
 
 
 --
@@ -509,12 +510,12 @@ ALTER TABLE ONLY app_user
 
 
 --
--- TOC entry 2079 (class 2606 OID 33123)
--- Name: creation_param_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
+-- TOC entry 2079 (class 2606 OID 41309)
+-- Name: creation_param_pk; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
 ALTER TABLE ONLY creation_param
-    ADD CONSTRAINT creation_param_pkey PRIMARY KEY (creation_id, field);
+    ADD CONSTRAINT creation_param_pk PRIMARY KEY (creation_id, field, version);
 
 
 --
@@ -770,7 +771,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-06-07 14:53:35 UTC
+-- Completed on 2017-06-08 09:45:36 UTC
 
 --
 -- PostgreSQL database dump complete
