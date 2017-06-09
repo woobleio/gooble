@@ -94,7 +94,7 @@ CREATE TABLE app_user (
     github_name text,
     twitter_name text,
     website text,
-    fullname text,
+    fullname text
 );
 
 
