@@ -34,6 +34,7 @@ func GETPackages(c *gin.Context) {
 			} else {
 				c.Error(err).SetMeta(ErrDB)
 			}
+			return
 		}
 	} else {
 		opts := lib.ParseOptions(c)
