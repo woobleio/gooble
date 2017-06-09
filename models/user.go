@@ -14,7 +14,7 @@ type User struct {
 	Email    string          `json:"email,omitempty" db:"email"`
 	Name     string          `json:"name,omitempty" db:"name"`
 	PicPath  *lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
-	Fullname string          `json:"fullname,omitempty" db:"fullname"`
+	Fullname *lib.NullString `json:"fullname,omitempty" db:"fullname"`
 
 	Website      *lib.NullString `json:"website,omitempty" db:"website"`
 	CodepenName  *lib.NullString `json:"codepenName,omitempty" db:"codepen_name"`
