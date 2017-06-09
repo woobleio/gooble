@@ -13,8 +13,15 @@ import (
 
 // JS Object
 type JS struct {
-	Name string
-	Src  string
+	Name   string
+	Src    string
+	Params []JSParam
+}
+
+// JSParam is a object parameter
+type JSParam struct {
+	Field string
+	Value string
 }
 
 const docVar string = "this.document"
@@ -26,10 +33,11 @@ const (
 )
 
 // NewJS initializes a JS and returns errors if the class isn't in the standard
-func NewJS(name string, src string) (*JS, []error) {
+func NewJS(name string, src string, params []JSParam) (*JS, []error) {
 	js := &JS{
-		Name: name,
-		Src:  src,
+		Name:   name,
+		Src:    src,
+		Params: params,
 	}
 
 	errs := js.Control()
@@ -48,6 +56,15 @@ func (js *JS) GetName() string { return js.Name }
 
 // GetSource returns obj code source
 func (js *JS) GetSource() string { return js.Src }
+
+// GetParams returns obj parameters
+func (js *JS) GetParams() []interface{} {
+	var interf = make([]interface{}, len(js.Params))
+	for i, p := range js.Params {
+		interf[i] = p
+	}
+	return interf
+}
 
 // IncludeHTMLCSS includes HTML and CSS in the object
 func (js *JS) IncludeHTMLCSS(srcHTML string, srcCSS string) error {

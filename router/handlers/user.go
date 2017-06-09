@@ -49,6 +49,7 @@ func POSTUser(c *gin.Context) {
 
 	var user model.User
 	user.Name = data.Name
+	user.Fullname = lib.InitNullString(data.Fullname)
 	user.Email = data.Email
 	user.IsCreator = data.IsCreator
 	user.Secret = data.Secret

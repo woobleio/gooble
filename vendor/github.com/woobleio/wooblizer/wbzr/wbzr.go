@@ -57,7 +57,7 @@ func (wb *Wbzr) Get(name string) (engine.Script, error) {
 
 // Inject injects a source code to be wooblized. It takes a name which must be
 // unique. Src can be empty, it'll create a default object
-func (wb *Wbzr) Inject(src string, name string) (engine.Script, []error) {
+func (wb *Wbzr) Inject(src string, name string, params []interface{}) (engine.Script, []error) {
 	errs := make([]error, 0)
 	if _, err := wb.Get(name); err == nil {
 		errs = append(errs, err)
@@ -67,7 +67,11 @@ func (wb *Wbzr) Inject(src string, name string) (engine.Script, []error) {
 
 	switch wb.lang {
 	case JS:
-		sc, errs = engine.NewJS(name, src)
+		var jsParams = make([]engine.JSParam, len(params))
+		for i, p := range params {
+			jsParams[i] = p.(engine.JSParam)
+		}
+		sc, errs = engine.NewJS(name, src, jsParams)
 	}
 
 	if len(errs) > 0 {
@@ -80,7 +84,7 @@ func (wb *Wbzr) Inject(src string, name string) (engine.Script, []error) {
 }
 
 // InjectFile injects a source from a file.
-func (wb *Wbzr) InjectFile(path string, name string) (engine.Script, []error) {
+func (wb *Wbzr) InjectFile(path string, name string, params []interface{}) (engine.Script, []error) {
 	errs := make([]error, 0)
 	c, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -88,7 +92,7 @@ func (wb *Wbzr) InjectFile(path string, name string) (engine.Script, []error) {
 		return nil, errs
 	}
 
-	return wb.Inject(string(c[:]), name)
+	return wb.Inject(string(c[:]), name, params)
 }
 
 // Secure set some domains to protect the script and make it works only for specific domains
@@ -124,7 +128,7 @@ func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
 // WooblyJS is a Wooble creation template for JS
 var WooblyJS = `class Woobly {
 
-	constructor() {
+	constructor(params) {
 		// This is mandatory. Use this.document to query elements in your creation
 		// (this.document.queryAll('div')), use document for manipulating the
 		// document parent (document.createElement('div'))
@@ -162,7 +166,15 @@ function Wb(id) {
 
   var cs = {
 		{{$lenScripts := len .Scripts}}
-  	{{range $i, $o := .Scripts}}"{{$o.GetName}}":{{$o.GetSource}}{{if ne (plus1 $i) $lenScripts}},{{end}}{{end}}
+  	{{range $i, $o := .Scripts}}
+			"{{$o.GetName}}":{{$o.GetSource}},
+			"__{{$o.GetName}}":{
+			{{$lenParams := len $o.Params}}
+			{{range $i, $p := $o.Params}}
+				"{{$p.Field}}":{{$p.Value}}{{if ne (plus1 $i) $lenParams}},{{end}}
+			{{end}}
+			}{{if ne (plus1 $i) $lenScripts}},{{end}}
+		{{end}}
   }
 
   var c = cs[id];
@@ -171,11 +183,20 @@ function Wb(id) {
     return undefined;
   }
 
-  this.init = function (tar) {
-    if(document.querySelector(tar) == null) {
-    	console.log("Wooble error : Element", target, "not found in the document");
+  this.init = function (tar, p) {
+    if(typeof tar === 'string' && document.querySelector(tar) == null) {
+    	console.log("Wooble error : Element", tar, "not found in the document");
       return;
     }
+
+		if(typeof tar === 'object') p = tar;
+		if (p) {
+			var _ = cs['__'+id];
+			for (prop in p) {
+				if (_.hasOwnProperty(prop)) _[prop] = p[prop];
+			}
+			p = _;
+		} else p = cs['__'+id];
 
 		var t = this;
     return new Promise(function(r, e) {
@@ -186,10 +207,10 @@ function Wb(id) {
         s.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js';
         document.getElementsByTagName('head')[0].appendChild(s);
         s.onload = function() {
-          r(new c(tar));
+          typeof tar === 'string' ? r(new c(tar,p)) : r(new c(p));
         }
       } else {
-        r(new c(tar));
+        typeof tar === 'string' ? r(new c(tar,p)) : r(new c(p));
       }
     });
   }

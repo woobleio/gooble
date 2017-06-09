@@ -241,6 +241,8 @@ var (
 
 	arrayExp = regexp.MustCompile(fmt.Sprintf("((%s)(,)?)", arrayValue))
 
+	parseStr = strings.NewReplacer(`\\`, `\`, `\"`, `"`)
+
 	valueIndex int
 )
 
@@ -285,6 +287,25 @@ func (us *UintSlice) Scan(src interface{}) error {
 // StringSlice see https://gist.github.com/adharris/4163702
 type StringSlice []string
 
+func (s *StringSlice) String() string {
+	str := "["
+	for _, p := range *s {
+		str += parseStr.Replace(strings.Trim(p, "\"")) + ","
+	}
+	str = strings.TrimRight(str, ",")
+	str += "]"
+	return str
+}
+
+// MarshalJSON marshals custom ID
+func (s StringSlice) MarshalJSON() ([]byte, error) {
+	p := make([]string, 0)
+	for _, v := range s {
+		p = append(p, parseStr.Replace(v))
+	}
+	return json.Marshal(p)
+}
+
 // Scan scans StringSlice
 func (s *StringSlice) Scan(src interface{}) error {
 	asBytes, ok := src.([]byte)
@@ -299,8 +320,9 @@ func (s *StringSlice) Scan(src interface{}) error {
 	for _, match := range matches {
 		s := match[valueIndex]
 		// the string _might_ be wrapped in quotes, so trim them:
+		s = strings.TrimRight(s, ",")
 		s = strings.Trim(s, "\"")
-		s = strings.Trim(s, ",")
+
 		parsed = append(parsed, s)
 	}
 
@@ -312,7 +334,7 @@ func (s *StringSlice) Scan(src interface{}) error {
 // Value returns StringSlice as psql value
 func (s StringSlice) Value() (driver.Value, error) {
 	for i, elem := range s {
-		s[i] = `"` + strings.Replace(strings.Replace(elem, `\`, `\\\`, -1), `"`, `\"`, -1) + `"`
+		s[i] = `"` + strings.Replace(strings.Replace(elem, `\`, `\\`, -1), `"`, `\"`, -1) + `"`
 	}
 	return "{" + strings.Join(s, ",") + "}", nil
 }

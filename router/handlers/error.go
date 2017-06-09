@@ -24,7 +24,7 @@ const (
 	chargeErr        errCode = "charge_fail"
 	creaNotAvail     errCode = "creation_not_available"
 	creaVersion      errCode = "creation_version"
-	dbFail           errCode = "db_failed_save"
+	dbFail           errCode = "db_failure"
 	planLimit        errCode = "plan_limit"
 	resNotFound      errCode = "res_not_found"
 	servErr          errCode = "server_error"

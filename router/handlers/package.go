@@ -14,6 +14,7 @@ import (
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
 	"github.com/woobleio/wooblizer/wbzr"
+	"github.com/woobleio/wooblizer/wbzr/engine"
 )
 
 // GETPackages is a handler that returns one or more packages
@@ -33,6 +34,7 @@ func GETPackages(c *gin.Context) {
 			} else {
 				c.Error(err).SetMeta(ErrDB)
 			}
+			return
 		}
 	} else {
 		opts := lib.ParseOptions(c)
@@ -128,7 +130,12 @@ func PATCHPackage(c *gin.Context) {
 			// Minify to remove comments and white spaces
 			src, _ = minifier.String("text/javascript", src)
 
-			script, errsScript := wb.Inject(src, objName)
+			var jsParams = make([]interface{}, len(creation.Params))
+			for i, p := range creation.Params {
+				jsParams[i] = engine.JSParam(p)
+			}
+
+			script, errsScript := wb.Inject(src, objName, jsParams)
 
 			if len(errsScript) > 0 {
 				if errsScript[0] == wbzr.ErrUniqueName {
@@ -217,11 +224,12 @@ func DELETEPackage(c *gin.Context) {
 
 	storage := lib.NewStorage(lib.SrcPackages)
 
-	for v := pkg.NbBuild; v > 0; v-- {
-		storage.PushBulkFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), fmt.Sprintf("%d", v), enum.Wooble)
+	if pkg.NbBuild > 0 {
+		for v := pkg.NbBuild; v > 0; v-- {
+			storage.PushBulkFile(fmt.Sprintf("%d", uID), fmt.Sprintf("%d", pkg.ID.ValueDecoded), fmt.Sprintf("%d", v), enum.Wooble)
+		}
+		storage.BulkDeleteFiles()
 	}
-
-	storage.BulkDeleteFiles()
 
 	if storage.Error() != nil {
 		c.Error(storage.Error())

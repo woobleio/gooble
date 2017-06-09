@@ -11,9 +11,10 @@ type User struct {
 	CustomerID string         `json:"-" db:"customer_id"`
 	AccountID  lib.NullString `json:"-" db:"account_id"`
 
-	Email   string          `json:"email,omitempty" db:"email"`
-	Name    string          `json:"name,omitempty" db:"name"`
-	PicPath *lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
+	Email    string          `json:"email,omitempty" db:"email"`
+	Name     string          `json:"name,omitempty" db:"name"`
+	PicPath  *lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
+	Fullname *lib.NullString `json:"fullname,omitempty" db:"fullname"`
 
 	Website      *lib.NullString `json:"website,omitempty" db:"website"`
 	CodepenName  *lib.NullString `json:"codepenName,omitempty" db:"codepen_name"`
@@ -42,6 +43,7 @@ func UserPublicByName(username string) (*User, error) {
 	q := `
 		SELECT
 			u.name,
+			u.fullname,
 			u.is_creator,
 			u.pic_path,
 			u.website,
@@ -65,6 +67,7 @@ func UserPrivateByID(id uint64) (*User, error) {
 			u.id "user.id",
 			u.email,
 			u.name,
+			u.fullname,
 			u.pic_path,
 			u.website,
 			u.codepen_name,
@@ -110,8 +113,8 @@ func NewUser(user *User) (uID uint64, err error) {
 	if errPasswd != nil {
 		return 0, errPasswd
 	}
-	q := `INSERT INTO app_user(name, email, is_creator, passwd, salt_key, customer_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
-	err = lib.DB.QueryRow(q, user.Name, user.Email, user.IsCreator, cp, salt, user.CustomerID).Scan(&uID)
+	q := `INSERT INTO app_user(name, fullname, email, is_creator, passwd, salt_key, customer_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+	err = lib.DB.QueryRow(q, user.Name, user.Fullname, user.Email, user.IsCreator, cp, salt, user.CustomerID).Scan(&uID)
 
 	return uID, err
 }
@@ -124,6 +127,7 @@ func UserByEmail(email string) (*User, error) {
       u.id "user.id",
       u.email,
       u.name,
+			u.fullname,
       u.passwd,
       u.is_creator,
       u.salt_key,
