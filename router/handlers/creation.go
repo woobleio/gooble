@@ -48,7 +48,7 @@ func GETCreations(c *gin.Context) {
 			return
 		}
 
-		creaLastVersion := fmt.Sprintf("%d", data.(*model.Creation).Versions[len(data.(*model.Creation).Versions)-1])
+		creaLastVersion := fmt.Sprintf("%d", data.(*model.Creation).Version)
 		s := lib.NewStorage(lib.SrcPreview)
 		creatorID := fmt.Sprintf("%d", data.(*model.Creation).Creator.ID)
 		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)

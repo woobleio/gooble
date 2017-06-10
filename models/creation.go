@@ -15,11 +15,15 @@ type Creation struct {
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
 	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
 	Creator     User            `json:"creator,omitempty" db:""`
-	Versions    lib.UintSlice   `json:"versions,omitempty" db:"versions"`
-	Alias       string          `json:"alias,omitempty" db:"alias"`
-	State       string          `json:"state,omitempty" db:"state"`
-	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
-	IsFeatured  bool            `json:"-" db:"is_featured"`
+
+	// When a creation is in draft, the very last version is ignored by most queries,
+	// thus the -1 from versions array within most queries
+	Versions lib.UintSlice `json:"versions,omitempty" db:"versions"`
+
+	Alias      string `json:"alias,omitempty" db:"alias"`
+	State      string `json:"state,omitempty" db:"state"`
+	IsOwner    bool   `json:"isOwner,omitempty" db:"is_owner"`
+	IsFeatured bool   `json:"-" db:"is_featured"`
 
 	NbUse uint64 `json:"nbUse" db:"nb_use"`
 
@@ -100,7 +104,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			c.thumb_path,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
-	    c.versions,
+	    CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.alias,
 			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
 			c.state,
@@ -113,10 +117,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE (c.state = 'public'
-		OR (
-			c.state = 'draft' AND array_length(c.versions, 1) > 1
-		))
+		WHERE c.state = 'public' OR array_length(versions, 1) > 1
 		`, &opt)
 
 	q.AddValues(uID)
@@ -139,7 +140,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			c.thumb_path,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
-	    c.versions,
+	    CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.alias,
 			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
 			c.state,
@@ -149,10 +150,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE (c.state = 'public'
-		OR (
-			c.state = 'draft' AND array_length(c.versions, 1) > 1
-		))
+		WHERE c.state = 'public' OR array_length(versions, 1) > 1
 		`, &opt)
 
 	q.AddValues(uID)
@@ -201,7 +199,8 @@ func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 			c.title,
 			c.thumb_path,
 			c.created_at "crea.created_at",
-			c.versions,
+			c.versions[array_length(c.versions, 1)] AS version,
+			c.versions[array_length(c.versions, 1)-1] AS versions,
 			c.state,
 			u.id "user.id",
 			u.name
@@ -230,7 +229,7 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
 		c.description,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
-    c.versions,
+		CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-1] END AS versions,
 		c.alias,
 		CASE WHEN c.creator_id = $2 THEN true ELSE false END "is_owner",
 		c.state,
@@ -243,16 +242,14 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
   FROM creation c
   INNER JOIN app_user u ON (c.creator_id = u.id)
 	INNER JOIN engine e ON (c.engine=e.name)
-  WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete' OR array_length(c.versions, 1) > 1)
+  WHERE c.id = $1
 	`
 
 	if err := lib.DB.Get(&crea, q, id, uID); err != nil {
 		return nil, err
 	}
 
-	if len(crea.Versions) > 1 && crea.State == enum.Draft {
-		crea.Versions = crea.Versions[:len(crea.Versions)-1]
-	}
+	crea.Version = crea.Versions[len(crea.Versions)-1] // Latest version
 
 	crea.PopulateParams()
 	return &crea, nil
@@ -325,8 +322,6 @@ func UpdateCreationParams(crea *Creation) error {
 			return err
 		}
 	}
-
-	fmt.Printf("Update for %d with params %s", lastVersion, crea.Params)
 
 	q := `
 	DELETE FROM creation_param
