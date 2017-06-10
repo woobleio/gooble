@@ -367,7 +367,7 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 		<head>
 			<script type="text/javascript">` + crea.Script + `</script>
 			<script type="text/javascript">window.onload = function(){new Woobly({` + params + `});}</script>
-			<style>` + crea.Style + `</style>
+			<style>html, body { height: 100%; width: 100%; margin: 0; }` + crea.Style + `</style>
 		</head>
 		<body>
 			` + crea.Document + `
