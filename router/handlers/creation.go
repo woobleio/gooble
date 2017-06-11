@@ -37,6 +37,7 @@ func GETCreations(c *gin.Context) {
 		}
 	}
 
+	s := lib.NewStorage(lib.SrcPreview)
 	if creaID != "" {
 		data, err = model.CreationByID(lib.InitID(creaID), authUserID)
 		if err != nil {
@@ -48,14 +49,12 @@ func GETCreations(c *gin.Context) {
 			return
 		}
 
-		creaLastVersion := fmt.Sprintf("%d", data.(*model.Creation).Versions[len(data.(*model.Creation).Versions)-1])
-		s := lib.NewStorage(lib.SrcPreview)
+		creaLastVersion := fmt.Sprintf("%d", data.(*model.Creation).Version)
 		creatorID := fmt.Sprintf("%d", data.(*model.Creation).Creator.ID)
 		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)
 		previewURL := s.GetPathFor(creatorID, creaID, creaLastVersion, "index.html")
 		spltPath := strings.Split(previewURL, "/")
 		data.(*model.Creation).PreviewURL = strings.Join(spltPath[1:], "/")
-
 	} else {
 		switch c.DefaultQuery("list", "") {
 		case "popular":
@@ -75,6 +74,15 @@ func GETCreations(c *gin.Context) {
 		if err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
+		}
+
+		for i, crea := range data.([]model.Creation) {
+			nbVersions := len(crea.Versions)
+			if nbVersions > 0 && crea.IsThumbPreview { // Means the creation is in draft and has never been published, it can't have a preview
+				url := s.GetPathFor(fmt.Sprintf("%d", crea.Creator.ID), fmt.Sprintf("%d", crea.ID.ValueDecoded), fmt.Sprintf("%d", crea.Versions[nbVersions-1]), "index.html")
+				spltPath := strings.Split(url, "/")
+				data.([]model.Creation)[i].PreviewURL = strings.Join(spltPath[1:], "/")
+			}
 		}
 	}
 
@@ -218,6 +226,7 @@ func PUTCreation(c *gin.Context) {
 	crea.Title = creaForm.Title
 	crea.Description = lib.InitNullString(creaForm.Description)
 	crea.ThumbPath = lib.InitNullString(creaForm.ThumbPath)
+	crea.IsThumbPreview = creaForm.IsThumbPreview
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias
 	crea.Params = creaForm.Params

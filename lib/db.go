@@ -260,6 +260,15 @@ func (us UintSlice) Value() (driver.Value, error) {
 
 // Scan scans UintSlice
 func (us *UintSlice) Scan(src interface{}) error {
+	if src == nil {
+		(*us) = []uint64{}
+		return nil
+	}
+	switch src.(type) {
+	case int64:
+		(*us) = []uint64{uint64(src.(int64))}
+		return nil
+	}
 	asBytes, ok := src.([]byte)
 	if !ok {
 		return errors.New("Scan source was not []bytes")
