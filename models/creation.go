@@ -174,8 +174,7 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 			c.thumb_path,
 			c.is_thumb_preview,
 			c.created_at "crea.created_at",
-			c.versions,
-			versions[array_length(versions, 1)] AS version,
+			CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.thumb_path,
 			u.id "user.id",
 			u.name
