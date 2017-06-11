@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.6
 -- Dumped by pg_dump version 9.5.6
 
--- Started on 2017-06-08 09:45:36 UTC
+-- Started on 2017-06-08 14:24:11 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,7 +17,7 @@ SET row_security = off;
 
 --
 -- TOC entry 1 (class 3079 OID 12361)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
@@ -26,7 +26,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- TOC entry 2225 (class 0 OID 0)
 -- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -94,7 +94,7 @@ CREATE TABLE app_user (
     github_name text,
     twitter_name text,
     website text,
-    fullname text NOT NULL
+    fullname text
 );
 
 
@@ -396,7 +396,7 @@ COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt
 -- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('app_user_id_seq', 110, true);
+SELECT pg_catalog.setval('app_user_id_seq', 111, true);
 
 
 --
@@ -415,7 +415,7 @@ COPY creation (id, title, creator_id, updated_at, engine, thumb_path, descriptio
 -- Name: creation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('creation_id_seq', 286, true);
+SELECT pg_catalog.setval('creation_id_seq', 292, true);
 
 
 --
@@ -465,7 +465,7 @@ COPY package_creation (package_id, creation_id, alias, version) FROM stdin;
 -- Name: package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('package_id_seq', 105, true);
+SELECT pg_catalog.setval('package_id_seq', 120, true);
 
 
 --
@@ -475,9 +475,9 @@ SELECT pg_catalog.setval('package_id_seq', 105, true);
 --
 
 COPY plan (label, price_per_month, price_per_year, nb_pkg, nb_crea, level) FROM stdin;
-Visitor	0	0	2	5	0
-Woobler	15	180	5	15	1
 Architect	40	480	0	0	2
+Visitor	0	0	2	3	0
+Woobler	15	180	5	8	1
 \.
 
 
@@ -497,7 +497,7 @@ COPY plan_user (id, user_id, nb_renew, created_at, start_date, end_date, plan_la
 -- Name: plan_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('plan_user_id_seq', 61, true);
+SELECT pg_catalog.setval('plan_user_id_seq', 62, true);
 
 
 --
@@ -771,9 +771,8 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-06-08 09:45:36 UTC
+-- Completed on 2017-06-08 14:24:11 UTC
 
 --
 -- PostgreSQL database dump complete
 --
-

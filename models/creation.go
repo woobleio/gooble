@@ -11,15 +11,20 @@ import (
 type Creation struct {
 	ID lib.ID `json:"id"      db:"crea.id"`
 
-	Title       string          `json:"title"  db:"title"`
-	Description *lib.NullString `json:"description,omitempty" db:"description"`
-	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
-	Creator     User            `json:"creator,omitempty" db:""`
-	Versions    lib.UintSlice   `json:"versions,omitempty" db:"versions"`
-	Alias       string          `json:"alias,omitempty" db:"alias"`
-	State       string          `json:"state,omitempty" db:"state"`
-	IsOwner     bool            `json:"isOwner,omitempty" db:"is_owner"`
-	IsFeatured  bool            `json:"-" db:"is_featured"`
+	Title          string          `json:"title"  db:"title"`
+	Description    *lib.NullString `json:"description,omitempty" db:"description"`
+	ThumbPath      *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
+	IsThumbPreview bool            `json:"isThumbPreview" db:"is_thumb_preview"`
+	Creator        User            `json:"creator,omitempty" db:""`
+
+	// When a creation is in draft, the very last version is ignored by most queries,
+	// thus the -1 from versions array within most queries
+	Versions lib.UintSlice `json:"versions,omitempty" db:"versions"`
+
+	Alias      string `json:"alias,omitempty" db:"alias"`
+	State      string `json:"state,omitempty" db:"state"`
+	IsOwner    bool   `json:"isOwner,omitempty" db:"is_owner"`
+	IsFeatured bool   `json:"-" db:"is_featured"`
 
 	NbUse uint64 `json:"nbUse" db:"nb_use"`
 
@@ -90,7 +95,7 @@ func (c *Creation) RetrieveSourceCode(version string, files ...string) error {
 }
 
 // AllCreations returns all creations
-func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	var creations []Creation
 	q := lib.NewQuery(`SELECT
 	    c.id "crea.id",
@@ -98,9 +103,10 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	    c.title,
 			c.description,
 			c.thumb_path,
+			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
-	    c.versions,
+	    CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.alias,
 			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
 			c.state,
@@ -113,10 +119,7 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE (c.state = 'public'
-		OR (
-			c.state = 'draft' AND array_length(c.versions, 1) > 1
-		))
+		WHERE c.state = 'public' OR array_length(versions, 1) > 1
 		`, &opt)
 
 	q.AddValues(uID)
@@ -126,20 +129,21 @@ func AllCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 
 	q.SetOrder(lib.CREATED_AT, "c.created_at")
 
-	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
+	return creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
 
 // AllPopularCreations returns all popular creations
-func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	var creations []Creation
 	q := lib.NewQuery(`SELECT
 	    c.id "crea.id",
 	    c.title,
 			c.description,
 			c.thumb_path,
+			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
-	    c.versions,
+	    CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.alias,
 			CASE WHEN c.creator_id = $1 THEN true ELSE false END "is_owner",
 			c.state,
@@ -149,10 +153,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE (c.state = 'public'
-		OR (
-			c.state = 'draft' AND array_length(c.versions, 1) > 1
-		))
+		WHERE c.state = 'public' OR array_length(versions, 1) > 1
 		`, &opt)
 
 	q.AddValues(uID)
@@ -160,19 +161,21 @@ func AllPopularCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 
 	q.Q += "GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
 
-	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
+	return creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
 
 // AllUsedCreations return creations used in some packages
-func AllUsedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	var creations []Creation
 	q := lib.NewQuery(`SELECT
 			DISTINCT c.id "crea.id",
 			COUNT(pcc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
+			c.is_thumb_preview,
 			c.created_at "crea.created_at",
 			c.versions,
+			versions[array_length(versions, 1)] AS version,
 			c.thumb_path,
 			u.id "user.id",
 			u.name
@@ -189,19 +192,21 @@ func AllUsedCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 
 	q.Q += "GROUP BY c.id, u.id"
 
-	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
+	return creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
 
 // AllDraftCreations returns all creation in draft of authenticated user
-func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
+func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	var creations []Creation
 	q := lib.NewQuery(`SELECT
 			c.id "crea.id",
 			COUNT(pc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
+			c.is_thumb_preview,
 			c.created_at "crea.created_at",
-			c.versions,
+			c.versions[array_length(c.versions, 1)] AS version,
+			c.versions[array_length(c.versions, 1)-1] AS versions,
 			c.state,
 			u.id "user.id",
 			u.name
@@ -216,7 +221,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) (*[]Creation, error) {
 
 	q.Q += "GROUP BY c.id, u.id"
 
-	return &creations, lib.DB.Select(&creations, q.String(), q.Values...)
+	return creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
 
 // CreationByID returns a creation with the id "id"
@@ -228,9 +233,10 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
     c.title,
 		c.thumb_path,
 		c.description,
+		c.is_thumb_preview,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
-    c.versions,
+		CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-1] END AS versions,
 		c.alias,
 		CASE WHEN c.creator_id = $2 THEN true ELSE false END "is_owner",
 		c.state,
@@ -243,15 +249,18 @@ func CreationByID(id lib.ID, uID uint64) (*Creation, error) {
   FROM creation c
   INNER JOIN app_user u ON (c.creator_id = u.id)
 	INNER JOIN engine e ON (c.engine=e.name)
-  WHERE c.id = $1 AND (c.state = 'public' OR c.state = 'delete' OR array_length(c.versions, 1) > 1)
+  WHERE c.id = $1
 	`
 
 	if err := lib.DB.Get(&crea, q, id, uID); err != nil {
 		return nil, err
 	}
 
-	if len(crea.Versions) > 1 && crea.State == enum.Draft {
-		crea.Versions = crea.Versions[:len(crea.Versions)-1]
+	nbVersions := len(crea.Versions)
+	if nbVersions > 0 {
+		crea.Version = crea.Versions[nbVersions-1] // Latest version
+	} else {
+		crea.Version = 1 // If no versions, the default is one
 	}
 
 	crea.PopulateParams()
@@ -266,6 +275,7 @@ func CreationPrivateByID(uID uint64, creaID lib.ID, version string) (*Creation, 
 		c.id "crea.id",
 		c.title,
 		c.description,
+		c.is_thumb_preview,
 		c.thumb_path,
 		c.alias,
 		c.creator_id,
@@ -302,12 +312,12 @@ func CreationPrivateByID(uID uint64, creaID lib.ID, version string) (*Creation, 
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7
+  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, is_thumb_preview = $8
   WHERE id = $1
   AND creator_id = $2
   `
 
-	if _, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath); err != nil {
+	if _, err := lib.DB.Exec(q, crea.ID, crea.CreatorID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.IsThumbPreview); err != nil {
 		return err
 	}
 
@@ -325,8 +335,6 @@ func UpdateCreationParams(crea *Creation) error {
 			return err
 		}
 	}
-
-	fmt.Printf("Update for %d with params %s", lastVersion, crea.Params)
 
 	q := `
 	DELETE FROM creation_param
