@@ -89,11 +89,11 @@ func UserPrivateByID(userID uint64) (*User, error) {
       pl.nb_pkg,
       pl.nb_crea
     FROM app_user u
-    LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id AND pu.end_date > now())
+    LEFT OUTER JOIN plan_user pu ON (pu.user_id = u.id AND pu.end_date < now())
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
 		WHERE u.id = $1
 		AND u.deleted_at IS NULL
-    ORDER BY u.id, pu.id, pl.level DESC`
+    ORDER BY u.id, pu.id DESC`
 
 	if err := lib.DB.Get(&user, q, userID); err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func UserByEmail(email string) (*User, error) {
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
     WHERE u.email = $1
 		AND u.deleted_at IS NULL
-    ORDER BY u.id, pu.start_date DESC
+    ORDER BY u.id, pu.id DESC
 	`
 
 	if err := lib.DB.Get(&user, q, email); err != nil {
