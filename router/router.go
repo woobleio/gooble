@@ -46,6 +46,8 @@ func Load() {
 			c.String(200, "%s", time.Now())
 		})
 
+		v1.POST("/webhooks/:event", handler.POSTWebhooks)
+
 		v1.POST("/users", handler.POSTUser)
 		v1.GET("/users/:name", handler.GETUser)
 

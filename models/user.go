@@ -93,7 +93,7 @@ func UserPrivateByID(userID uint64) (*User, error) {
     LEFT OUTER JOIN plan pl ON (pl.label = pu.plan_label)
 		WHERE u.id = $1
 		AND u.deleted_at IS NULL
-    ORDER BY u.id, pu.start_date, pl.level DESC`
+    ORDER BY u.id, pu.id, pl.level DESC`
 
 	if err := lib.DB.Get(&user, q, userID); err != nil {
 		return nil, err

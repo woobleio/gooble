@@ -49,6 +49,21 @@ func UnsubUserPlan(planID uint64) error {
 	return err
 }
 
+// RenewUserPlan renews user (customer id) plan from start date to end date
+func RenewUserPlan(custID string, startDate int64, endDate int64) error {
+	q := `
+	UPDATE plan_user SET start_date = $2, end_date = $3, nb_renew = nb_renew + 1
+	WHERE id IN (
+		SELECT DISTINCT ON (u.id) pu.id FROM app_user u
+		INNER JOIN plan_user pu ON (pu.user_id = u.id)
+		WHERE u.customer_id = $1
+		ORDER BY u.id, pu.id DESC
+	)
+	`
+	_, err := lib.DB.Exec(q, custID, time.Unix(startDate, 0), time.Unix(endDate, 0))
+	return err
+}
+
 // AllPlans returns all plans
 func AllPlans() (*[]Plan, error) {
 	var plans []Plan
