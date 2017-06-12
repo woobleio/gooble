@@ -61,7 +61,7 @@ func UserPublicByName(username string) (*User, error) {
 
 // UserPrivateByID returns user with id "id"
 // It'll select the most recent plan but ignore it if the end_date expired
-func UserPrivateByID(id uint64) (*User, error) {
+func UserPrivateByID(userID uint64) (*User, error) {
 	var user User
 	q := `SELECT DISTINCT ON (u.id)
 			u.id "user.id",
@@ -95,12 +95,12 @@ func UserPrivateByID(id uint64) (*User, error) {
 		AND u.deleted_at IS NULL
     ORDER BY u.id, pu.start_date, pl.level DESC`
 
-	if err := lib.DB.Get(&user, q, id); err != nil {
+	if err := lib.DB.Get(&user, q, userID); err != nil {
 		return nil, err
 	}
 
 	if user.Plan.Label == nil {
-		user.Plan, _ = DefaultPlan()
+		user.Plan, _ = DefaultPlan(userID)
 	}
 
 	return &user, nil
@@ -150,7 +150,7 @@ func UserByEmail(email string) (*User, error) {
 	}
 
 	if user.Plan == nil {
-		user.Plan, _ = DefaultPlan()
+		user.Plan, _ = DefaultPlan(user.ID)
 	}
 
 	return &user, lib.DB.Get(&user, q, email)

@@ -74,7 +74,7 @@ func POSTUser(c *gin.Context) {
 	model.UpdateCustomerID(uID, customer.ID)
 
 	// Logs customer subscription in the DB
-	model.NewPlanUser(uID, strings.Split(data.Plan.Label, "_")[0], customer.Subs.Values[0].PeriodEnd)
+	model.NewPlanUser(uID, strings.Split(data.Plan.Label, "_")[0], 0)
 
 	c.Header("Location", "/tokens")
 

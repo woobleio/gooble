@@ -7,7 +7,7 @@ type UserForm struct {
 	Fullname string `json:"fullname" validate:"required,ascii,min=4,max=50"`
 	Secret   string `json:"secret" validate:"required,min=8"`
 	Plan     struct {
-		Label string `json:"label" validate:"required,alpha"`
+		Label string `json:"label" validate:"required,ascii"`
 	} `json:"plan" validate:"required"`
 
 	CardToken string `json:"cardToken"`
@@ -24,7 +24,7 @@ type UserPatchForm struct {
 	IsCreator *bool   `json:"isCreator" db:"is_creator"`
 
 	Plan *struct {
-		Label string `json:"label" validate:"required,alpha"`
+		Label string `json:"label" validate:"required,ascii"`
 	} `json:"plan" validate:"omitempty"`
 	CardToken *string `json:"cardToken"`
 

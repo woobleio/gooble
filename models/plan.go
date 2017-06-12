@@ -7,7 +7,8 @@ import (
 
 // Plans label
 const (
-	Free string = "Visitor"
+	Free    string = "Visitor"
+	Woobler string = "Woobler"
 )
 
 // Plan is a Wooble plan with some restrictions
@@ -31,7 +32,13 @@ type Plan struct {
 // NewPlanUser logs user subscription
 func NewPlanUser(uID uint64, planLabel string, periodEnd int64) (id uint64, err error) {
 	q := `INSERT INTO plan_user(user_id, nb_renew, end_date, plan_label) VALUES ($1, 0, $2, $3) RETURNING id`
-	err = lib.DB.QueryRow(q, uID, time.Unix(periodEnd, 0), planLabel).Scan(&uID)
+
+	if periodEnd == 0 {
+		lib.DB.QueryRow(q, uID, nil, planLabel).Scan(&uID)
+	} else {
+		lib.DB.QueryRow(q, uID, time.Unix(periodEnd, 0), planLabel).Scan(&uID)
+	}
+
 	return id, err
 }
 
@@ -74,8 +81,8 @@ func PlanByLabel(label string) (*Plan, error) {
 	return &plan, lib.DB.Get(&plan, q, label)
 }
 
-// DefaultPlan gets free plan
-func DefaultPlan() (*Plan, error) {
+// DefaultPlan gets free plan or second plan if user is VIP
+func DefaultPlan(userID uint64) (*Plan, error) {
 	var plan Plan
 	q := `
 		SELECT
@@ -83,14 +90,18 @@ func DefaultPlan() (*Plan, error) {
       pl.nb_pkg,
 			pl.level,
       pl.nb_crea
-		FROM plan pl
-		WHERE pl.label = $1
+		FROM plan pl, app_user u
+		WHERE CASE WHEN u.is_vip THEN pl.label = $2 ELSE pl.label = $3 END
+		AND u.id = $1
 	`
 
-	return &plan, lib.DB.Get(&plan, q, Free)
+	return &plan, lib.DB.Get(&plan, q, userID, Woobler, Free)
 }
 
 // HasExpired returns true if the plan has expired
 func (plan *Plan) HasExpired() bool {
+	if plan.EndDate == nil {
+		return true
+	}
 	return plan.EndDate.Time.Unix() < time.Now().Unix()
 }

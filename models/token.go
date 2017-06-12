@@ -29,9 +29,7 @@ func NewToken(user *User, refreshToken string) *jwt.Token {
 
 	// Set default plan if the user has no plan (this isn't an exceptionnal case)
 	if user.Plan.Label == nil || !user.Plan.Label.Valid {
-		user.Plan, _ = DefaultPlan()
-		user.Plan.StartDate = lib.InitNullTime(time.Now())
-		user.Plan.EndDate = lib.InitNullTime(time.Now())
+		user.Plan, _ = DefaultPlan(user.ID)
 	}
 
 	claims := &CustomClaims{
@@ -108,7 +106,7 @@ func UserByToken(token interface{}) (*User, error) {
 	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
 
 	idStr := claims["sub"]
-	id, err := strconv.ParseUint(idStr.(string), 10, 64)
+	userID, err := strconv.ParseUint(idStr.(string), 10, 64)
 
 	if err != nil {
 		return nil, err
@@ -162,12 +160,12 @@ func UserByToken(token interface{}) (*User, error) {
 	}
 
 	// DefaultPlan if the current plan has exprired
-	if plan.Label.String != Free && plan.HasExpired() {
-		plan, _ = DefaultPlan()
+	if plan.HasExpired() {
+		plan, _ = DefaultPlan(userID)
 	}
 
 	return &User{
-		ID:   id,
+		ID:   userID,
 		Name: name.(string),
 		Plan: plan,
 	}, nil
