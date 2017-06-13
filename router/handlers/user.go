@@ -175,6 +175,14 @@ func PATCHUser(c *gin.Context) {
 				return
 			}
 			model.NewPlanUser(privUser.ID, planLabel, sub.PeriodEnd)
+
+			privUser.Plan = plan
+
+			// Refresh token
+			token := model.NewToken(privUser, "")
+			tokenS, _ := token.SignedString(model.TokenKey())
+			c.Header("Authorization", tokenS)
+
 		} else if planLabel == model.Free && privUser.Plan.UnsubDate == nil {
 			if err := model.UnsubCustomer(privUser.CustomerID); err != nil {
 				c.Error(err).SetMeta(ErrIntServ)
