@@ -119,7 +119,7 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE c.state = 'public' OR array_length(versions, 1) > 1
+		WHERE (c.state = 'public' OR array_length(versions, 1) > 1)
 		`, &opt)
 
 	q.AddValues(uID)
@@ -153,13 +153,13 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE c.state = 'public' OR array_length(versions, 1) > 1
+		WHERE (c.state = 'public' OR array_length(versions, 1) > 1)
 		`, &opt)
 
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
 
-	q.Q += "GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
+	q.Q += " GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
 
 	return creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
@@ -189,7 +189,7 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title")
 
-	q.Q += "GROUP BY c.id, u.id"
+	q.Q += " GROUP BY c.id, u.id"
 
 	return creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
@@ -218,7 +218,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	q.AddValues(uID)
 	q.SetFilters(lib.SEARCH, "c.title")
 
-	q.Q += "GROUP BY c.id, u.id"
+	q.Q += " GROUP BY c.id, u.id"
 
 	return creations, lib.DB.Select(&creations, q.String(), q.Values...)
 }
