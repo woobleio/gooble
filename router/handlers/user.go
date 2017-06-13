@@ -47,12 +47,15 @@ func POSTUser(c *gin.Context) {
 		return
 	}
 
+	users, _ := model.AllUsers()
+
 	var user model.User
 	user.Name = data.Name
 	user.Fullname = lib.InitNullString(data.Fullname)
 	user.Email = data.Email
 	user.IsCreator = data.IsCreator
 	user.Secret = data.Secret
+	user.IsVIP = len(users) < 310
 
 	uID, err := model.NewUser(&user)
 	if err != nil {

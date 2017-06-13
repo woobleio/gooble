@@ -15,6 +15,7 @@ type User struct {
 	Name     string          `json:"name,omitempty" db:"name"`
 	PicPath  *lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
 	Fullname *lib.NullString `json:"fullname,omitempty" db:"fullname"`
+	IsVIP    bool            `json:"-" db:"is_vip"`
 
 	Website      *lib.NullString `json:"website,omitempty" db:"website"`
 	CodepenName  *lib.NullString `json:"codepenName,omitempty" db:"codepen_name"`
@@ -35,6 +36,27 @@ type User struct {
 	CreatedAt *lib.NullTime `json:"createdAt,omitempty" db:"user.created_at"`
 	UpdatedAt *lib.NullTime `json:"updatedAt,omitempty" db:"user.updated_at"`
 	DeletedAt *lib.NullTime `json:"deletedAt,omitempty" db:"user.deleted_at"`
+}
+
+// AllUsers returns all public users
+func AllUsers() ([]User, error) {
+	var users []User
+	q := `
+	SELECT
+		u.name,
+		u.fullname,
+		u.is_creator,
+		u.pic_path,
+		u.website,
+		u.codepen_name,
+		u.dribbble_name,
+		u.github_name,
+		u.twitter_name,
+		u.created_at "user.created_at"
+	FROM app_user u
+	WHERE u.deleted_at IS NULL
+	`
+	return users, lib.DB.Select(&users, q)
 }
 
 // UserPublicByName returns user public profile with the name "username"
@@ -113,8 +135,8 @@ func NewUser(user *User) (uID uint64, err error) {
 	if errPasswd != nil {
 		return 0, errPasswd
 	}
-	q := `INSERT INTO app_user(name, fullname, email, is_creator, passwd, salt_key, customer_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
-	err = lib.DB.QueryRow(q, user.Name, user.Fullname, user.Email, user.IsCreator, cp, salt, user.CustomerID).Scan(&uID)
+	q := `INSERT INTO app_user(name, fullname, email, is_creator, passwd, salt_key, customer_id, is_vip) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+	err = lib.DB.QueryRow(q, user.Name, user.Fullname, user.Email, user.IsCreator, cp, salt, user.CustomerID, user.IsVIP).Scan(&uID)
 
 	return uID, err
 }
