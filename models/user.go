@@ -51,8 +51,8 @@ type User struct {
 	DeletedAt *lib.NullTime `json:"deletedAt,omitempty" db:"user.deleted_at"`
 }
 
-// AllUsers returns all public users
-func AllUsers() ([]User, error) {
+// AllActiveUsers returns all public and activated users
+func AllActiveUsers() ([]User, error) {
 	var users []User
 	q := `
 	SELECT
@@ -67,7 +67,7 @@ func AllUsers() ([]User, error) {
 		u.twitter_name,
 		u.created_at "user.created_at"
 	FROM app_user u
-	WHERE u.deleted_at IS NULL
+	WHERE u.deleted_at IS NULL AND u.is_active = TRUE
 	`
 	return users, lib.DB.Select(&users, q)
 }

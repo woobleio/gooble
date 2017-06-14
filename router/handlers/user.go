@@ -47,7 +47,7 @@ func POSTUser(c *gin.Context) {
 		return
 	}
 
-	users, _ := model.AllUsers()
+	users, _ := model.AllActiveUsers()
 
 	var user model.User
 	user.Name = data.Name
