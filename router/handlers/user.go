@@ -76,6 +76,15 @@ func POSTUser(c *gin.Context) {
 	// Sets customer id to User
 	model.UpdateCustomerID(uID, customer.ID)
 
+	name := user.Name
+	if user.Fullname != nil {
+		name = strings.Split(user.Fullname.String, " ")[0]
+	}
+	if err := model.SendActivationEmail(name, user.Email); err != nil {
+		c.Error(err)
+		return
+	}
+
 	// Logs customer subscription in the DB
 	model.NewPlanUser(uID, strings.Split(data.Plan.Label, "_")[0], 0)
 
