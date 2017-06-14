@@ -106,7 +106,7 @@ func DefaultPlan(userID uint64) (*Plan, error) {
 			pl.level,
       pl.nb_crea
 		FROM plan pl, app_user u
-		WHERE CASE WHEN u.is_vip THEN pl.label = $2 ELSE pl.label = $3 END
+		WHERE CASE WHEN u.is_vip AND u.is_active THEN pl.label = $2 ELSE pl.label = $3 END
 		AND u.id = $1
 	`
 
