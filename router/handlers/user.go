@@ -200,6 +200,42 @@ func PATCHUser(c *gin.Context) {
 		return
 	}
 
+	if userPatchForm.Operation != nil {
+		switch *userPatchForm.Operation {
+		case "resendActivationEmail":
+			fullUser, _ := model.UserPrivateByID(user.(*model.User).ID)
+			if fullUser.IsActive {
+				c.Error(errors.New("User already active"))
+				return
+			}
+			name := fullUser.Name
+			if fullUser.Fullname != nil {
+				name = strings.Split(fullUser.Fullname.String, " ")[0]
+			}
+			if err := model.SendActivationEmail(name, fullUser.Email); err != nil {
+				c.Error(err)
+				return
+			}
+		case "activateEmail":
+			fullUser, _ := model.UserPrivateByID(user.(*model.User).ID)
+			if fullUser.IsActive {
+				c.Error(errors.New("User already active")).SetMeta(ErrActivation)
+				return
+			}
+			if err := model.ActivateUser(fullUser.Email, *userPatchForm.ValidationToken); err != nil {
+				c.Error(err).SetMeta(ErrActivation)
+				return
+			}
+
+			fullUser.IsActive = true
+
+			// Refresh token
+			token := model.NewToken(fullUser, "")
+			tokenS, _ := token.SignedString(model.TokenKey())
+			c.Header("Authorization", tokenS)
+		}
+	}
+
 	c.Header("Location", fmt.Sprintf("/users/%s", user.(*model.User).Name))
 
 	c.AbortWithStatus(NoContent)

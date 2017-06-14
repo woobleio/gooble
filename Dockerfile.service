@@ -56,6 +56,7 @@ RUN go get golang.org/x/crypto/scrypt
 RUN go get github.com/gin-gonic/gin
 RUN go get gopkg.in/gin-contrib/cors.v1
 RUN go get gopkg.in/go-playground/validator.v9
+RUN go get gopkg.in/gomail.v2
 
 EXPOSE 3000
 

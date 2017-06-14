@@ -1,8 +1,20 @@
 package model
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
 	"fmt"
+	"html/template"
+	"io"
+	"strconv"
+	"strings"
 	"wooble/lib"
+
+	gomail "gopkg.in/gomail.v2"
 )
 
 // User is a Wooble user
@@ -16,6 +28,7 @@ type User struct {
 	PicPath  *lib.NullString `json:"profilePath,omitempty" db:"pic_path"`
 	Fullname *lib.NullString `json:"fullname,omitempty" db:"fullname"`
 	IsVIP    bool            `json:"-" db:"is_vip"`
+	IsActive bool            `json:"-" db:"is_active"`
 
 	Website      *lib.NullString `json:"website,omitempty" db:"website"`
 	CodepenName  *lib.NullString `json:"codepenName,omitempty" db:"codepen_name"`
@@ -90,6 +103,7 @@ func UserPrivateByID(userID uint64) (*User, error) {
 			u.email,
 			u.name,
 			u.fullname,
+			u.is_active,
 			u.pic_path,
 			u.website,
 			u.codepen_name,
@@ -150,6 +164,7 @@ func UserByEmail(email string) (*User, error) {
       u.email,
       u.name,
 			u.fullname,
+			u.is_active,
       u.passwd,
       u.is_creator,
       u.salt_key,
@@ -250,6 +265,87 @@ func UserNbPackages(uID uint64) int64 {
 func UserSubFund(uID uint64, amount uint64) error {
 	q := `UPDATE appe_user SET fund = fund - $2 WHERE id = $1`
 	_, err := lib.DB.Exec(q, uID, amount)
+	return err
+}
+
+// SendActivationEmail prepares and sends an activation email
+func SendActivationEmail(name string, to string) error {
+	addToBytes := []byte(to)
+
+	block, err := aes.NewCipher([]byte(lib.GetEncKey()))
+	if err != nil {
+		return err
+	}
+
+	ciphertext := make([]byte, aes.BlockSize+len(addToBytes))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err = io.ReadFull(rand.Reader, iv); err != nil {
+		return err
+	}
+
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], addToBytes)
+
+	// convert to base64
+	validationToken := base64.URLEncoding.EncodeToString(ciphertext)
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", "no-reply@wooble.io")
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", fmt.Sprintf("Hi %s, Validate your Wooble account!", name))
+
+	var out bytes.Buffer
+	tmpl := template.Must(template.New("email.html").ParseFiles("./templates/email.html"))
+	data := Email{
+		Title: "Activate your Wooble account!",
+		Name:  name,
+		Elements: []Element{
+			{"p", "I am happy to see you here! To use Wooble you have to activate your email address. Please click the link below so Wooble can activate your account :", ""},
+			{"a", "Activate my account", fmt.Sprintf(`%s/settings/account?t=%s`, lib.GetOrigins()[0], validationToken)},
+			{"p", "", ""},
+			{"p", "Thank you!", ""},
+		},
+	}
+
+	if err := tmpl.Execute(&out, data); err != nil {
+		return err
+	}
+
+	m.SetBody("text/html", string(out.Bytes()))
+
+	emailHost := strings.Split(lib.GetEmailHost(), ":")
+	port, _ := strconv.Atoi(emailHost[1])
+
+	d := gomail.NewDialer(emailHost[0], port, "no-reply@wooble.io", lib.GetEmailPasswd())
+
+	return d.DialAndSend(m)
+}
+
+// ActivateUser activate user's email if the token is valid
+func ActivateUser(email string, token string) error {
+	ciphertext, _ := base64.URLEncoding.DecodeString(token)
+
+	block, err := aes.NewCipher([]byte(lib.GetEncKey()))
+	if err != nil {
+		return err
+	}
+
+	if len(ciphertext) < aes.BlockSize {
+		return errors.New("ciphertext too short")
+	}
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+
+	stream := cipher.NewCFBDecrypter(block, iv)
+
+	stream.XORKeyStream(ciphertext, ciphertext)
+
+	if string(ciphertext) != email {
+		return errors.New("Invalid token")
+	}
+
+	q := `UPDATE app_user SET is_active = TRUE WHERE email = $1`
+	_, err = lib.DB.Exec(q, email)
 	return err
 }
 

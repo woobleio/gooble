@@ -55,6 +55,14 @@ func GetTokenKey() string {
 	return viper.GetString("token_key")
 }
 
+// GetEncKey returns a key for encryptions
+func GetEncKey() string {
+	if isProd() {
+		return os.Getenv("ENC_KEY")
+	}
+	return viper.GetString("enc_key")
+}
+
 // GetCloudRepo returns the cloud repository name
 func GetCloudRepo() string {
 	if isProd() {
@@ -89,6 +97,22 @@ func GetPkgRepo() string {
 	}
 
 	return viper.GetString("pkg_repo")
+}
+
+// GetEmailHost returns email host with port
+func GetEmailHost() string {
+	if isProd() {
+		return os.Getenv("EMAIL_HOST")
+	}
+	return viper.GetString("email_host")
+}
+
+// GetEmailPasswd returns email password
+func GetEmailPasswd() string {
+	if isProd() {
+		return os.Getenv("EMAIL_PASSWD")
+	}
+	return viper.GetString("email_passwd")
 }
 
 // HashID hashes uint64 id and returns a unique string

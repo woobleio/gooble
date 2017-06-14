@@ -61,36 +61,40 @@ func Load() {
 
 		v1.Use(middleware.Authenticate())
 		{
-			v1.POST("/files", handler.POSTFile)
-			creations := v1.Group("/creations")
-			{
-				creations.POST("", handler.POSTCreation)
-				creations.PUT("/:encid", handler.PUTCreation)
-				creations.DELETE("/:encid", handler.DELETECreation)
-				creations.GET("/:encid/code", handler.GETCreationCode)
-
-				creations.POST("/:encid/versions", handler.POSTCreationVersion)
-				creations.PUT("/:encid/versions", handler.SaveVersion)
-			}
-
 			users := v1.Group("/users")
 			{
 				users.PATCH("", handler.PATCHUser)
 				users.DELETE("", handler.DELETEUser)
 			}
 
-			packages := v1.Group("/packages")
-			{
-				packages.GET("", handler.GETPackages)
-				packages.POST("", handler.POSTPackage)
-				packages.GET("/:encid", handler.GETPackages)
-				packages.PUT("/:encid", handler.PUTPackage)
-				packages.PATCH("/:encid", handler.PATCHPackage)
-				packages.DELETE("/:encid", handler.DELETEPackage)
+			v1.POST("/files", handler.POSTFile)
 
-				packages.POST("/:encid/creations", handler.PushCreation)
-				packages.DELETE("/:encid/creations/:creaid", handler.RemovePackageCreation)
-				packages.PUT("/:encid/creations/:creaid", handler.PUTPackageCreation)
+			v1.Use(middleware.IsActive())
+			{
+				creations := v1.Group("/creations")
+				{
+					creations.POST("", handler.POSTCreation)
+					creations.PUT("/:encid", handler.PUTCreation)
+					creations.DELETE("/:encid", handler.DELETECreation)
+					creations.GET("/:encid/code", handler.GETCreationCode)
+
+					creations.POST("/:encid/versions", handler.POSTCreationVersion)
+					creations.PUT("/:encid/versions", handler.SaveVersion)
+				}
+
+				packages := v1.Group("/packages")
+				{
+					packages.GET("", handler.GETPackages)
+					packages.POST("", handler.POSTPackage)
+					packages.GET("/:encid", handler.GETPackages)
+					packages.PUT("/:encid", handler.PUTPackage)
+					packages.PATCH("/:encid", handler.PATCHPackage)
+					packages.DELETE("/:encid", handler.DELETEPackage)
+
+					packages.POST("/:encid/creations", handler.PushCreation)
+					packages.DELETE("/:encid/creations/:creaid", handler.RemovePackageCreation)
+					packages.PUT("/:encid/creations/:creaid", handler.PUTPackageCreation)
+				}
 			}
 		}
 	}

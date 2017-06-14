@@ -18,6 +18,7 @@ type CustomClaims struct {
 	Name         string `json:"name"`
 	Plan         Plan   `json:"plan"`
 	RefreshToken string `json:"refresh_token"`
+	IsActive     bool   `json:"isActive"`
 	jwt.StandardClaims
 }
 
@@ -36,6 +37,7 @@ func NewToken(user *User, refreshToken string) *jwt.Token {
 		user.Name,
 		*user.Plan,
 		refreshToken,
+		user.IsActive,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Minute * time.Duration(lib.GetTokenLifetime())).Unix(),
 			IssuedAt:  time.Now().Unix(),
@@ -105,9 +107,7 @@ func UserByToken(token interface{}) (*User, error) {
 	}
 	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
 
-	idStr := claims["sub"]
-	userID, err := strconv.ParseUint(idStr.(string), 10, 64)
-
+	userID, err := strconv.ParseUint(claims["sub"].(string), 10, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -165,9 +165,10 @@ func UserByToken(token interface{}) (*User, error) {
 	}
 
 	return &User{
-		ID:   userID,
-		Name: name.(string),
-		Plan: plan,
+		ID:       userID,
+		Name:     name.(string),
+		Plan:     plan,
+		IsActive: claims["isActive"].(bool),
 	}, nil
 }
 

@@ -1,5 +1,6 @@
 -- ADD is_vip (boolean DEFAULT FALSE) in app_user
 -- REMOVES IS NULL from column end_date FROM plan_user
+-- ADD is_active (boolean DEFAULT FALSE) in app_user
 
 --
 -- PostgreSQL database dump

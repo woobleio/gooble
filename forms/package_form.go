@@ -23,5 +23,5 @@ type PackagePatchForm struct {
 	BuiltAt *string `json:"-" db:"built_at"`
 
 	// Operation build
-	Build *bool `json:"build" validate:"omitempty"`
+	Operation *string `json:"operation" validate:"omitempty"`
 }

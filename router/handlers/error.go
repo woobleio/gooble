@@ -12,6 +12,7 @@ type errCode string
 
 // errors code
 const (
+	activationFail   errCode = "activation_fail"
 	aliasRequired    errCode = "alias_required"
 	alreadyCreaOwner errCode = "already_owner"
 	badCreds         errCode = "bad_credentials"
@@ -33,6 +34,7 @@ const (
 
 // API errors
 var (
+	ErrActivation     = NewAPIError(activationFail, "Activation failed", "The token might be wrong", http.StatusConflict)
 	ErrAliasRequired  = NewAPIError(aliasRequired, "Alias required", "Creation name should be unique in a package : creation %s should have an alias", http.StatusBadRequest)
 	ErrBadCreds       = NewAPIError(badCreds, "Wrong credentials", "Unknown email or password invalid", http.StatusUnauthorized)
 	ErrBadFileFormat  = NewAPIError(badFileFormat, "Server can't handle this file", "Allowed formats are : %s", http.StatusBadRequest)

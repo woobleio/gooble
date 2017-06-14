@@ -35,11 +35,12 @@ type UserPatchForm struct {
 	GithubName   *string `json:"githubName" validate:"omitempty,ascii,max=30" db:"github_name"`
 	TwitterName  *string `json:"twitterName" validate:"omitempty,ascii,max=30" db:"twitter_name"`
 
-	OldSecret *string `json:"secret" validate:"omitempty,min=8"`
-	BankToken *string `json:"bankToken"`
+	OldSecret       *string `json:"secret" validate:"omitempty,min=8"`
+	BankToken       *string `json:"bankToken"`
+	ValidationToken *string `json:"validationToken" validate:"omitempty"`
 
 	Salt *string `json:"-" db:"salt_key"`
 
 	// Operations
-	Withdraw *bool `json:"withdraw"`
+	Operation *string `json:"operation" validate:"omitempty"`
 }
