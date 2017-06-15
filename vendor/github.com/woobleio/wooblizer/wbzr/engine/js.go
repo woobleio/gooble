@@ -27,7 +27,7 @@ type JSParam struct {
 const docVar string = "this.document"
 
 const (
-	docRegex         string = `this.document[ ]?=[ ]?document[;]?`
+	docRegex         string = `this.document[ ]?=[ ]?document.body.attachShadow\(\{[ ]?mode:[ ]?'open'[ ]?\}\)[;]?`
 	constructorRegex string = `.*function Woobly\(`
 	classRegex       string = `var Woobly[ ]?=`
 )
@@ -81,23 +81,23 @@ func (js *JS) IncludeHTMLCSS(srcHTML string, srcCSS string) error {
 
 	sRootVar := "_sr_" // Shadow root element
 	jsw := newJsWriter(sRootVar)
-	if srcHTML != "" {
-		constructorRegex := regexp.MustCompile(constructorRegex)
-		constructorIdx := constructorRegex.FindIndex([]byte(js.Src))
-		srcToBytes := []byte(js.Src)
-		index := constructorIdx[1]
+	constructorRegex := regexp.MustCompile(constructorRegex)
+	constructorIdx := constructorRegex.FindIndex([]byte(js.Src))
+	srcToBytes := []byte(js.Src)
+	index := constructorIdx[1]
 
-		coma := ","
-		if string(srcToBytes[index:index+1]) == ")" {
-			coma = ""
-		}
-		// Insert target parameter in the object constructor
-		js.Src = string(append(srcToBytes[:index], append([]byte("_t_"+coma), srcToBytes[index:]...)...))
-
-		jsw.affectVar(sRootVar, "document.querySelector(_t_).attachShadow({mode:'open'})")
-		doc.ReadAndExecute(jsw.buildNode, 0)
-		jsw.affectAttr("this", "document", sRootVar)
+	coma := ","
+	if string(srcToBytes[index:index+1]) == ")" {
+		coma = ""
 	}
+	// Insert target parameter in the object constructor
+	js.Src = string(append(srcToBytes[:index], append([]byte("_t_"+coma), srcToBytes[index:]...)...))
+
+	jsw.affectVar(sRootVar, "document.querySelector(_t_).attachShadow({mode:'open'})")
+	if srcHTML != "" {
+		doc.ReadAndExecute(jsw.buildNode, 0)
+	}
+	jsw.affectAttr("this", "document", sRootVar)
 
 	if srcCSS != "" {
 		styleVar := "__s"
@@ -105,13 +105,7 @@ func (js *JS) IncludeHTMLCSS(srcHTML string, srcCSS string) error {
 		jsw.createElement("style")
 		jsw.affectAttr(styleVar, "innerHTML", "'"+sanitize(sanitizeString(srcCSS))+"'")
 
-		if srcHTML != "" {
-			jsw.appendChild(docVar, styleVar)
-		} else {
-			// Rewrite document initialization to override the replaceAll
-			jsw.bf.WriteString("this.document=document;")
-			jsw.appendChild(docVar+".head", styleVar)
-		}
+		jsw.appendChild(docVar, styleVar)
 	}
 
 	js.Src = string(initDocRegex.ReplaceAll([]byte(js.Src), jsw.bf.Bytes()))
