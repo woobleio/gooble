@@ -374,13 +374,20 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 
 	preview := `<html>
 		<head>
-			<script type="text/javascript">` + crea.Script + `</script>
 			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js"></script>
-			<script type="text/javascript">window.onload = function(){new Woobly({` + params + `});}</script>
-			<style>html, body { height: 100%; width: 100%; margin: 0; }` + crea.Style + `</style>
+			<script type="text/javascript">` + crea.Script + `</script>
+			<script type="text/javascript">window.onload = function(){
+				var s = document.body.attachShadow({mode: 'open'});
+				s.innerHTML = ` + "`" + crea.Document + "`;" + `
+				var a = document.createElement('style');
+				a.type = 'text/css';
+				a.innerHTML = ` + "`" + crea.Style + "`" + `
+				s.appendChild(a);
+				new Woobly({` + params + `});}
+			</script>
+			<style>html, body { height: 100%; width: 100%; margin: 0; }</style>
 		</head>
 		<body>
-			` + crea.Document + `
 		</body>
 	</html>`
 

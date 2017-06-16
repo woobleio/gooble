@@ -27,7 +27,7 @@ type JSParam struct {
 const docVar string = "this.document"
 
 const (
-	docRegex         string = `this.document[ ]?=[ ]?document.body.attachShadow\(\{[ ]?mode:[ ]?'open'[ ]?\}\)[;]?`
+	docRegex         string = `this.document[ ]?=[ ]?document.body.shadowRoot`
 	constructorRegex string = `.*function Woobly\(`
 	classRegex       string = `var Woobly[ ]?=`
 )

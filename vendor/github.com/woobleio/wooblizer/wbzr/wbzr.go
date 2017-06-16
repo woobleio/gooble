@@ -132,7 +132,7 @@ var WooblyJS = `class Woobly {
 		// This is mandatory.
 		// Use this.document.querySelector to query elements in your creation
 		// Use document to call document prototypes such as document.createElement
-		this.document = document.body.attachShadow({mode: 'open'});
+		this.document = document.body.shadowRoot;
 
 		/*
 		 * Your creation start-up code
