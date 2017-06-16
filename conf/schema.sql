@@ -1,7 +1,3 @@
--- ADD is_vip (boolean DEFAULT FALSE) in app_user
--- REMOVES IS NULL from column end_date FROM plan_user
--- ADD is_active (boolean DEFAULT FALSE) in app_user
-
 --
 -- PostgreSQL database dump
 --
@@ -9,7 +5,7 @@
 -- Dumped from database version 9.5.6
 -- Dumped by pg_dump version 9.5.6
 
--- Started on 2017-06-11 13:20:04 UTC
+-- Started on 2017-06-16 10:40:46 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -21,16 +17,16 @@ SET row_security = off;
 
 --
 -- TOC entry 1 (class 3079 OID 12361)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 2226 (class 0 OID 0)
+-- TOC entry 2228 (class 0 OID 0)
 -- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -98,7 +94,9 @@ CREATE TABLE app_user (
     github_name text,
     twitter_name text,
     website text,
-    fullname text NOT NULL
+    fullname text NOT NULL,
+    is_vip boolean DEFAULT false,
+    is_active boolean DEFAULT false
 );
 
 
@@ -120,7 +118,7 @@ CREATE SEQUENCE app_user_id_seq
 ALTER TABLE app_user_id_seq OWNER TO wooble;
 
 --
--- TOC entry 2227 (class 0 OID 0)
+-- TOC entry 2229 (class 0 OID 0)
 -- Dependencies: 182
 -- Name: app_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
@@ -169,7 +167,7 @@ CREATE SEQUENCE creation_id_seq
 ALTER TABLE creation_id_seq OWNER TO wooble;
 
 --
--- TOC entry 2228 (class 0 OID 0)
+-- TOC entry 2230 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: creation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
@@ -258,7 +256,7 @@ CREATE SEQUENCE package_id_seq
 ALTER TABLE package_id_seq OWNER TO wooble;
 
 --
--- TOC entry 2229 (class 0 OID 0)
+-- TOC entry 2231 (class 0 OID 0)
 -- Dependencies: 188
 -- Name: package_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
@@ -284,7 +282,7 @@ CREATE TABLE plan (
 ALTER TABLE plan OWNER TO wooble;
 
 --
--- TOC entry 2230 (class 0 OID 0)
+-- TOC entry 2232 (class 0 OID 0)
 -- Dependencies: 189
 -- Name: COLUMN plan.level; Type: COMMENT; Schema: public; Owner: wooble
 --
@@ -303,7 +301,7 @@ CREATE TABLE plan_user (
     nb_renew smallint NOT NULL,
     created_at date DEFAULT ('now'::text)::date NOT NULL,
     start_date date DEFAULT ('now'::text)::date NOT NULL,
-    end_date date NOT NULL,
+    end_date date,
     plan_label text NOT NULL,
     unsub_date date
 );
@@ -312,7 +310,7 @@ CREATE TABLE plan_user (
 ALTER TABLE plan_user OWNER TO wooble;
 
 --
--- TOC entry 2231 (class 0 OID 0)
+-- TOC entry 2233 (class 0 OID 0)
 -- Dependencies: 190
 -- Name: TABLE plan_user; Type: COMMENT; Schema: public; Owner: wooble
 --
@@ -321,7 +319,7 @@ COMMENT ON TABLE plan_user IS 'History of user plans';
 
 
 --
--- TOC entry 2232 (class 0 OID 0)
+-- TOC entry 2234 (class 0 OID 0)
 -- Dependencies: 190
 -- Name: COLUMN plan_user.nb_renew; Type: COMMENT; Schema: public; Owner: wooble
 --
@@ -345,7 +343,7 @@ CREATE SEQUENCE plan_user_id_seq
 ALTER TABLE plan_user_id_seq OWNER TO wooble;
 
 --
--- TOC entry 2233 (class 0 OID 0)
+-- TOC entry 2235 (class 0 OID 0)
 -- Dependencies: 191
 -- Name: plan_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: wooble
 --
@@ -362,7 +360,7 @@ ALTER TABLE ONLY app_user ALTER COLUMN id SET DEFAULT nextval('app_user_id_seq':
 
 
 --
--- TOC entry 2038 (class 2604 OID 16470)
+-- TOC entry 2040 (class 2604 OID 16470)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: wooble
 --
 
@@ -370,7 +368,7 @@ ALTER TABLE ONLY creation ALTER COLUMN id SET DEFAULT nextval('creation_id_seq':
 
 
 --
--- TOC entry 2043 (class 2604 OID 16471)
+-- TOC entry 2045 (class 2604 OID 16471)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: wooble
 --
 
@@ -378,7 +376,7 @@ ALTER TABLE ONLY package ALTER COLUMN id SET DEFAULT nextval('package_id_seq'::r
 
 
 --
--- TOC entry 2051 (class 2604 OID 16472)
+-- TOC entry 2053 (class 2604 OID 16472)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: wooble
 --
 
@@ -386,26 +384,26 @@ ALTER TABLE ONLY plan_user ALTER COLUMN id SET DEFAULT nextval('plan_user_id_seq
 
 
 --
--- TOC entry 2207 (class 0 OID 16396)
+-- TOC entry 2209 (class 0 OID 16396)
 -- Dependencies: 181
 -- Data for Name: app_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
-COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, fund, deleted_at, account_id, pic_path, codepen_name, dribbble_name, github_name, twitter_name, website, fullname) FROM stdin;
+COPY app_user (id, name, email, created_at, updated_at, is_creator, passwd, salt_key, customer_id, fund, deleted_at, account_id, pic_path, codepen_name, dribbble_name, github_name, twitter_name, website, fullname, is_vip, is_active) FROM stdin;
 \.
 
 
 --
--- TOC entry 2234 (class 0 OID 0)
+-- TOC entry 2236 (class 0 OID 0)
 -- Dependencies: 182
 -- Name: app_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('app_user_id_seq', 113, true);
+SELECT pg_catalog.setval('app_user_id_seq', 125, true);
 
 
 --
--- TOC entry 2209 (class 0 OID 16407)
+-- TOC entry 2211 (class 0 OID 16407)
 -- Dependencies: 183
 -- Data for Name: creation; Type: TABLE DATA; Schema: public; Owner: wooble
 --
@@ -415,16 +413,16 @@ COPY creation (id, title, creator_id, updated_at, engine, thumb_path, descriptio
 
 
 --
--- TOC entry 2235 (class 0 OID 0)
+-- TOC entry 2237 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: creation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('creation_id_seq', 307, true);
+SELECT pg_catalog.setval('creation_id_seq', 339, true);
 
 
 --
--- TOC entry 2218 (class 0 OID 33116)
+-- TOC entry 2220 (class 0 OID 33116)
 -- Dependencies: 192
 -- Data for Name: creation_param; Type: TABLE DATA; Schema: public; Owner: wooble
 --
@@ -434,7 +432,7 @@ COPY creation_param (creation_id, field, value, version) FROM stdin;
 
 
 --
--- TOC entry 2211 (class 0 OID 16427)
+-- TOC entry 2213 (class 0 OID 16427)
 -- Dependencies: 185
 -- Data for Name: engine; Type: TABLE DATA; Schema: public; Owner: wooble
 --
@@ -445,7 +443,7 @@ JS	.js	application/javascript
 
 
 --
--- TOC entry 2212 (class 0 OID 16433)
+-- TOC entry 2214 (class 0 OID 16433)
 -- Dependencies: 186
 -- Data for Name: package; Type: TABLE DATA; Schema: public; Owner: wooble
 --
@@ -455,7 +453,7 @@ COPY package (id, user_id, title, created_at, updated_at, source, referer, build
 
 
 --
--- TOC entry 2213 (class 0 OID 16440)
+-- TOC entry 2215 (class 0 OID 16440)
 -- Dependencies: 187
 -- Data for Name: package_creation; Type: TABLE DATA; Schema: public; Owner: wooble
 --
@@ -465,29 +463,29 @@ COPY package_creation (package_id, creation_id, alias, version) FROM stdin;
 
 
 --
--- TOC entry 2236 (class 0 OID 0)
+-- TOC entry 2238 (class 0 OID 0)
 -- Dependencies: 188
 -- Name: package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('package_id_seq', 122, true);
+SELECT pg_catalog.setval('package_id_seq', 128, true);
 
 
 --
--- TOC entry 2215 (class 0 OID 16449)
+-- TOC entry 2217 (class 0 OID 16449)
 -- Dependencies: 189
 -- Data for Name: plan; Type: TABLE DATA; Schema: public; Owner: wooble
 --
 
 COPY plan (label, price_per_month, price_per_year, nb_pkg, nb_crea, level) FROM stdin;
-Architect	40	480	0	0	2
 Visitor	0	0	2	3	0
-Woobler	15	180	5	8	1
+Architect	35	800	0	0	2
+Woobler	1300	25000	5	8	1
 \.
 
 
 --
--- TOC entry 2216 (class 0 OID 16459)
+-- TOC entry 2218 (class 0 OID 16459)
 -- Dependencies: 190
 -- Data for Name: plan_user; Type: TABLE DATA; Schema: public; Owner: wooble
 --
@@ -497,16 +495,16 @@ COPY plan_user (id, user_id, nb_renew, created_at, start_date, end_date, plan_la
 
 
 --
--- TOC entry 2237 (class 0 OID 0)
+-- TOC entry 2239 (class 0 OID 0)
 -- Dependencies: 191
 -- Name: plan_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: wooble
 --
 
-SELECT pg_catalog.setval('plan_user_id_seq', 63, true);
+SELECT pg_catalog.setval('plan_user_id_seq', 84, true);
 
 
 --
--- TOC entry 2053 (class 2606 OID 16474)
+-- TOC entry 2055 (class 2606 OID 16474)
 -- Name: app_user_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -515,7 +513,7 @@ ALTER TABLE ONLY app_user
 
 
 --
--- TOC entry 2080 (class 2606 OID 41309)
+-- TOC entry 2082 (class 2606 OID 41309)
 -- Name: creation_param_pk; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -524,7 +522,7 @@ ALTER TABLE ONLY creation_param
 
 
 --
--- TOC entry 2061 (class 2606 OID 16476)
+-- TOC entry 2063 (class 2606 OID 16476)
 -- Name: creation_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -533,7 +531,7 @@ ALTER TABLE ONLY creation
 
 
 --
--- TOC entry 2055 (class 2606 OID 16480)
+-- TOC entry 2057 (class 2606 OID 16480)
 -- Name: customer_id; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -542,7 +540,7 @@ ALTER TABLE ONLY app_user
 
 
 --
--- TOC entry 2057 (class 2606 OID 16482)
+-- TOC entry 2059 (class 2606 OID 16482)
 -- Name: email; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -551,7 +549,7 @@ ALTER TABLE ONLY app_user
 
 
 --
--- TOC entry 2065 (class 2606 OID 16484)
+-- TOC entry 2067 (class 2606 OID 16484)
 -- Name: engine_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -560,7 +558,7 @@ ALTER TABLE ONLY engine
 
 
 --
--- TOC entry 2074 (class 2606 OID 16486)
+-- TOC entry 2076 (class 2606 OID 16486)
 -- Name: label_pk; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -569,7 +567,7 @@ ALTER TABLE ONLY plan
 
 
 --
--- TOC entry 2059 (class 2606 OID 16488)
+-- TOC entry 2061 (class 2606 OID 16488)
 -- Name: name; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -578,7 +576,7 @@ ALTER TABLE ONLY app_user
 
 
 --
--- TOC entry 2072 (class 2606 OID 16490)
+-- TOC entry 2074 (class 2606 OID 16490)
 -- Name: package_creation_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -587,7 +585,7 @@ ALTER TABLE ONLY package_creation
 
 
 --
--- TOC entry 2068 (class 2606 OID 16492)
+-- TOC entry 2070 (class 2606 OID 16492)
 -- Name: package_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -596,7 +594,7 @@ ALTER TABLE ONLY package
 
 
 --
--- TOC entry 2078 (class 2606 OID 16494)
+-- TOC entry 2080 (class 2606 OID 16494)
 -- Name: plan_user_pkey; Type: CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -605,7 +603,7 @@ ALTER TABLE ONLY plan_user
 
 
 --
--- TOC entry 2066 (class 1259 OID 16495)
+-- TOC entry 2068 (class 1259 OID 16495)
 -- Name: fki_app_user_id_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -613,7 +611,7 @@ CREATE INDEX fki_app_user_id_fk ON package USING btree (user_id);
 
 
 --
--- TOC entry 2069 (class 1259 OID 16496)
+-- TOC entry 2071 (class 1259 OID 16496)
 -- Name: fki_creation_id_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -621,7 +619,7 @@ CREATE INDEX fki_creation_id_fk ON package_creation USING btree (creation_id);
 
 
 --
--- TOC entry 2081 (class 1259 OID 33129)
+-- TOC entry 2083 (class 1259 OID 33129)
 -- Name: fki_creation_id_param_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -629,7 +627,7 @@ CREATE INDEX fki_creation_id_param_fk ON creation_param USING btree (creation_id
 
 
 --
--- TOC entry 2062 (class 1259 OID 16497)
+-- TOC entry 2064 (class 1259 OID 16497)
 -- Name: fki_engine_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -637,7 +635,7 @@ CREATE INDEX fki_engine_fk ON creation USING btree (engine);
 
 
 --
--- TOC entry 2063 (class 1259 OID 16498)
+-- TOC entry 2065 (class 1259 OID 16498)
 -- Name: fki_fk_app_user_id; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -645,7 +643,7 @@ CREATE INDEX fki_fk_app_user_id ON creation USING btree (creator_id);
 
 
 --
--- TOC entry 2070 (class 1259 OID 16499)
+-- TOC entry 2072 (class 1259 OID 16499)
 -- Name: fki_package_id_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -653,7 +651,7 @@ CREATE INDEX fki_package_id_fk ON package_creation USING btree (package_id);
 
 
 --
--- TOC entry 2075 (class 1259 OID 16500)
+-- TOC entry 2077 (class 1259 OID 16500)
 -- Name: fki_plan_app_user_id_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -661,7 +659,7 @@ CREATE INDEX fki_plan_app_user_id_fk ON plan_user USING btree (user_id);
 
 
 --
--- TOC entry 2076 (class 1259 OID 16501)
+-- TOC entry 2078 (class 1259 OID 16501)
 -- Name: fki_plan_label_fk; Type: INDEX; Schema: public; Owner: wooble
 --
 
@@ -669,7 +667,7 @@ CREATE INDEX fki_plan_label_fk ON plan_user USING btree (plan_label);
 
 
 --
--- TOC entry 2090 (class 2620 OID 16504)
+-- TOC entry 2092 (class 2620 OID 16504)
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
@@ -677,7 +675,7 @@ CREATE TRIGGER update_date AFTER UPDATE OF name, email, is_creator ON app_user F
 
 
 --
--- TOC entry 2091 (class 2620 OID 16505)
+-- TOC entry 2093 (class 2620 OID 16505)
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
@@ -685,7 +683,7 @@ CREATE TRIGGER update_date AFTER UPDATE OF title, description, versions ON creat
 
 
 --
--- TOC entry 2092 (class 2620 OID 16506)
+-- TOC entry 2094 (class 2620 OID 16506)
 -- Name: update_date; Type: TRIGGER; Schema: public; Owner: wooble
 --
 
@@ -693,7 +691,7 @@ CREATE TRIGGER update_date AFTER UPDATE ON package FOR EACH ROW EXECUTE PROCEDUR
 
 
 --
--- TOC entry 2082 (class 2606 OID 16507)
+-- TOC entry 2084 (class 2606 OID 16507)
 -- Name: app_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -702,7 +700,7 @@ ALTER TABLE ONLY creation
 
 
 --
--- TOC entry 2084 (class 2606 OID 16512)
+-- TOC entry 2086 (class 2606 OID 16512)
 -- Name: app_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -711,7 +709,7 @@ ALTER TABLE ONLY package
 
 
 --
--- TOC entry 2085 (class 2606 OID 16517)
+-- TOC entry 2087 (class 2606 OID 16517)
 -- Name: creation_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -720,7 +718,7 @@ ALTER TABLE ONLY package_creation
 
 
 --
--- TOC entry 2089 (class 2606 OID 33130)
+-- TOC entry 2091 (class 2606 OID 33130)
 -- Name: creation_id_param_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -729,7 +727,7 @@ ALTER TABLE ONLY creation_param
 
 
 --
--- TOC entry 2083 (class 2606 OID 16522)
+-- TOC entry 2085 (class 2606 OID 16522)
 -- Name: engine_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -738,7 +736,7 @@ ALTER TABLE ONLY creation
 
 
 --
--- TOC entry 2086 (class 2606 OID 16527)
+-- TOC entry 2088 (class 2606 OID 16527)
 -- Name: package_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -747,7 +745,7 @@ ALTER TABLE ONLY package_creation
 
 
 --
--- TOC entry 2087 (class 2606 OID 16532)
+-- TOC entry 2089 (class 2606 OID 16532)
 -- Name: plan_app_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -756,7 +754,7 @@ ALTER TABLE ONLY plan_user
 
 
 --
--- TOC entry 2088 (class 2606 OID 16537)
+-- TOC entry 2090 (class 2606 OID 16537)
 -- Name: plan_label_fk; Type: FK CONSTRAINT; Schema: public; Owner: wooble
 --
 
@@ -765,7 +763,7 @@ ALTER TABLE ONLY plan_user
 
 
 --
--- TOC entry 2225 (class 0 OID 0)
+-- TOC entry 2227 (class 0 OID 0)
 -- Dependencies: 7
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
@@ -776,8 +774,9 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2017-06-11 13:20:05 UTC
+-- Completed on 2017-06-16 10:40:47 UTC
 
 --
 -- PostgreSQL database dump complete
 --
+
