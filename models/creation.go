@@ -119,7 +119,7 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE (c.state = 'public' OR array_length(versions, 1) > 1)
+		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
@@ -153,7 +153,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
-		WHERE (c.state = 'public' OR array_length(versions, 1) > 1)
+		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
