@@ -314,7 +314,7 @@ func SaveVersion(c *gin.Context) {
 			case engine.ErrNoConstructor:
 				c.Error(errs[0]).SetMeta(ErrBadScriptConst.SetParams("example", "constructor() { }"))
 			case engine.ErrNoDocInit:
-				c.Error(errs[0]).SetMeta(ErrBadScriptDoc.SetParams("example", "this.document = document"))
+				c.Error(errs[0]).SetMeta(ErrBadScriptDoc.SetParams("example", "this.document = document.body.attachShadow({mode: 'open'});"))
 			}
 			return
 		}
