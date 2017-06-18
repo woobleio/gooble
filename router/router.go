@@ -58,6 +58,7 @@ func Load() {
 
 		v1.GET("/creations", handler.GETCreations)
 		v1.GET("/creations/:encid", handler.GETCreations)
+		v1.GET("/creations/:encid/code", handler.GETCreationCode)
 
 		v1.Use(middleware.Authenticate())
 		{
@@ -76,7 +77,6 @@ func Load() {
 					creations.POST("", handler.POSTCreation)
 					creations.PUT("/:encid", handler.PUTCreation)
 					creations.DELETE("/:encid", handler.DELETECreation)
-					creations.GET("/:encid/code", handler.GETCreationCode)
 
 					creations.POST("/:encid/versions", handler.POSTCreationVersion)
 					creations.PUT("/:encid/versions", handler.SaveVersion)

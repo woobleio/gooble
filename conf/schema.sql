@@ -1,3 +1,9 @@
+-- CREATE TABLE creation_function
+--   creation_id integer REFERENCES creation.id PRIMARY KEY NOT NULL DELETE CASCADE
+--   version integer PRIMARY KEY NOT NULL
+--   call text PRIMARY KEY NOT NULL
+--   detail text
+
 --
 -- PostgreSQL database dump
 --
@@ -17,7 +23,7 @@ SET row_security = off;
 
 --
 -- TOC entry 1 (class 3079 OID 12361)
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
@@ -26,7 +32,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- TOC entry 2228 (class 0 OID 0)
 -- Dependencies: 1
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -779,4 +785,3 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
-

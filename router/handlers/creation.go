@@ -39,7 +39,7 @@ func GETCreations(c *gin.Context) {
 
 	s := lib.NewStorage(lib.SrcPreview)
 	if creaID != "" {
-		data, err = model.CreationByID(lib.InitID(creaID), authUserID)
+		data, err = model.CreationByID(lib.InitID(creaID), authUserID, false)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "Creation", "id", creaID))
@@ -136,7 +136,7 @@ func DELETECreation(c *gin.Context) {
 			return
 		}
 	} else {
-		crea, err := model.CreationPrivateByID(uID, creaID, "")
+		crea, err := model.CreationByID(creaID, uID, false)
 		if err != nil {
 			c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID.ValueEncoded))
 			return
@@ -167,12 +167,10 @@ func DELETECreation(c *gin.Context) {
 	c.AbortWithStatus(NoContent)
 }
 
-// GETCreationCode return private creation view
+// GETCreationCode return creation source
 func GETCreationCode(c *gin.Context) {
-	user, _ := c.Get("user")
-
 	creaID := lib.InitID(c.Param("encid"))
-	crea, err := model.CreationPrivateByID(user.(*model.User).ID, creaID, c.Query("v"))
+	crea, err := model.CreationByID(creaID, 0, c.Query("v") == "latest")
 	if err != nil {
 		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID.ValueEncoded))
 		return
@@ -200,7 +198,6 @@ func GETCreationCode(c *gin.Context) {
 	}
 
 	if crea.Script == "" {
-		// TODO put this in wooblizer lib
 		crea.Script = wbzr.WooblyJS
 	}
 
@@ -222,7 +219,7 @@ func PUTCreation(c *gin.Context) {
 
 	var crea model.Creation
 	crea.ID = lib.InitID(creaID)
-	crea.CreatorID = user.(*model.User).ID
+	crea.Creator.ID = user.(*model.User).ID
 	crea.Title = creaForm.Title
 	crea.Description = lib.InitNullString(creaForm.Description)
 	crea.ThumbPath = lib.InitNullString(creaForm.ThumbPath)
@@ -230,6 +227,7 @@ func PUTCreation(c *gin.Context) {
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias
 	crea.Params = creaForm.Params
+	crea.Functions = creaForm.Functions
 	crea.Version = uint64(creaForm.Version)
 
 	if err := model.UpdateCreation(&crea); err != nil {
@@ -260,7 +258,7 @@ func SaveVersion(c *gin.Context) {
 	}
 
 	user, _ := c.Get("user")
-	crea, err := model.CreationPrivateByID(user.(*model.User).ID, creaID, "latest")
+	crea, err := model.CreationByID(creaID, user.(*model.User).ID, true)
 	if err != nil {
 		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID))
 		return
@@ -331,7 +329,7 @@ func POSTCreationVersion(c *gin.Context) {
 	uID := user.(*model.User).ID
 
 	creaID := lib.InitID(c.Param("encid"))
-	crea, err := model.CreationPrivateByID(uID, creaID, "latest")
+	crea, err := model.CreationByID(creaID, uID, true)
 	if err != nil {
 		c.Error(err).SetMeta(ErrResNotFound.SetParams("source", "creation", "id", creaID.ValueEncoded))
 		return
@@ -339,7 +337,7 @@ func POSTCreationVersion(c *gin.Context) {
 
 	newVersion := crea.Version + 1
 
-	uIDStr := fmt.Sprintf("%d", crea.CreatorID)
+	uIDStr := fmt.Sprintf("%d", uID)
 	creaIDStr := fmt.Sprintf("%d", crea.ID.ValueDecoded)
 	storage := lib.NewStorage(lib.SrcCreations)
 	curVersionStr := fmt.Sprintf("%d", crea.Version)
