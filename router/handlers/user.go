@@ -55,7 +55,7 @@ func POSTUser(c *gin.Context) {
 	user.Email = data.Email
 	user.IsCreator = data.IsCreator
 	user.Secret = data.Secret
-	user.IsVIP = len(users) < 310
+	// user.IsVIP = len(users) < 310
 
 	uID, err := model.NewUser(&user)
 	if err != nil {
