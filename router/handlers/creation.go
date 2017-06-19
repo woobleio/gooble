@@ -221,7 +221,7 @@ func PUTCreation(c *gin.Context) {
 	crea.ID = lib.InitID(creaID)
 	crea.Creator.ID = user.(*model.User).ID
 	crea.Title = creaForm.Title
-	crea.Description = lib.InitNullString(creaForm.Description)
+	crea.Description = lib.InitNullString(strings.TrimRight(creaForm.Description, "\n"))
 	crea.ThumbPath = lib.InitNullString(creaForm.ThumbPath)
 	crea.IsThumbPreview = creaForm.IsThumbPreview
 	crea.State = creaForm.State

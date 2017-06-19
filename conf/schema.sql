@@ -1,9 +1,9 @@
--- CREATE TABLE creation_function
---   creation_id integer REFERENCES creation.id PRIMARY KEY NOT NULL DELETE CASCADE
---   version integer PRIMARY KEY NOT NULL
---   call text PRIMARY KEY NOT NULL
---   detail text
-
+-- CREATE TABLE creation_function (
+--   creation_id integer NOT NULL REFERENCES creation(id) ON DELETE CASCADE,
+--   version integer NOT NULL,
+--   call text NOT NULL,
+--   detail text,
+--   CONSTRAINT creation_function_pk PRIMARY KEY(creation_id, version, call));
 --
 -- PostgreSQL database dump
 --
