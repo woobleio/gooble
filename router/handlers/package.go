@@ -132,7 +132,7 @@ func PATCHPackage(c *gin.Context) {
 
 			var jsParams = make([]interface{}, len(creation.Params))
 			for i, p := range creation.Params {
-				jsParams[i] = engine.JSParam(p)
+				jsParams[i] = engine.JSParam(engine.JSParam{Field: p.Field, Value: p.Value})
 			}
 
 			script, errsScript := wb.Inject(src, objName, jsParams)

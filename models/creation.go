@@ -47,8 +47,9 @@ type Creation struct {
 
 // CreationParam is a creation parameter
 type CreationParam struct {
-	Field string `json:"field" db:"field"`
-	Value string `json:"value" db:"value"`
+	CreationID lib.ID `json:"-" db:"creation_id"`
+	Field      string `json:"field" db:"field"`
+	Value      string `json:"value" db:"value"`
 }
 
 // CreationFunction is a creation function
@@ -381,7 +382,13 @@ func CreationByIDAndVersion(id lib.ID, version uint64) (*Creation, error) {
 	WHERE id = $1
   AND $2 = ANY (versions)
   `
-	return crea, lib.DB.Get(crea, q, id, version)
+	if err := lib.DB.Get(crea, q, id, version); err != nil {
+		return nil, err
+	}
+
+	crea.PopulateParams()
+
+	return crea, nil
 }
 
 // CreationLastVersion gets creation's last version

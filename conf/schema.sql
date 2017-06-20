@@ -8,6 +8,15 @@
 -- PostgreSQL database dump
 --
 
+-- ALTER TABLE package_creation_id ADD COLUMN id serial NOT NULL UNIQUE
+
+-- CREATE TABLE creation_package_param (
+--   package_creation_id integer NOT NULL REFENCES package_creation(id) ON DELETE CASCADE,
+--   field text NOT NULL,
+--   value text,
+--   CONSTRAINT package_creation_param_pk PRIMARY KEY(package_creation_id, field)
+-- )
+
 -- Dumped from database version 9.5.6
 -- Dumped by pg_dump version 9.5.6
 

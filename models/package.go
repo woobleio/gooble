@@ -36,7 +36,6 @@ func (p *Package) PopulateCreations() error {
     c.creator_id,
 		CASE WHEN c.state = 'draft' THEN c.versions[0:array_length(c.versions, 1) - 1] ELSE c.versions END AS versions,
 		CASE WHEN pc.alias != '' THEN pc.alias ELSE c.alias END AS alias,
-		u.id "user.id",
 		u.name
 	FROM package_creation pc
 	INNER JOIN creation c ON (pc.creation_id = c.id)
@@ -45,12 +44,26 @@ func (p *Package) PopulateCreations() error {
 	ORDER BY c.title
 	`
 
-	if err := lib.DB.Select(&p.Creations, q, p.ID.ValueDecoded); err != nil {
+	if err := lib.DB.Select(&p.Creations, q, p.ID); err != nil {
+		return err
+	}
+
+	q = `
+	SELECT pc.creation_id, field, value FROM package_creation_param pcp
+	INNER JOIN package_creation pc ON (pcp.package_creation_id = pc.id)`
+
+	var params []CreationParam
+	if err := lib.DB.Select(&params, q); err != nil {
 		return err
 	}
 
 	for i, crea := range p.Creations {
-		crea.PopulateParams()
+		crea.Params = make([]CreationParam, 0)
+		for _, param := range params {
+			if param.CreationID == crea.ID {
+				crea.Params = append(crea.Params, param)
+			}
+		}
 		p.Creations[i] = crea
 	}
 
@@ -171,13 +184,36 @@ func UpdatePackageCreation(pkg *Package) error {
 	) AND creation_id = $6
 	`
 	_, err := lib.DB.Exec(q, pkg.UserID, pkg.ID, crea.Alias, crea.Version, enum.Draft, crea.ID)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Refresh params (in case version changed)
+	q = `DELETE FROM package_creation_param WHERE package_creation_id = (SELECT id FROM package_creation WHERE package_id = $1)`
+	lib.DB.Exec(q, pkg.ID)
+
+	return NewPackageCreationParam(pkg.ID, crea.ID, crea.Version)
 }
 
 // NewPackageCreation create a new relationship with package and creation
 func NewPackageCreation(pkgID lib.ID, creaID lib.ID, version uint64, alias string) error {
 	q := `INSERT INTO package_creation(package_id, creation_id, version, alias) VALUES ($1, $2, $3, $4)`
-	_, err := lib.DB.Exec(q, pkgID, creaID, version, alias)
+	if _, err := lib.DB.Exec(q, pkgID, creaID, version, alias); err != nil {
+		return err
+	}
+
+	return NewPackageCreationParam(pkgID, creaID, version)
+}
+
+// NewPackageCreationParam create new package creation params
+func NewPackageCreationParam(pkgID lib.ID, creaID lib.ID, version uint64) error {
+	q := `
+	INSERT INTO package_creation_param(package_creation_id, field, value)
+	SELECT pkg_c.id, p.field, p.value FROM package_creation pkg_c
+	INNER JOIN creation_param p ON (p.creation_id = pkg_c.creation_id)
+	WHERE pkg_c.creation_id = $1 AND pkg_c.package_id = $2 AND p.version = $3
+	`
+	_, err := lib.DB.Exec(q, creaID, pkgID, version)
 	return err
 }
 
