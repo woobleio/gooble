@@ -189,8 +189,8 @@ func UpdatePackageCreation(pkg *Package) error {
 	}
 
 	// Refresh params (in case version changed)
-	q = `DELETE FROM package_creation_param WHERE package_creation_id = (SELECT id FROM package_creation WHERE package_id = $1)`
-	lib.DB.Exec(q, pkg.ID)
+	q = `DELETE FROM package_creation_param WHERE package_creation_id = (SELECT id FROM package_creation WHERE package_id = $1 AND creation_id = $2)`
+	lib.DB.Exec(q, pkg.ID, crea.ID)
 
 	return NewPackageCreationParam(pkg.ID, crea.ID, crea.Version)
 }
