@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math/rand"
 	"os"
+	"time"
 
 	"wooble/lib"
 	"wooble/router"
@@ -28,5 +30,6 @@ func init() {
 }
 
 func main() {
+	rand.Seed(time.Now().UTC().UnixNano())
 	router.Load()
 }
