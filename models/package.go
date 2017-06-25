@@ -93,7 +93,7 @@ func AllPackages(opt *lib.Option, userID uint64) (*[]Package, error) {
 		return nil, err
 	}
 
-	if q.Opt.HasPopulate("creations") {
+	if q.Opt != nil && q.Opt.HasPopulate("creations") {
 		for i := range packages {
 			packages[i].PopulateCreations()
 		}

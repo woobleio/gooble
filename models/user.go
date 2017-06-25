@@ -210,6 +210,16 @@ func DeleteUser(uID uint64) error {
 // SafeDeleteUser sets deleted at to current date, meaning this user is disactivated
 func SafeDeleteUser(uID uint64) error {
 	q := `UPDATE app_user SET deleted_at = CURRENT_DATE WHERE id = $1`
+	if _, err := lib.DB.Exec(q, uID); err != nil {
+		return err
+	}
+
+	q = `DELETE FROM package WHERE user_id = $1`
+	if _, err := lib.DB.Exec(q, uID); err != nil {
+		return err
+	}
+
+	q = `UPDATE creation SET state = 'delete' WHERE creator_id = $1`
 	_, err := lib.DB.Exec(q, uID)
 	return err
 }
