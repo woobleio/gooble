@@ -420,18 +420,7 @@ func NewCreation(crea *Creation) (*Creation, error) {
 		return nil, err
 	}
 
-	buff := new(bytes.Buffer)
-	img := lib.GenImage(crea.ID.ValueDecoded)
-
-	newImage := resize.Resize(100, 0, img, resize.Lanczos3)
-	png.Encode(buff, newImage)
-
-	source := lib.SrcCreaThumb
-	storage := lib.NewStorage(source)
-	path := storage.StoreFile(buff, "image/png", fmt.Sprintf("%d", crea.CreatorID), source+crea.ID.ValueEncoded, "", "gen.png")
-
-	splPath := strings.Split(path, "/")
-	path = strings.Join(splPath[1:len(splPath)], "/")
+	_, path := crea.GenerateDefaultThumb()
 
 	q = `UPDATE creation SET thumb_path = $2 WHERE id = $1`
 	lib.DB.Exec(q, crea.ID, path)
@@ -509,6 +498,27 @@ func CreationInUse(creaID lib.ID) bool {
 		return false
 	}
 	return inUse.InUse
+}
+
+// GenerateDefaultThumb generates unique thumbnail for the creation
+// it returns the image buffer and the image path
+func (c *Creation) GenerateDefaultThumb() ([]byte, string) {
+	buff := new(bytes.Buffer)
+
+	img := resize.Resize(100, 0, lib.GenImage(c.ID.ValueDecoded), resize.Lanczos3)
+
+	png.Encode(buff, img)
+
+	pngToBytes := buff.Bytes()
+
+	source := lib.SrcCreaThumb
+	storage := lib.NewStorage(source)
+	path := storage.StoreFile(pngToBytes, "image/png", fmt.Sprintf("%d", c.CreatorID), source+c.ID.ValueEncoded, "", "gen.png")
+
+	splPath := strings.Split(path, "/")
+	path = strings.Join(splPath[1:len(splPath)], "/")
+
+	return pngToBytes, path
 }
 
 func (c *Creation) getLastVersionQuery() string {

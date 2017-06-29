@@ -119,6 +119,8 @@ func (s *Storage) StoreFile(content interface{}, contentType string, userID stri
 		var buff bytes.Buffer
 		buff.ReadFrom(content.(io.Reader))
 		contentByte = buff.Bytes()
+	case []byte:
+		contentByte = content.([]byte)
 	}
 
 	obj := &s3.PutObjectInput{

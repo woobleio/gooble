@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -112,6 +113,37 @@ func POSTCreation(c *gin.Context) {
 	c.Header("Location", fmt.Sprintf("/%s/%s", "creations", crea.ID.ValueEncoded))
 
 	c.JSON(Created, NewRes(crea))
+}
+
+// PATCHCreation patches a creation
+func PATCHCreation(c *gin.Context) {
+	var creaPatchForm form.CreationPatchForm
+	var res interface{}
+
+	if err := c.BindJSON(&creaPatchForm); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind).SetMeta(ErrBadForm)
+		return
+	}
+
+	user, _ := c.Get("user")
+
+	var crea model.Creation
+	crea.ID = lib.InitID(c.Param("encid"))
+	crea.CreatorID = user.(*model.User).ID
+
+	if creaPatchForm.Operation != nil && *creaPatchForm.Operation == "generateDefaultThumb" {
+		imgBytes, path := crea.GenerateDefaultThumb()
+		imgB64 := base64.StdEncoding.EncodeToString(imgBytes)
+		res = struct {
+			Path   string `json:"path"`
+			Base64 string `json:"base64"`
+		}{
+			path,
+			imgB64,
+		}
+	}
+
+	c.JSON(OK, NewRes(res))
 }
 
 // DELETECreation delete the creation of the authenticated user

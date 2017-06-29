@@ -76,6 +76,7 @@ func Load() {
 				{
 					creations.POST("", handler.POSTCreation)
 					creations.PUT("/:encid", handler.PUTCreation)
+					creations.PATCH("/:encid", handler.PATCHCreation)
 					creations.DELETE("/:encid", handler.DELETECreation)
 
 					creations.POST("/:encid/versions", handler.POSTCreationVersion)

@@ -18,6 +18,12 @@ type CreationForm struct {
 	Version     int                      `json:"version" validate:"omitempty"`
 }
 
+// CreationPatchForm is the form for patching creation
+type CreationPatchForm struct {
+	// Operation generateDefaultThumb
+	Operation *string `json:"operation" validate:"omitempty"`
+}
+
 // CreationCodeForm is a form for creation code
 type CreationCodeForm struct {
 	Script string                `json:"script" validate:"required"`
