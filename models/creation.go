@@ -1,21 +1,24 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
+	"image/png"
 	"strings"
 	"wooble/lib"
 	enum "wooble/models/enums"
+
+	"github.com/nfnt/resize"
 )
 
 // Creation is a Wooble object
 type Creation struct {
 	ID lib.ID `json:"id"      db:"crea.id"`
 
-	Title          string          `json:"title"  db:"title"`
-	Description    *lib.NullString `json:"description,omitempty" db:"description"`
-	ThumbPath      *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
-	IsThumbPreview bool            `json:"isThumbPreview" db:"is_thumb_preview"`
-	Creator        User            `json:"creator,omitempty" db:""`
+	Title       string          `json:"title"  db:"title"`
+	Description *lib.NullString `json:"description,omitempty" db:"description"`
+	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
+	Creator     User            `json:"creator,omitempty" db:""`
 
 	// When a creation is in draft, the very last version is ignored by most queries,
 	// thus the -1 from versions array within most queries
@@ -111,7 +114,6 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    c.title,
 			c.description,
 			c.thumb_path,
-			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-1] END AS versions,
@@ -148,7 +150,6 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    c.title,
 			c.description,
 			c.thumb_path,
-			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
@@ -180,7 +181,6 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 			COUNT(pcc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
-			c.is_thumb_preview,
 			c.created_at "crea.created_at",
 			CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.thumb_path,
@@ -210,7 +210,6 @@ func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 			COUNT(pc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
-			c.is_thumb_preview,
 			c.created_at "crea.created_at",
 			c.versions[array_length(c.versions, 1)] AS version,
 			c.versions[array_length(c.versions, 1)-1] AS versions,
@@ -240,7 +239,6 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
     c.title,
 		c.thumb_path,
 		c.description,
-		c.is_thumb_preview,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
 		CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-$3] END AS versions,
@@ -284,12 +282,12 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, is_thumb_preview = $8
+  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7
   WHERE id = $1
   AND creator_id = $2
   `
 
-	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.IsThumbPreview); err != nil {
+	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath); err != nil {
 		return err
 	}
 
@@ -418,7 +416,27 @@ func NewCreation(crea *Creation) (*Creation, error) {
 		crea.Alias = "woobly"
 	}
 
-	return crea, lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, fmt.Sprintf("%d", BaseVersion)), crea.Engine.Name, crea.State, crea.Alias).Scan(&crea.ID)
+	if err := lib.DB.QueryRow(q, crea.Title, crea.CreatorID, append(stringSliceVersions, fmt.Sprintf("%d", BaseVersion)), crea.Engine.Name, crea.State, crea.Alias).Scan(&crea.ID); err != nil {
+		return nil, err
+	}
+
+	buff := new(bytes.Buffer)
+	img := lib.GenImage(crea.ID.ValueDecoded)
+
+	newImage := resize.Resize(100, 0, img, resize.Lanczos3)
+	png.Encode(buff, newImage)
+
+	source := lib.SrcCreaThumb
+	storage := lib.NewStorage(source)
+	path := storage.StoreFile(buff, "image/png", fmt.Sprintf("%d", crea.CreatorID), source+crea.ID.ValueEncoded, "", "gen.png")
+
+	splPath := strings.Split(path, "/")
+	path = strings.Join(splPath[1:len(splPath)], "/")
+
+	q = `UPDATE creation SET thumb_path = $2 WHERE id = $1`
+	lib.DB.Exec(q, crea.ID, path)
+
+	return crea, nil
 }
 
 // CopyCreationParamsAndFunctions copie creation parameters and functions from current version to a new version

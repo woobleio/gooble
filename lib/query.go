@@ -41,7 +41,7 @@ func (q *Query) SetFilters(filters ...string) {
 				q.Q += " AND ("
 				for _, searchFilter := range searchFilters {
 					q.Values = append(q.Values, "%"+filter.Value+"%")
-					q.Q += "LOWER(" + searchFilter + ") LIKE $" + fmt.Sprintf("%d", len(q.Values)) + " OR "
+					q.Q += "LOWER(" + searchFilter + ") LIKE LOWER($" + fmt.Sprintf("%d", len(q.Values)) + ") OR "
 				}
 				q.Q = q.Q[0 : len(q.Q)-4] // Remove last 'OR'
 				q.Q += ")"
