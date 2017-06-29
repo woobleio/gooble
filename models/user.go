@@ -355,7 +355,13 @@ func ActivateUser(email string, token string) error {
 	}
 
 	q := `UPDATE app_user SET is_active = TRUE WHERE email = $1`
+	if _, err = lib.DB.Exec(q, email); err != nil {
+		return err
+	}
+
+	q = `INSERT INTO package(title, user_id, referer, nb_build) SELECT 'Super Package' AS title, id, '' AS referer, 0 AS nb_build FROM app_user WHERE email = $1`
 	_, err = lib.DB.Exec(q, email)
+
 	return err
 }
 
