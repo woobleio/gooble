@@ -93,7 +93,7 @@ func (js *JS) IncludeHTMLCSS(srcHTML string, srcCSS string) error {
 	// Insert target parameter in the object constructor
 	js.Src = string(append(srcToBytes[:index], append([]byte("_t_"+coma), srcToBytes[index:]...)...))
 
-	jsw.affectVar(sRootVar, "document.querySelector(_t_).attachShadow({mode:'open'})")
+	jsw.affectVar(sRootVar, "_t_.attachShadow({mode:'open'})")
 	if srcHTML != "" {
 		doc.ReadAndExecute(jsw.buildNode, 0)
 	}
