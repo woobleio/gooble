@@ -509,28 +509,22 @@
 			"revisionTime": "2016-04-27T18:05:39Z"
 		},
 		{
-			"checksumSHA1": "L3YyiuhowX/qKqgzj/7kkMZCgFo=",
+			"checksumSHA1": "NUHCJm8FjV4rAmxHb2NkGpmV4ak=",
 			"path": "github.com/woobleio/wooblizer",
-			"revision": "dfcb330cf44522adc169a4589d2436af392bbd36",
-			"revisionTime": "2017-10-04T14:11:44Z"
+			"revision": "e0360a4b9654f626a4726d409a7229c9c334d35a",
+			"revisionTime": "2017-10-31T22:11:39Z"
 		},
 		{
-			"checksumSHA1": "QYS+KPEbTATwALftyPJ9tX35xzY=",
-			"path": "github.com/woobleio/wooblizer/wbzr",
-			"revision": "dfcb330cf44522adc169a4589d2436af392bbd36",
-			"revisionTime": "2017-10-04T14:11:44Z"
+			"checksumSHA1": "VhIRKxOBvBEPNiA9GVbW/IUfv4E=",
+			"path": "github.com/woobleio/wooblizer/engine",
+			"revision": "e0360a4b9654f626a4726d409a7229c9c334d35a",
+			"revisionTime": "2017-10-31T22:11:39Z"
 		},
 		{
-			"checksumSHA1": "xVeHA8eZJy8M8HYUoZFDEWpaIrU=",
-			"path": "github.com/woobleio/wooblizer/wbzr/engine",
-			"revision": "dfcb330cf44522adc169a4589d2436af392bbd36",
-			"revisionTime": "2017-10-04T14:11:44Z"
-		},
-		{
-			"checksumSHA1": "zSSoxQj0g60RvSQDhsFll/7xKAg=",
-			"path": "github.com/woobleio/wooblizer/wbzr/engine/doc",
-			"revision": "dfcb330cf44522adc169a4589d2436af392bbd36",
-			"revisionTime": "2017-10-04T14:11:44Z"
+			"checksumSHA1": "g333ZwF6KR94zTVAtbjWUgnysrQ=",
+			"path": "github.com/woobleio/wooblizer/engine/doc",
+			"revision": "e0360a4b9654f626a4726d409a7229c9c334d35a",
+			"revisionTime": "2017-10-31T22:11:39Z"
 		},
 		{
 			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",

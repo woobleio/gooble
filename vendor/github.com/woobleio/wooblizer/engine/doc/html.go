@@ -3,18 +3,21 @@ package doc
 import (
 	"regexp"
 
-	h "golang.org/x/net/html"
 	"strings"
+
+	h "golang.org/x/net/html"
 )
 
-type html struct {
+// HTML is struct for HTML parse
+type HTML struct {
 	doc     *h.Node
 	curNode *h.Node
 }
 
 var exclNodes []interface{}
 
-func NewHTML(doc string) (*html, error) {
+// NewHTML creates a new HTML parser
+func NewHTML(doc string) (*HTML, error) {
 	r := strings.NewReader(doc)
 	node, err := h.Parse(r)
 	if err != nil {
@@ -23,14 +26,16 @@ func NewHTML(doc string) (*html, error) {
 
 	addExcludedNodes("body", "html", "head", h.DoctypeNode, h.ErrorNode, h.DocumentNode, h.CommentNode)
 
-	return &html{
+	return &HTML{
 		node,
 		node,
 	}, nil
 }
 
-// pIndex is parent node index in the tree (excluded and invalid nodes are not indexed)
-func (html *html) ReadAndExecute(fn func(*h.Node, int) int, pIndex int) {
+// ReadAndExecute is a recursive function that takes a callback function as parameters.
+// It parses the HTML source code and execute a callback function with the current node.
+// It's a Depth-first Search algorithm
+func (html *HTML) ReadAndExecute(fn func(*h.Node, int) int, pIndex int) {
 	n := html.curNode
 
 	// Fixes html string format, avoid " " text nodes, for insecable space use &nbsp;
@@ -48,6 +53,7 @@ func (html *html) ReadAndExecute(fn func(*h.Node, int) int, pIndex int) {
 	}
 }
 
+// addExcludedNodes add nodes to be excluded from the parser
 func addExcludedNodes(nodes ...interface{}) {
 	for _, n := range nodes {
 		exclNodes = append(exclNodes, n)

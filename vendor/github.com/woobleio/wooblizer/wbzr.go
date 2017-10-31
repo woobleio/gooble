@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"text/template"
 
-	"github.com/woobleio/wooblizer/wbzr/engine"
+	"github.com/woobleio/wooblizer/engine"
 )
 
 // ScriptLang are constants for implemented script languages.
@@ -106,7 +106,7 @@ func (wb *Wbzr) SecureAndWrap(domains ...string) (*bytes.Buffer, error) {
 	return wb.Wrap()
 }
 
-// Wrap packages some woobles (all the woobles injected in the Wbzr)
+// Wrap packages some creations (all the creations injected in the Wbzr)
 // and build a file which contains the wooble library.
 func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
 	fns := template.FuncMap{
@@ -144,6 +144,7 @@ var WooblyJS = `class Woobly {
 	 */
 }`
 
+// Wooble API for JS ES2015
 var wbJS = `
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
