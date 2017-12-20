@@ -1,9 +1,5 @@
 {
 	"comment": "",
-	"heroku": {
-		"install": ["./..."],
-		"goVersion": "go1.8"
-	},
 	"ignore": "test",
 	"package": [
 		{
@@ -351,48 +347,6 @@
 			"revisionTime": "2017-03-02T17:43:01Z"
 		},
 		{
-			"checksumSHA1": "5uqO4ITTDMklKi3uNaE/D9LQ5nM=",
-			"path": "github.com/robertkrimen/otto",
-			"revision": "1861f2408b93febb6dca3e39483fa6fe63d6e70f",
-			"revisionTime": "2017-03-08T08:57:57Z"
-		},
-		{
-			"checksumSHA1": "qgziiO3/QDVJMKw2nGrUbC8QldY=",
-			"path": "github.com/robertkrimen/otto/ast",
-			"revision": "1861f2408b93febb6dca3e39483fa6fe63d6e70f",
-			"revisionTime": "2017-03-08T08:57:57Z"
-		},
-		{
-			"checksumSHA1": "L0KsB2EzTlPgv0iae3q3SukNW7U=",
-			"path": "github.com/robertkrimen/otto/dbg",
-			"revision": "1861f2408b93febb6dca3e39483fa6fe63d6e70f",
-			"revisionTime": "2017-03-08T08:57:57Z"
-		},
-		{
-			"checksumSHA1": "euDLJKhw4doeTSxjEoezjxYXLzs=",
-			"path": "github.com/robertkrimen/otto/file",
-			"revision": "1861f2408b93febb6dca3e39483fa6fe63d6e70f",
-			"revisionTime": "2017-03-08T08:57:57Z"
-		},
-		{
-			"checksumSHA1": "LLuLITFO8chqSG0+APJIy5NtOHU=",
-			"path": "github.com/robertkrimen/otto/parser",
-			"revision": "1861f2408b93febb6dca3e39483fa6fe63d6e70f",
-			"revisionTime": "2017-03-08T08:57:57Z"
-		},
-		{
-			"checksumSHA1": "7J/7NaYRqKhBvZ+dTIutsEoEgFw=",
-			"path": "github.com/robertkrimen/otto/registry",
-			"revision": "1861f2408b93febb6dca3e39483fa6fe63d6e70f",
-			"revisionTime": "2017-03-08T08:57:57Z"
-		},
-		{
-			"checksumSHA1": "/jMXYuXycBpTqWhRyJ2xsqvHvQI=",
-			"path": "github.com/robertkrimen/otto/token",
-			"revision": "1861f2408b93febb6dca3e39483fa6fe63d6e70f",
-			"revisionTime": "2017-03-08T08:57:57Z"
-		},
-		{
 			"checksumSHA1": "Y9fXuEUOqrRTLMr+kl4UPUqhWC4=",
 			"path": "github.com/speps/go-hashids",
 			"revision": "4edc50732619c2510e5edee5a846e4c1417390fd",
@@ -513,8 +467,14 @@
 			"revisionTime": "2016-04-27T18:05:39Z"
 		},
 		{
-			"checksumSHA1": "ZwjsYYpDjclRbOPSQSP0BsvSXx8=",
+			"checksumSHA1": "AKknUrl8fsDonmb4cnsesQFP/nQ=",
 			"path": "github.com/woobleio/wooblizer",
+			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
+			"revisionTime": "2017-11-08T23:31:54Z"
+		},
+		{
+			"checksumSHA1": "GL5zFUepBEH5MV7Au4bEuis/YfY=",
+			"path": "github.com/woobleio/wooblizer/apis",
 			"revision": "3212b39f58e9c727d366545df66845d876dfda35",
 			"revisionTime": "2017-11-08T23:34:28Z",
 			"tree": true
@@ -530,6 +490,11 @@
 			"path": "github.com/woobleio/wooblizer/engine/doc",
 			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
 			"revisionTime": "2017-11-08T23:31:54Z"
+		},
+		{
+			"path": "github.com/woobleio/wooblizer/wbzr",
+			"revision": "",
+			"tree": true
 		},
 		{
 			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
@@ -602,18 +567,6 @@
 			"path": "gopkg.in/gomail.v2",
 			"revision": "81ebce5c23dfd25c6c67194b37d3dd3f338c98b1",
 			"revisionTime": "2016-04-11T21:29:32Z"
-		},
-		{
-			"checksumSHA1": "4BwmmgQUhWtizsR2soXND0nqZ1I=",
-			"path": "gopkg.in/sourcemap.v1",
-			"revision": "6e83acea0053641eff084973fee085f0c193c61a",
-			"revisionTime": "2017-02-13T14:20:43Z"
-		},
-		{
-			"checksumSHA1": "GDXPA04g0Dfwu2w++JiOKkYuZEc=",
-			"path": "gopkg.in/sourcemap.v1/base64vlq",
-			"revision": "6e83acea0053641eff084973fee085f0c193c61a",
-			"revisionTime": "2017-02-13T14:20:43Z"
 		},
 		{
 			"checksumSHA1": "0KwOlQV1dNUh9X8t+5s7nX5bqfk=",
