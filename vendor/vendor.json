@@ -1,9 +1,9 @@
 {
 	"comment": "",
-	"ignore": "test",
 	"heroku": {
 		"goVersion": "go1.8"
 	},
+	"ignore": "test",
 	"package": [
 		{
 			"checksumSHA1": "FN20dHo+g6B2zQC/ETGW/J+RNxw=",
@@ -512,22 +512,22 @@
 			"revisionTime": "2016-04-27T18:05:39Z"
 		},
 		{
-			"checksumSHA1": "NUHCJm8FjV4rAmxHb2NkGpmV4ak=",
+			"checksumSHA1": "AKknUrl8fsDonmb4cnsesQFP/nQ=",
 			"path": "github.com/woobleio/wooblizer",
-			"revision": "e0360a4b9654f626a4726d409a7229c9c334d35a",
-			"revisionTime": "2017-10-31T22:11:39Z"
+			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
+			"revisionTime": "2017-11-08T23:31:54Z"
 		},
 		{
 			"checksumSHA1": "VhIRKxOBvBEPNiA9GVbW/IUfv4E=",
 			"path": "github.com/woobleio/wooblizer/engine",
-			"revision": "e0360a4b9654f626a4726d409a7229c9c334d35a",
-			"revisionTime": "2017-10-31T22:11:39Z"
+			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
+			"revisionTime": "2017-11-08T23:31:54Z"
 		},
 		{
 			"checksumSHA1": "g333ZwF6KR94zTVAtbjWUgnysrQ=",
 			"path": "github.com/woobleio/wooblizer/engine/doc",
-			"revision": "e0360a4b9654f626a4726d409a7229c9c334d35a",
-			"revisionTime": "2017-10-31T22:11:39Z"
+			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
+			"revisionTime": "2017-11-08T23:31:54Z"
 		},
 		{
 			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
