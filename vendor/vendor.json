@@ -1,13 +1,9 @@
 {
 	"comment": "",
-	"ignore": "test",
 	"heroku": {
-		"goVersion": "go1.8",
-		"sync": "false",
-		"install": [
-			"github.com/woobleio/wooblizer/apis"
-		]
+		"goVersion": "go1.8"
 	},
+	"ignore": "test",
 	"package": [
 		{
 			"checksumSHA1": "FN20dHo+g6B2zQC/ETGW/J+RNxw=",
@@ -478,6 +474,13 @@
 			"path": "github.com/woobleio/wooblizer",
 			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
 			"revisionTime": "2017-11-08T23:31:54Z"
+		},
+		{
+			"checksumSHA1": "GL5zFUepBEH5MV7Au4bEuis/YfY=",
+			"path": "github.com/woobleio/wooblizer/apis",
+			"revision": "3212b39f58e9c727d366545df66845d876dfda35",
+			"revisionTime": "2017-11-08T23:34:28Z",
+			"tree": true
 		},
 		{
 			"checksumSHA1": "VhIRKxOBvBEPNiA9GVbW/IUfv4E=",
