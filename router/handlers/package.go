@@ -13,8 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
-	"github.com/woobleio/wooblizer/wbzr"
-	"github.com/woobleio/wooblizer/wbzr/engine"
+	"github.com/woobleio/wooblizer"
+	"github.com/woobleio/wooblizer/engine"
 )
 
 // GETPackages is a handler that returns one or more packages

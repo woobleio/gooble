@@ -8,7 +8,7 @@ import (
 
 	h "golang.org/x/net/html"
 
-	"github.com/woobleio/wooblizer/wbzr/engine/doc"
+	"github.com/woobleio/wooblizer/engine/doc"
 )
 
 // JS Object
@@ -32,7 +32,10 @@ const (
 	classRegex       string = `var Woobly[ ]?=`
 )
 
-// NewJS initializes a JS and returns errors if the class isn't in the standard
+// NewJS initializes a native JS ES2015 creation
+// name: creation's name
+// src: source code
+// params: creation's parameters
 func NewJS(name string, src string, params []JSParam) (*JS, []error) {
 	js := &JS{
 		Name:   name,
@@ -144,11 +147,18 @@ func sanitizeString(src string) string {
 	return rpcer.Replace(src)
 }
 
+// jsWriter is a syntactic sugar for writing JS using a buffer
 type jsWriter struct {
-	bf      bytes.Buffer
+	bf bytes.Buffer
+
+	// Genesis variable
 	baseVar string
-	cVar    string
-	vars    []string
+
+	// Last used JavaScript variable
+	cVar string
+
+	// All created variables
+	vars []string
 }
 
 func newJsWriter(baseVar string) *jsWriter {
@@ -162,6 +172,11 @@ func newJsWriter(baseVar string) *jsWriter {
 	}
 }
 
+// | Example |
+// context: this
+// attrName: foo
+// expr: 1
+// => this.foo = 1;
 func (jsw *jsWriter) affectAttr(context string, attrName string, expr string) {
 	jsw.bf.WriteString(context)
 	jsw.bf.WriteRune('.')
@@ -171,6 +186,10 @@ func (jsw *jsWriter) affectAttr(context string, attrName string, expr string) {
 	jsw.endExpr()
 }
 
+// | Example |
+// varName: foo
+// expr: 'hello'
+// => var foo = 'hello';
 func (jsw *jsWriter) affectVar(varName string, expr string) {
 	if len(varName) == 0 {
 		varName = jsw.cVar
@@ -184,6 +203,10 @@ func (jsw *jsWriter) affectVar(varName string, expr string) {
 	}
 }
 
+// | Example |
+// to: document
+// toAppend: textNode
+// => document.appendChild(textNode);
 func (jsw *jsWriter) appendChild(to string, toAppend string) {
 	if len(toAppend) == 0 {
 		toAppend = jsw.cVar
@@ -195,6 +218,8 @@ func (jsw *jsWriter) appendChild(to string, toAppend string) {
 	jsw.endExpr()
 }
 
+// buildNode create a node element or a text node depending on the type, and
+// affects it to a generated variable
 func (jsw *jsWriter) buildNode(node *h.Node, pIndex int) int {
 	jsw.genUniqueVar()
 	jsw.affectVar("", "")
@@ -215,6 +240,9 @@ func (jsw *jsWriter) buildNode(node *h.Node, pIndex int) int {
 	return len(jsw.vars) - 1
 }
 
+// | Example |
+// el: div
+// => document.createElement('div');
 func (jsw *jsWriter) createElement(el string) {
 	jsw.bf.WriteString("document.createElement('")
 	jsw.bf.WriteString(el)
@@ -222,6 +250,9 @@ func (jsw *jsWriter) createElement(el string) {
 	jsw.endExpr()
 }
 
+// | Example |
+// text: 'hello world'
+// => document.createTextNode('hello world');
 func (jsw *jsWriter) createTextNode(text string) {
 	jsw.bf.WriteString("document.createTextNode('")
 	jsw.bf.WriteString(text)
@@ -233,6 +264,7 @@ func (jsw *jsWriter) endExpr() {
 	jsw.bf.WriteRune(';')
 }
 
+// genUniqueVar generates a deterministic unique variable name within the jsWriter instance
 func (jsw *jsWriter) genUniqueVar() {
 	baseNames := [26]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
 	tLength := len(jsw.vars)
@@ -248,6 +280,8 @@ func (jsw *jsWriter) genUniqueVar() {
 	jsw.cVar = "__" + jsw.vars[len(jsw.vars)-1]
 }
 
+// setAttributes adds attributes to nodes with the JavaScript prototype "setAttribute"
+// ex : divNode.setAttribute('class', 'foobar');
 func (jsw *jsWriter) setAttributes(attrs []h.Attribute) {
 	var attrKey string
 	for _, attr := range attrs {
