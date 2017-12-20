@@ -36,6 +36,9 @@ type Creation struct {
 	PreviewURL string             `json:"previewUrl,omitempty"`
 	Version    uint64             `json:"version,omitempty"`
 
+	PreviewPos       PreviewPosition   `json:"previewPosition" db:""`
+	PreviewPositions []PreviewPosition `json:"previewPositions,omitempty" db:""`
+
 	Script       string `json:"script,omitempty"`
 	ParsedScript string `json:"parsedScript,omitempty"`
 	Document     string `json:"document,omitempty"`
@@ -61,6 +64,12 @@ type CreationFunction struct {
 	Detail string `json:"detail" db:"detail"`
 }
 
+// PreviewPosition is the creation position in the preview
+type PreviewPosition struct {
+	Position    string `json:"position" db:"position_id"`
+	StyleSource string `json:"styleSource" db:"style_source"`
+}
+
 // BaseVersion is creation default version
 const BaseVersion uint64 = 1
 
@@ -80,6 +89,12 @@ func (c *Creation) PopulateParams() {
 func (c *Creation) PopulateFunctions() {
 	q := `SELECT call, detail FROM creation_function WHERE creation_id = $1 AND version ` + c.getLastVersionQuery()
 	lib.DB.Select(&c.Functions, q, c.ID, c.Version)
+}
+
+// PopulatePreviewPositions populates available creation's preview positions
+func (c *Creation) PopulatePreviewPositions() {
+	q := `SELECT position_id, style_source FROM preview_position`
+	lib.DB.Select(&c.PreviewPositions, q)
 }
 
 // RetrieveSourceCode request the source files in the cloud and set the content to the Creation
@@ -248,12 +263,15 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 		e.name "eng.name",
 		e.extension,
 		e.content_type,
+		pp.position_id,
+		pp.style_source,
     u.id "user.id",
     u.name,
 		u.pic_path
   FROM creation c
   INNER JOIN app_user u ON (c.creator_id = u.id)
 	INNER JOIN engine e ON (c.engine=e.name)
+	INNER JOIN preview_position pp ON (c.preview_position_id=pp.position_id)
   WHERE c.id = $1
 	`
 
@@ -275,6 +293,7 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 
 	crea.PopulateParams()
 	crea.PopulateFunctions()
+	crea.PopulatePreviewPositions()
 	return &crea, nil
 }
 
@@ -282,12 +301,12 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7
+  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, preview_position_id = $8
   WHERE id = $1
   AND creator_id = $2
   `
 
-	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath); err != nil {
+	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.PreviewPos.Position); err != nil {
 		return err
 	}
 
@@ -301,6 +320,20 @@ func UpdateCreation(crea *Creation) error {
 		return UpdateCreationFunctions(crea)
 	}
 	return nil
+}
+
+// UpdateCreationPatch updates a creation
+func UpdateCreationPatch(uID uint64, creaID lib.ID, patch lib.SQLPatch) error {
+	q := patch.GetUpdateQuery("creation") +
+		` WHERE creator_id = $` + fmt.Sprintf("%d", patch.Index+1) +
+		` AND id = $` + fmt.Sprintf("%d", patch.Index+2)
+
+	patch.Args = append(patch.Args, uID)
+	patch.Args = append(patch.Args, creaID)
+
+	_, err := lib.DB.Exec(q, patch.Args...)
+
+	return err
 }
 
 // UpdateCreationFunctions updates creation functions

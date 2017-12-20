@@ -143,6 +143,11 @@ func PATCHCreation(c *gin.Context) {
 		}
 	}
 
+	if err := model.UpdateCreationPatch(user.(*model.User).ID, crea.ID, lib.SQLPatches(creaPatchForm)); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
+	}
+
 	c.JSON(OK, NewRes(res))
 }
 
@@ -249,6 +254,7 @@ func PUTCreation(c *gin.Context) {
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias
 	crea.Params = creaForm.Params
+	crea.PreviewPos = creaForm.PreviewPos
 	crea.Functions = creaForm.Functions
 	crea.Version = uint64(creaForm.Version)
 
@@ -261,7 +267,8 @@ func PUTCreation(c *gin.Context) {
 	if err := crea.RetrieveSourceCode(version, enum.Script, enum.Document, enum.Style); err != nil {
 		c.Error(err)
 	}
-	buildPreview(&crea, fmt.Sprintf("%d", crea.CreatorID), version)
+
+	buildPreview(&crea, fmt.Sprintf("%d", user.(*model.User).ID), version)
 
 	c.Header("Location", fmt.Sprintf("/creations/%s", creaID))
 
@@ -318,8 +325,6 @@ func SaveVersion(c *gin.Context) {
 	crea.Params = codeForm.Params
 
 	model.UpdateCreationParams(crea)
-
-	buildPreview(crea, userIDStr, version)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
@@ -405,7 +410,7 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 				s.appendChild(a);
 				new Woobly({` + params + `});}
 			</script>
-			<style>html, body { height: 100%; width: 100%; margin: 0; }</style>
+			<style>html {height: 100%; width: 100%; margin: 0;} body {margin: 0;} ` + crea.PreviewPos.StyleSource + `</style>
 		</head>
 		<body>
 		</body>
