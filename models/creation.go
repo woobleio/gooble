@@ -324,7 +324,11 @@ func UpdateCreation(crea *Creation) error {
 
 // UpdateCreationPatch updates a creation
 func UpdateCreationPatch(uID uint64, creaID lib.ID, patch lib.SQLPatch) error {
-	q := patch.GetUpdateQuery("creation") +
+	updateQuery := patch.GetUpdateQuery("creation")
+	if len(updateQuery) == 0 {
+		return nil
+	}
+	q := updateQuery +
 		` WHERE creator_id = $` + fmt.Sprintf("%d", patch.Index+1) +
 		` AND id = $` + fmt.Sprintf("%d", patch.Index+2)
 

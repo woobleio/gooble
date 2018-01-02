@@ -4,6 +4,7 @@ package wbzr
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"text/template"
 
@@ -24,15 +25,17 @@ type Wbzr struct {
 	Scripts    []engine.Script
 
 	lang     ScriptLang
-	skeleton string
+	apiPath  string
+	filename string
 }
 
 // New takes a script language which is used to inject and output a file.
 func New(sl ScriptLang) *Wbzr {
-	var skeleton string
+	apiPath := "./apis/%s"
+	var filename string
 	switch sl {
 	case JS:
-		skeleton = wbJS
+		filename = "js2015.js"
 	default:
 		panic("Language not supported")
 	}
@@ -41,7 +44,8 @@ func New(sl ScriptLang) *Wbzr {
 		nil,
 		make([]engine.Script, 0),
 		sl,
-		skeleton,
+		apiPath,
+		filename,
 	}
 }
 
@@ -115,7 +119,7 @@ func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
 		},
 	}
 
-	tmpl := template.Must(template.New("wbJS").Funcs(fns).Parse(wbJS))
+	tmpl := template.Must(template.New(wb.filename).Funcs(fns).ParseFiles(fmt.Sprintf(wb.apiPath, wb.filename)))
 
 	var out bytes.Buffer
 	if err := tmpl.Execute(&out, wb); err != nil {
@@ -125,7 +129,7 @@ func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
 	return &out, nil
 }
 
-// WooblyJS is a Wooble creation template for JS
+// WooblyJS is a Wooble base code for creation
 var WooblyJS = `class Woobly {
 
 	constructor(params) {
@@ -143,81 +147,3 @@ var WooblyJS = `class Woobly {
 	 * You can create all methods you need
 	 */
 }`
-
-// Wooble API for JS ES2015
-var wbJS = `
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function Wb(id) {
-	{{if .DomainsSec}}
-	{{$lenDoms := len .DomainsSec}}
-	var ah = [{{range $i, $o := .DomainsSec}}"{{$o}}"{{if ne (plus1 $i) $lenDoms}},{{end}}{{end}}];
-  var xx = ah.indexOf(window.location.hostname);
-  if(ah.indexOf(window.location.hostname) == -1) {
-  	console.log("Wooble error : domain restricted");
-    return;
-  }
-	{{end}}
-
-	if(window === this) {
-  	return new Wb(id);
-  }
-
-  var cs = {
-		{{$lenScripts := len .Scripts}}
-  	{{range $i, $o := .Scripts}}
-			"{{$o.GetName}}":{{$o.GetSource}},
-			"__{{$o.GetName}}":{
-			{{$lenParams := len $o.Params}}
-			{{range $i, $p := $o.Params}}
-				"{{$p.Field}}":{{$p.Value}}{{if ne (plus1 $i) $lenParams}},{{end}}
-			{{end}}
-			}{{if ne (plus1 $i) $lenScripts}},{{end}}
-		{{end}}
-  }
-
-  var c = cs[id];
-  if(typeof c == 'undefined') {
-  	console.log("Wooble error : creation", id, "not found");
-    return undefined;
-  }
-
-  this.init = function (tar, p) {
-    if(document.querySelector(tar) == null) {
-    	console.log("Wooble error : Element", tar, "not found in the document");
-      return;
-    }
-
-		if (p) {
-			var _ = cs['__'+id];
-			for (prop in p) {
-				if (_.hasOwnProperty(prop)) _[prop] = p[prop];
-			}
-			p = _;
-		} else p = cs['__'+id];
-
-		var t = this;
-		var _cs = [];
-    return new Promise(function(r, e) {
-      if (!document.head.attachShadow) {
-        // Browsers shadow dom support with polyfill
-        var s = document.createElement('script');
-        s.type = 'text/javascript';
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.14/webcomponents-sd-ce.js';
-        document.getElementsByTagName('head')[0].appendChild(s);
-        s.onload = function() {
-					for (var d of document.querySelectorAll(tar)) _cs.push(new c(d,p));
-          r(_cs);
-        }
-      } else {
-				for (var d of document.querySelectorAll(tar)) _cs.push(new c(d,p));
-        r(_cs);
-      }
-    });
-  }
-
-  return this;
-}
-`
