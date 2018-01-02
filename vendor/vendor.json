@@ -509,10 +509,11 @@
 			"revisionTime": "2016-04-27T18:05:39Z"
 		},
 		{
-			"checksumSHA1": "NUHCJm8FjV4rAmxHb2NkGpmV4ak=",
+			"checksumSHA1": "ZwjsYYpDjclRbOPSQSP0BsvSXx8=",
 			"path": "github.com/woobleio/wooblizer",
-			"revision": "e0360a4b9654f626a4726d409a7229c9c334d35a",
-			"revisionTime": "2017-10-31T22:11:39Z"
+			"revision": "3212b39f58e9c727d366545df66845d876dfda35",
+			"revisionTime": "2017-11-08T23:34:28Z",
+			"tree": true
 		},
 		{
 			"checksumSHA1": "VhIRKxOBvBEPNiA9GVbW/IUfv4E=",
