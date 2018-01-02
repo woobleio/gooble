@@ -470,19 +470,8 @@
 			"revisionTime": "2016-04-27T18:05:39Z"
 		},
 		{
-<<<<<<< HEAD
 			"checksumSHA1": "ZwjsYYpDjclRbOPSQSP0BsvSXx8=",
 			"path": "github.com/woobleio/wooblizer",
-=======
-			"checksumSHA1": "AKknUrl8fsDonmb4cnsesQFP/nQ=",
-			"path": "github.com/woobleio/wooblizer",
-			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
-			"revisionTime": "2017-11-08T23:31:54Z"
-		},
-		{
-			"checksumSHA1": "GL5zFUepBEH5MV7Au4bEuis/YfY=",
-			"path": "github.com/woobleio/wooblizer/apis",
->>>>>>> 6f78c56434044e596c5915f04897a324d6bf23fe
 			"revision": "3212b39f58e9c727d366545df66845d876dfda35",
 			"revisionTime": "2017-11-08T23:34:28Z",
 			"tree": true
