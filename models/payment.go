@@ -35,7 +35,7 @@ func CaptureCharge(chargeID string) (*stripe.Charge, error) {
 // RegisterBank links a bank account to a customer
 func RegisterBank(email string, token string) (*stripe.Account, error) {
 	accParams := &stripe.AccountParams{
-		Managed: true,
+		Type:    stipe.AccountTypeCustom,
 		Country: "FR",
 		Email:   email,
 	}
