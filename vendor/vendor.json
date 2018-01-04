@@ -477,18 +477,6 @@
 			"tree": true
 		},
 		{
-			"checksumSHA1": "VhIRKxOBvBEPNiA9GVbW/IUfv4E=",
-			"path": "github.com/woobleio/wooblizer/engine",
-			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
-			"revisionTime": "2017-11-08T23:31:54Z"
-		},
-		{
-			"checksumSHA1": "g333ZwF6KR94zTVAtbjWUgnysrQ=",
-			"path": "github.com/woobleio/wooblizer/engine/doc",
-			"revision": "6c083482634a44e11d3dee03a6988d255da46cd5",
-			"revisionTime": "2017-11-08T23:31:54Z"
-		},
-		{
 			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
 			"path": "golang.org/x/crypto/pbkdf2",
 			"revision": "728b753d0135da6801d45a38e6f43ff55779c5c2",
