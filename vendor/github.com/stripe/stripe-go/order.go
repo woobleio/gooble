@@ -8,54 +8,55 @@ import (
 type OrderStatus string
 
 const (
-	StatusCreated   OrderStatus = "created"
-	StatusPaid      OrderStatus = "paid"
 	StatusCanceled  OrderStatus = "canceled"
+	StatusCreated   OrderStatus = "created"
 	StatusFulfilled OrderStatus = "fulfilled"
+	StatusPaid      OrderStatus = "paid"
 	StatusReturned  OrderStatus = "returned"
 )
 
 type OrderParams struct {
-	Params
-	Currency Currency
-	Customer string
-	Email    string
-	Items    []*OrderItemParams
-	Shipping *ShippingParams
+	Params   `form:"*"`
+	Coupon   string             `form:"coupon"`
+	Currency Currency           `form:"currency"`
+	Customer string             `form:"customer"`
+	Email    string             `form:"email"`
+	Items    []*OrderItemParams `form:"items,indexed"`
+	Shipping *ShippingParams    `form:"shipping"`
 }
 
 type ShippingParams struct {
-	Name    string
-	Address *AddressParams
-	Phone   string
+	Address *AddressParams `form:"address"`
+	Name    string         `form:"name"`
+	Phone   string         `form:"phone"`
 }
 
 type OrderUpdateParams struct {
-	Params
-	Coupon                 string
-	SelectedShippingMethod string
-	Status                 OrderStatus
+	Params                 `form:"*"`
+	Coupon                 string      `form:"coupon"`
+	SelectedShippingMethod string      `form:"selected_shipping_method"`
+	Status                 OrderStatus `form:"status"`
 }
 
 // OrderReturnParams is the set of parameters that can be used when returning
 // orders. For more details, see: https://stripe.com/docs/api#return_order.
 type OrderReturnParams struct {
-	Params
-	Items []*OrderItemParams
+	Params `form:"*"`
+	Items  []*OrderItemParams `form:"items,indexed"`
 }
 
 type Shipping struct {
-	Name    string  `json:"name"`
 	Address Address `json:"address"`
+	Name    string  `json:"name"`
 	Phone   string  `json:"phone"`
 }
 
 type ShippingMethod struct {
-	ID               string            `json:"id"`
 	Amount           int64             `json:"amount"`
+	ID               string            `json:"id"`
 	Currency         Currency          `json:"currency"`
-	Description      string            `json:"description"`
 	DeliveryEstimate *DeliveryEstimate `json:"delivery_estimate"`
+	Description      string            `json:"description"`
 }
 
 type EstimateType string
@@ -75,7 +76,6 @@ type DeliveryEstimate struct {
 }
 
 type Order struct {
-	ID                     string            `json:"id"`
 	Amount                 int64             `json:"amount"`
 	AmountReturned         int64             `json:"amount_returned"`
 	Application            string            `json:"application"`
@@ -85,6 +85,7 @@ type Order struct {
 	Currency               Currency          `json:"currency"`
 	Customer               Customer          `json:"customer"`
 	Email                  string            `json:"email"`
+	ID                     string            `json:"id"`
 	Items                  []OrderItem       `json:"items"`
 	Live                   bool              `json:"livemode"`
 	Meta                   map[string]string `json:"metadata"`
@@ -92,8 +93,8 @@ type Order struct {
 	SelectedShippingMethod *string           `json:"selected_shipping_method"`
 	Shipping               Shipping          `json:"shipping"`
 	ShippingMethods        []ShippingMethod  `json:"shipping_methods"`
-	StatusTransitions      StatusTransitions `json:"status_transitions"`
 	Status                 OrderStatus       `json:"status"`
+	StatusTransitions      StatusTransitions `json:"status_transitions"`
 	Updated                int64             `json:"updated"`
 }
 
@@ -107,12 +108,14 @@ type OrderList struct {
 // listing orders. For more details, see:
 // https://stripe.com/docs/api#list_orders.
 type OrderListParams struct {
-	ListParams
-	IDs    []string
-	Status OrderStatus
+	ListParams   `form:"*"`
+	Created      int64             `form:"created"`
+	CreatedRange *RangeQueryParams `form:"created"`
+	IDs          []string          `form:"ids"`
+	Status       OrderStatus       `form:"status"`
 }
 
-// StatsuTransitions are the timestamps at which the order status was updated
+// StatusTransitions are the timestamps at which the order status was updated
 // https://stripe.com/docs/api#order_object
 type StatusTransitions struct {
 	Canceled  int64 `json:"canceled"`
@@ -125,11 +128,11 @@ type StatusTransitions struct {
 // paying orders. For more details, see:
 // https://stripe.com/docs/api#pay_order.
 type OrderPayParams struct {
-	Params
-	Source         *SourceParams
-	Customer       string
-	ApplicationFee int64
-	Email          string
+	Params         `form:"*"`
+	ApplicationFee int64         `form:"application_fee"`
+	Customer       string        `form:"customer"`
+	Email          string        `form:"email"`
+	Source         *SourceParams `form:"*"` // SourceParams has custom encoding so brought to top level with "*"
 }
 
 // SetSource adds valid sources to a OrderParams object,
