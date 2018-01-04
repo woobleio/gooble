@@ -9,32 +9,26 @@ import (
 	"net/http"
 )
 
-type Delims struct {
-	Left  string
-	Right string
-}
+type (
+	HTMLRender interface {
+		Instance(string, interface{}) Render
+	}
 
-type HTMLRender interface {
-	Instance(string, interface{}) Render
-}
+	HTMLProduction struct {
+		Template *template.Template
+	}
 
-type HTMLProduction struct {
-	Template *template.Template
-	Delims   Delims
-}
+	HTMLDebug struct {
+		Files []string
+		Glob  string
+	}
 
-type HTMLDebug struct {
-	Files   []string
-	Glob    string
-	Delims  Delims
-	FuncMap template.FuncMap
-}
-
-type HTML struct {
-	Template *template.Template
-	Name     string
-	Data     interface{}
-}
+	HTML struct {
+		Template *template.Template
+		Name     string
+		Data     interface{}
+	}
+)
 
 var htmlContentType = []string{"text/html; charset=utf-8"}
 
@@ -54,27 +48,19 @@ func (r HTMLDebug) Instance(name string, data interface{}) Render {
 	}
 }
 func (r HTMLDebug) loadTemplate() *template.Template {
-	if r.FuncMap == nil {
-		r.FuncMap = template.FuncMap{}
-	}
 	if len(r.Files) > 0 {
-		return template.Must(template.New("").Delims(r.Delims.Left, r.Delims.Right).Funcs(r.FuncMap).ParseFiles(r.Files...))
+		return template.Must(template.ParseFiles(r.Files...))
 	}
-	if r.Glob != "" {
-		return template.Must(template.New("").Delims(r.Delims.Left, r.Delims.Right).Funcs(r.FuncMap).ParseGlob(r.Glob))
+	if len(r.Glob) > 0 {
+		return template.Must(template.ParseGlob(r.Glob))
 	}
 	panic("the HTML debug render was created without files or glob pattern")
 }
 
 func (r HTML) Render(w http.ResponseWriter) error {
-	r.WriteContentType(w)
-
-	if r.Name == "" {
+	writeContentType(w, htmlContentType)
+	if len(r.Name) == 0 {
 		return r.Template.Execute(w, r.Data)
 	}
 	return r.Template.ExecuteTemplate(w, r.Name, r.Data)
-}
-
-func (r HTML) WriteContentType(w http.ResponseWriter) {
-	writeContentType(w, htmlContentType)
 }

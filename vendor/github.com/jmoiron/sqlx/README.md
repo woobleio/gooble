@@ -1,4 +1,4 @@
-# sqlx
+#sqlx
 
 [![Build Status](https://drone.io/github.com/jmoiron/sqlx/status.png)](https://drone.io/github.com/jmoiron/sqlx/latest) [![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/jmoiron/sqlx) [![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/jmoiron/sqlx/master/LICENSE)
 
@@ -66,12 +66,10 @@ usage.
 package main
 
 import (
-    "database/sql"
-    "fmt"
-    "log"
-    
     _ "github.com/lib/pq"
+    "database/sql"
     "github.com/jmoiron/sqlx"
+    "log"
 )
 
 var schema = `

@@ -122,13 +122,13 @@ func GetEmailPasswd() string {
 
 // HashID hashes uint64 id and returns a unique string
 func HashID(id int64) (string, error) {
-	hasher, _ := initHasher()
+	hasher := initHasher()
 	return hasher.EncodeInt64([]int64{id})
 }
 
 // DecodeHash returns the decoded id
 func DecodeHash(hash string) (int64, error) {
-	hasher, _ := initHasher()
+	hasher := initHasher()
 	id, err := hasher.DecodeInt64WithError(hash)
 	if err != nil {
 		return 0, err
@@ -188,7 +188,7 @@ func GenImage(id uint64) *image.RGBA {
 	return m
 }
 
-func initHasher() (*hashids.HashID, error) {
+func initHasher() *hashids.HashID {
 	hashConf := hashids.NewData()
 	if isProd() {
 		hashConf.Salt = os.Getenv("SALT_FOR_ID")

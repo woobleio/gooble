@@ -627,14 +627,10 @@ func (r *Rows) StructScan(dest interface{}) error {
 func Connect(driverName, dataSourceName string) (*DB, error) {
 	db, err := Open(driverName, dataSourceName)
 	if err != nil {
-		return nil, err
+		return db, err
 	}
 	err = db.Ping()
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
-	return db, nil
+	return db, err
 }
 
 // MustConnect connects to a database and panics on error.

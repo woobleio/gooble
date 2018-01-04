@@ -5,7 +5,7 @@ based on tags.
 It can also handle Cross-Field and Cross-Struct validation for nested structs
 and has the ability to dive into arrays and maps of any type.
 
-see more examples https://github.com/go-playground/validator/tree/v9/_examples
+see more examples https://github.com/go-playground/validator/tree/v9/examples
 
 Validation Functions Return Type error
 
@@ -31,7 +31,7 @@ Custom Validation Functions
 Custom Validation functions can be added. Example:
 
 	// Structure
-	func customFunc(fl FieldLevel) bool {
+	func customFunc(fl FielddLevel) bool {
 
 		if fl.Field().String() == "invalid" {
 			return false
@@ -56,7 +56,7 @@ Cross-Field Validation can be done via the following tags:
 	- eqcsfield
 	- necsfield
 	- gtcsfield
-	- gtecsfield
+	- ftecsfield
 	- ltcsfield
 	- ltecsfield
 
@@ -193,8 +193,7 @@ Dive
 This tells the validator to dive into a slice, array or map and validate that
 level of the slice, array or map with the validation tags that follow.
 Multidimensional nesting is also supported, each level you wish to dive will
-require another dive tag. dive has some sub-tags, 'keys' & 'endkeys', please see
-the Keys & EndKeys section just below.
+require another dive tag.
 
 	Usage: dive
 
@@ -212,30 +211,6 @@ Example #2
 	// []string will be spared validation
 	// required will be applied to string
 
-Keys & EndKeys
-
-These are to be used together directly after the dive tag and tells the validator
-that anything between 'keys' and 'endkeys' applies to the keys of a map and not the
-values; think of it like the 'dive' tag, but for map keys instead of values.
-Multidimensional nesting is also supported, each level you wish to validate will
-require another 'keys' and 'endkeys' tag. These tags are only valid for maps.
-
-	Usage: dive,keys,othertagvalidation(s),endkeys,valuevalidationtags
-
-Example #1
-
-	map[string]string with validation tag "gt=0,dive,keys,eg=1|eq=2,endkeys,required"
-	// gt=0 will be applied to the map itself
-	// eg=1|eq=2 will be applied to the map keys
-	// required will be applied to map values
-
-Example #2
-
-	map[[2]string]string with validation tag "gt=0,dive,keys,dive,eq=1|eq=2,endkeys,required"
-	// gt=0 will be applied to the map itself
-	// eg=1|eq=2 will be applied to each array element in the the map keys
-	// required will be applied to map values
-
 Required
 
 This validates that the value is not the data types default zero value.
@@ -244,13 +219,6 @@ not "". For slices, maps, pointers, interfaces, channels and functions
 ensures the value is not nil.
 
 	Usage: required
-
-Is Default
-
-This validates that the value is the default value and is almost the
-opposite of required.
-
-	Usage: isdefault
 
 Length
 
@@ -270,7 +238,7 @@ slices, arrays, and maps, validates the number of items.
 
 	Usage: max=10
 
-Minimum
+Mininum
 
 For numbers, min will ensure that the value is
 greater or equal to the parameter given. For strings, it checks that
@@ -492,12 +460,6 @@ This does the same as ltefield except that it validates the field provided relat
 to the top level struct.
 
 	Usage: ltecsfield=InnerStructField.Field
-
-Unique
-
-For arrays & slices, unique will ensure that there are no duplicates.
-
-	Usage: unique
 
 Alpha Only
 
@@ -831,18 +793,6 @@ This validates that a string value contains a valid MAC Adress.
 Note: See Go's ParseMAC for accepted formats and types:
 
 	http://golang.org/src/net/mac.go?s=866:918#L29
-
-Hostname
-
-This validates that a string value is a valid Hostname
-
-	Usage: hostname
-
-Full Qualified Domain Name (FQDN)
-
-This validates that a string value contains a valid FQDN.
-
-	Usage: fqdn
 
 Alias Validators and Tags
 

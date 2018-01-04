@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 )
 
 const (
@@ -29,12 +28,11 @@ var sepsOriginal = []rune("cfhistuCFHISTU")
 
 // HashID contains everything needed to encode/decode hashids
 type HashID struct {
-	alphabet           []rune
-	minLength          int
-	maxLengthPerNumber int
-	salt               []rune
-	seps               []rune
-	guards             []rune
+	alphabet  []rune
+	minLength int
+	salt      []rune
+	seps      []rune
+	guards    []rune
 }
 
 // HashIDData contains the information needed to generate hashids
@@ -55,23 +53,20 @@ func NewData() *HashIDData {
 }
 
 // New creates a new HashID
-func New() (*HashID, error) {
+func New() *HashID {
 	return NewWithData(NewData())
 }
 
 // NewWithData creates a new HashID with the provided HashIDData
-func NewWithData(data *HashIDData) (*HashID, error) {
+func NewWithData(data *HashIDData) *HashID {
 	if len(data.Alphabet) < minAlphabetLength {
-		return nil, fmt.Errorf("alphabet must contain at least %d characters", minAlphabetLength)
-	}
-	if strings.Contains(data.Alphabet, " ") {
-		return nil, fmt.Errorf("alphabet may not contain spaces")
+		panic(fmt.Errorf("alphabet must contain at least %d characters", minAlphabetLength))
 	}
 	// Check if all characters are unique in Alphabet
 	uniqueCheck := make(map[rune]bool, len(data.Alphabet))
 	for _, a := range data.Alphabet {
 		if _, found := uniqueCheck[a]; found {
-			return nil, fmt.Errorf("duplicate character in alphabet: %s", string([]rune{a}))
+			panic(errors.New("duplicate character in alphabet"))
 		}
 		uniqueCheck[a] = true
 	}
@@ -79,7 +74,8 @@ func NewWithData(data *HashIDData) (*HashID, error) {
 	alphabet := []rune(data.Alphabet)
 	salt := []rune(data.Salt)
 
-	seps := duplicateRuneSlice(sepsOriginal)
+	seps := make([]rune, len(sepsOriginal))
+	copy(seps, sepsOriginal)
 
 	// seps should contain only characters present in alphabet; alphabet should not contains seps
 	for i := 0; i < len(seps); i++ {
@@ -97,7 +93,7 @@ func NewWithData(data *HashIDData) (*HashID, error) {
 			alphabet = append(alphabet[:foundIndex], alphabet[foundIndex+1:]...)
 		}
 	}
-	consistentShuffleInPlace(seps, salt)
+	seps = consistentShuffle(seps, salt)
 
 	if len(seps) == 0 || float64(len(alphabet))/float64(len(seps)) > sepDiv {
 		sepsLength := int(math.Ceil(float64(len(alphabet)) / sepDiv))
@@ -112,7 +108,7 @@ func NewWithData(data *HashIDData) (*HashID, error) {
 			seps = seps[:sepsLength]
 		}
 	}
-	consistentShuffleInPlace(alphabet, salt)
+	alphabet = consistentShuffle(alphabet, salt)
 
 	guardCount := int(math.Ceil(float64(len(alphabet)) / guardDiv))
 	var guards []rune
@@ -124,22 +120,13 @@ func NewWithData(data *HashIDData) (*HashID, error) {
 		alphabet = alphabet[guardCount:]
 	}
 
-	hid := &HashID{
+	return &HashID{
 		alphabet:  alphabet,
 		minLength: data.MinLength,
 		salt:      salt,
 		seps:      seps,
 		guards:    guards,
 	}
-
-	// Calculate the maximum possible string length by hashing the maximum possible id
-	encoded, err := hid.EncodeInt64([]int64{math.MaxInt64})
-	if err != nil {
-		return nil, fmt.Errorf("Unable to encode maximum int64 to find max encoded value length: %s", err)
-	}
-	hid.maxLengthPerNumber = len(encoded)
-
-	return hid, nil
 }
 
 // Encode hashes an array of int to a string containing at least MinLength characters taken from the Alphabet.
@@ -164,35 +151,26 @@ func (h *HashID) EncodeInt64(numbers []int64) (string, error) {
 		}
 	}
 
-	alphabet := duplicateRuneSlice(h.alphabet)
+	alphabet := make([]rune, len(h.alphabet))
+	copy(alphabet, h.alphabet)
 
 	numbersHash := int64(0)
 	for i, n := range numbers {
 		numbersHash += (n % int64(i+100))
 	}
 
-	maxRuneLength := h.maxLengthPerNumber * len(numbers)
-	if maxRuneLength < h.minLength {
-		maxRuneLength = h.minLength
-	}
-
-	result := make([]rune, 0, maxRuneLength)
+	result := make([]rune, 0, h.minLength)
 	lottery := alphabet[numbersHash%int64(len(alphabet))]
 	result = append(result, lottery)
-	hashBuf := make([]rune, maxRuneLength)
-	buffer := make([]rune, len(alphabet)+len(h.salt)+1)
 
 	for i, n := range numbers {
-		buffer = buffer[:1]
-		buffer[0] = lottery
-		buffer = append(buffer, h.salt...)
-		buffer = append(buffer, alphabet...)
-		consistentShuffleInPlace(alphabet, buffer[:len(alphabet)])
-		hashBuf = hash(n, alphabet, hashBuf)
-		result = append(result, hashBuf...)
+		buffer := append([]rune{lottery}, append(h.salt, alphabet...)...)
+		alphabet = consistentShuffle(alphabet, buffer[:len(alphabet)])
+		hash := hash(n, alphabet)
+		result = append(result, hash...)
 
 		if i+1 < len(numbers) {
-			n %= int64(hashBuf[0]) + int64(i)
+			n %= int64(hash[0]) + int64(i)
 			result = append(result, h.seps[n%int64(len(h.seps))])
 		}
 	}
@@ -209,7 +187,7 @@ func (h *HashID) EncodeInt64(numbers []int64) (string, error) {
 
 	halfLength := len(alphabet) / 2
 	for len(result) < h.minLength {
-		consistentShuffleInPlace(alphabet, duplicateRuneSlice(alphabet))
+		alphabet = consistentShuffle(alphabet, alphabet)
 		result = append(alphabet[halfLength:], append(result, alphabet[:halfLength]...)...)
 		excess := len(result) - h.minLength
 		if excess > 0 {
@@ -269,33 +247,23 @@ func (h *HashID) DecodeInt64WithError(hash string) ([]int64, error) {
 		hashIndex = 1
 	}
 
-	result := make([]int64, 0, 10)
+	result := make([]int64, 0)
 
 	hashBreakdown := hashes[hashIndex]
 	if len(hashBreakdown) > 0 {
 		lottery := hashBreakdown[0]
 		hashBreakdown = hashBreakdown[1:]
 		hashes = splitRunes(hashBreakdown, h.seps)
-		alphabet := duplicateRuneSlice(h.alphabet)
-		buffer := make([]rune, len(alphabet)+len(h.salt)+1)
+		alphabet := []rune(h.alphabet)
 		for _, subHash := range hashes {
-			buffer = buffer[:1]
-			buffer[0] = lottery
-			buffer = append(buffer, h.salt...)
-			buffer = append(buffer, alphabet...)
-			consistentShuffleInPlace(alphabet, buffer[:len(alphabet)])
+			buffer := append([]rune{lottery}, append(h.salt, alphabet...)...)
+			alphabet = consistentShuffle(alphabet, buffer[:len(alphabet)])
 			number, err := unhash(subHash, alphabet)
 			if err != nil {
 				return nil, err
 			}
 			result = append(result, number)
 		}
-	}
-
-	sanityCheck, _ := h.EncodeInt64(result)
-	if sanityCheck != hash {
-		return result, fmt.Errorf("mismatch between encode and decode: %s start %s"+
-			" re-encoded. result: %v", hash, sanityCheck, result)
 	}
 
 	return result, nil
@@ -315,7 +283,9 @@ func splitRunes(input, seps []rune) [][]rune {
 	inputLeft := input[:]
 	for _, splitIndex := range splitIndices {
 		splitIndex -= len(input) - len(inputLeft)
-		result = append(result, inputLeft[:splitIndex])
+		subInput := make([]rune, splitIndex)
+		copy(subInput, inputLeft[:splitIndex])
+		result = append(result, subInput)
 		inputLeft = inputLeft[splitIndex+1:]
 	}
 	result = append(result, inputLeft)
@@ -323,8 +293,8 @@ func splitRunes(input, seps []rune) [][]rune {
 	return result
 }
 
-func hash(input int64, alphabet []rune, result []rune) []rune {
-	result = result[:0]
+func hash(input int64, alphabet []rune) []rune {
+	result := make([]rune, 0)
 	for {
 		r := alphabet[input%int64(len(alphabet))]
 		result = append(result, r)
@@ -333,11 +303,11 @@ func hash(input int64, alphabet []rune, result []rune) []rune {
 			break
 		}
 	}
-	for i := len(result)/2 - 1; i >= 0; i-- {
-		opp := len(result) - 1 - i
-		result[i], result[opp] = result[opp], result[i]
+	reversed := make([]rune, len(result))
+	for i, r := range result {
+		reversed[len(result)-i-1] = r
 	}
-	return result
+	return reversed
 }
 
 func unhash(input, alphabet []rune) (int64, error) {
@@ -364,7 +334,8 @@ func consistentShuffle(alphabet, salt []rune) []rune {
 		return alphabet
 	}
 
-	result := duplicateRuneSlice(alphabet)
+	result := make([]rune, len(alphabet))
+	copy(result, alphabet)
 	for i, v, p := len(result)-1, 0, 0; i > 0; i-- {
 		p += int(salt[v])
 		j := (int(salt[v]) + v + p) % i
@@ -372,25 +343,5 @@ func consistentShuffle(alphabet, salt []rune) []rune {
 		v = (v + 1) % len(salt)
 	}
 
-	return result
-}
-
-func consistentShuffleInPlace(alphabet []rune, salt []rune) {
-	if len(salt) == 0 {
-		return
-	}
-
-	for i, v, p := len(alphabet)-1, 0, 0; i > 0; i-- {
-		p += int(salt[v])
-		j := (int(salt[v]) + v + p) % i
-		alphabet[i], alphabet[j] = alphabet[j], alphabet[i]
-		v = (v + 1) % len(salt)
-	}
-	return
-}
-
-func duplicateRuneSlice(data []rune) []rune {
-	result := make([]rune, len(data))
-	copy(result, data)
 	return result
 }
