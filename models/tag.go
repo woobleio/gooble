@@ -12,6 +12,7 @@ const TagSeparator string = ","
 type Tag struct {
 	ID    uint64 `json:"id,omitempty" db:"tag.id"`
 	Title string `json:"title" db:"tag.title"`
+	NbUse uint64 `json:"nbUse" db:"tag_nb_use"`
 }
 
 // NewOrGetTag creates a tag or get one if exists
@@ -36,4 +37,26 @@ func NewOrGetTag(tag *Tag) {
 		q = `SELECT id "tag.id", title "tag.title" FROM tag WHERE title = $1`
 		lib.DB.Get(tag, q, oneTag)
 	}
+}
+
+// AllTags returns all tags
+// Filters : search
+// Orders : nb_use
+func AllTags(opt lib.Option) ([]Tag, error) {
+	var tags []Tag
+	q := lib.NewQuery(`SELECT
+		t.id "tag.id",
+		t.title "tag.title",
+		COUNT(ct.tag_id) AS tag_nb_use
+	FROM tag t
+	LEFT OUTER JOIN creation_tag ct ON (ct.tag_id=t.id)
+	`, &opt)
+
+	q.SetFilters(lib.SEARCH, "t.title")
+
+	q.Q += `GROUP BY ct.tag_id, t.id`
+
+	q.SetOrder(lib.NB_USE, "tag_nb_use")
+
+	return tags, lib.DB.Select(&tags, q.String(), q.Values...)
 }

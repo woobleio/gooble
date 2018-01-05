@@ -33,6 +33,7 @@ const (
 	CREATED_AT = "createdAt"
 	CREATOR    = "creator"
 	SEARCH     = "search"
+	NB_USE     = "nbUse"
 )
 
 var filters = []string{

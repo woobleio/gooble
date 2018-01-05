@@ -56,6 +56,8 @@ func Load() {
 
 		v1.GET("/plans", handler.GETPlans)
 
+		v1.GET("/tags", handler.GETTags)
+
 		v1.GET("/creations", handler.GETCreations)
 		v1.GET("/creations/:encid", handler.GETCreations)
 		v1.GET("/creations/:encid/code", handler.GETCreationCode)
