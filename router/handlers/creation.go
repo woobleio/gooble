@@ -57,6 +57,7 @@ func GETCreations(c *gin.Context) {
 		spltPath := strings.Split(previewURL, "/")
 		data.(*model.Creation).PreviewURL = strings.Join(spltPath[1:], "/")
 	} else {
+		data = make([]model.Creation, 0)
 		switch c.DefaultQuery("list", "") {
 		case "popular":
 			data, err = model.AllPopularCreations(opts, authUserID)
@@ -75,6 +76,10 @@ func GETCreations(c *gin.Context) {
 		if err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
+		}
+
+		for i := range data.([]model.Creation) {
+			data.([]model.Creation)[i].PopulateTags()
 		}
 	}
 

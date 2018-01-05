@@ -17,6 +17,7 @@ type Creation struct {
 
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
+	Tags        []Tag           `json:"tags,omitempty" db:""`
 	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
 	Creator     User            `json:"creator,omitempty" db:""`
 
@@ -89,6 +90,21 @@ func (c *Creation) PopulateParams() {
 func (c *Creation) PopulateFunctions() {
 	q := `SELECT call, detail FROM creation_function WHERE creation_id = $1 AND version ` + c.getLastVersionQuery()
 	lib.DB.Select(&c.Functions, q, c.ID, c.Version)
+}
+
+// PopulateTags populates creation's tags
+func (c *Creation) PopulateTags() error {
+	q := `
+	SELECT
+		tag.id "tag.id",
+		tag.title "tag.title"
+	FROM creation_tag ct
+	INNER JOIN creation ON (creation.id=ct.creation_id)
+	INNER JOIN tag ON (tag.id=ct.tag_id)
+	WHERE ct.creation_id = $1
+	`
+
+	return lib.DB.Select(&c.Tags, q, c.ID)
 }
 
 // PopulatePreviewPositions populates available creation's preview positions
