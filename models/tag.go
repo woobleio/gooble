@@ -10,25 +10,30 @@ const TagSeparator string = ","
 
 // Tag is for arranging crations
 type Tag struct {
-	ID    uint64 `json:"id" db:"tag.id"`
+	ID    uint64 `json:"id,omitempty" db:"tag.id"`
 	Title string `json:"title" db:"tag.title"`
 }
 
-// NewTag creates a tag
-// The only error possible here is unique title constrain
-// No need to warn if this error is raised
-func NewTag(tag *Tag) *Tag {
+// NewOrGetTag creates a tag or get one if exists
+func NewOrGetTag(tag *Tag) {
 	q := `
 	INSERT INTO tag (title) VALUES ($1) RETURNING id
 	`
 
 	// Makes sure we split to build one tag
-	oneTag := strings.Split(tag.Title, TagSeparator)
+	oneTag := strings.Split(tag.Title, TagSeparator)[0]
 
 	tagLength := 18
 
 	// A tag is not longer than tagLength characters
-	lib.DB.QueryRow(q, strings.ToLower(oneTag[0])[:tagLength]).Scan(&tag.ID)
+	if len(oneTag) > tagLength {
+		oneTag = oneTag[:tagLength]
+	}
 
-	return tag
+	oneTag = strings.ToLower(oneTag)
+
+	if err := lib.DB.QueryRow(q, oneTag).Scan(&tag.ID); err != nil {
+		q = `SELECT id "tag.id", title "tag.title" FROM tag WHERE title = $1`
+		lib.DB.Get(tag, q, oneTag)
+	}
 }

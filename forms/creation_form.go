@@ -12,6 +12,7 @@ type CreationForm struct {
 	Engine      string                   `json:"engine" validate:"omitempty,alphanum"`
 	State       string                   `json:"state" validate:"omitempty,alpha"`
 	Description string                   `json:"description" validate:"omitempty,max=10000"`
+	Tags        []model.Tag              `json:"tags" validate:"omitempty"`
 	ThumbPath   string                   `json:"thumbPath" validate:"omitempty,max=300"`
 	PreviewPos  model.PreviewPosition    `json:"previewPosition" validate:"omitempty"`
 	Params      []model.CreationParam    `json:"params" validate:"omitempty"`

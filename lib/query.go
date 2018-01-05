@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -52,6 +53,30 @@ func (q *Query) SetFilters(filters ...string) {
 			}
 		}
 	}
+}
+
+// SetBulkInsert adds bulk insert to the query
+// baseValues are values that doesn't change or bulk inserting (can be empty)
+// atrs are attributes of the values interface
+// values are the dynamic values to bulk insert (attrs relates to this interfaces slice)
+func (q *Query) SetBulkInsert(baseValues []interface{}, attrs []string, values ...interface{}) {
+	var index = 1
+	for _, v := range values {
+		q.Q += ` (`
+		for _, base := range baseValues {
+			q.Q += `$` + fmt.Sprintf("%d", index) + `,`
+			q.Values = append(q.Values, base)
+			index++
+		}
+
+		for _, attr := range attrs {
+			q.Q += `$` + fmt.Sprintf("%d", index) + `,`
+			q.Values = append(q.Values, reflect.ValueOf(v).FieldByName(attr))
+			index++
+		}
+		q.Q = strings.TrimRight(q.Q, ",") + `),`
+	}
+	q.Q = strings.TrimRight(q.Q, ",")
 }
 
 // SetOrder adds order to the query

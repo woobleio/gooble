@@ -21,8 +21,7 @@ type Creation struct {
 	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
 	Creator     User            `json:"creator,omitempty" db:""`
 
-	// When a creation is in draft, the very last version is ignored by most queries,
-	// thus the -1 from versions array within most queries
+	// When a creation is in draft, the very last version is ignored by most queries
 	Versions lib.UintSlice `json:"versions,omitempty" db:"versions"`
 
 	Alias      string `json:"alias,omitempty" db:"alias"`
@@ -333,9 +332,12 @@ func UpdateCreation(crea *Creation) error {
 	}
 
 	if len(crea.Functions) > 0 {
-		return UpdateCreationFunctions(crea)
+		if err := UpdateCreationFunctions(crea); err != nil {
+			return err
+		}
 	}
-	return nil
+
+	return UpdateCreationTags(crea)
 }
 
 // UpdateCreationPatch updates a creation
@@ -356,6 +358,27 @@ func UpdateCreationPatch(uID uint64, creaID lib.ID, patch lib.SQLPatch) error {
 	return err
 }
 
+// UpdateCreationTags updates creation tags
+func UpdateCreationTags(crea *Creation) (err error) {
+	// Reset all tags
+	lib.DB.Exec(`DELETE FROM creation_tag WHERE creation_id = $1`, crea.ID)
+
+	if len(crea.Tags) > 0 {
+		bulk := lib.NewQuery(`INSERT INTO creation_tag(creation_id, tag_id) VALUES`, nil)
+
+		values := make([]interface{}, 0)
+		for _, t := range crea.Tags {
+			values = append(values, t)
+		}
+
+		bulk.SetBulkInsert([]interface{}{crea.ID}, []string{"ID"}, values...)
+
+		_, err = lib.DB.Exec(bulk.String(), bulk.Values...)
+	}
+
+	return err
+}
+
 // UpdateCreationFunctions updates creation functions
 func UpdateCreationFunctions(crea *Creation) error {
 	lastVersion := crea.Version
@@ -372,18 +395,16 @@ func UpdateCreationFunctions(crea *Creation) error {
 	`
 	lib.DB.Exec(q, crea.ID, lastVersion)
 
-	// Bulk insert
-	index := 3
-	vals := []interface{}{crea.ID, lastVersion}
-	q = `INSERT INTO creation_function(creation_id, version, call, detail) VALUES`
-	for _, fn := range crea.Functions {
-		q += `($1, $2, $` + fmt.Sprintf("%d", index) + `, $` + fmt.Sprintf("%d", index+1) + `),`
-		vals = append(vals, fn.Call, fn.Detail)
-		index += 2
-	}
-	q = strings.TrimRight(q, ",")
+	bulk := lib.NewQuery(`INSERT INTO creation_function(creation_id, version, call, detail) VALUES`, nil)
 
-	_, err := lib.DB.Exec(q, vals...)
+	values := make([]interface{}, 0)
+	for _, fn := range crea.Functions {
+		values = append(values, fn)
+	}
+
+	bulk.SetBulkInsert([]interface{}{crea.ID, lastVersion}, []string{"Call", "Detail"}, values...)
+
+	_, err := lib.DB.Exec(bulk.String(), bulk.Values...)
 	return err
 }
 
@@ -403,18 +424,16 @@ func UpdateCreationParams(crea *Creation) error {
 	`
 	lib.DB.Exec(q, crea.ID, lastVersion)
 
-	// Bulk insert
-	index := 3
-	vals := []interface{}{crea.ID, lastVersion}
-	q = `INSERT INTO creation_param(creation_id, version, field, value) VALUES`
-	for _, p := range crea.Params {
-		q += `($1, $2, $` + fmt.Sprintf("%d", index) + `, $` + fmt.Sprintf("%d", index+1) + `),`
-		vals = append(vals, p.Field, p.Value)
-		index += 2
-	}
-	q = strings.TrimRight(q, ",")
+	bulk := lib.NewQuery(`INSERT INTO creation_param(creation_id, version, field, value) VALUES`, nil)
 
-	_, err := lib.DB.Exec(q, vals...)
+	values := make([]interface{}, 0)
+	for _, p := range crea.Params {
+		values = append(values, p)
+	}
+
+	bulk.SetBulkInsert([]interface{}{crea.ID, lastVersion}, []string{"Field", "Value"}, values...)
+
+	_, err := lib.DB.Exec(bulk.String(), bulk.Values...)
 	return err
 }
 
