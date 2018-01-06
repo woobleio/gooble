@@ -158,14 +158,16 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(true, lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name|t.title", lib.CREATOR, "u.name")
 
-	q.Q += "GROUP BY c.id, u.id, e.name"
+	q.Q += " GROUP BY c.id, u.id, e.name"
 
 	q.SetOrder(lib.CREATED_AT, "c.created_at")
 
@@ -191,12 +193,14 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    u.name
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(true, lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name|t.title", lib.CREATOR, "u.name")
 
 	q.Q += " GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
 
@@ -219,13 +223,15 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		FROM creation c
 		INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN package_creation pc ON (pc.creation_id = c.id)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pcc ON (pcc.creation_id = c.id)
     INNER JOIN package p ON (p.id = pc.package_id)
 		WHERE p.user_id = $1
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(true, lib.SEARCH, "c.title")
+	q.SetFilters(true, lib.SEARCH, "c.title|t.title")
 
 	q.Q += " GROUP BY c.id, u.id"
 
