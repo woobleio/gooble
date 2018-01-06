@@ -17,11 +17,11 @@ type Creation struct {
 
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
+	Tags        []Tag           `json:"tags" db:""`
 	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
 	Creator     User            `json:"creator,omitempty" db:""`
 
-	// When a creation is in draft, the very last version is ignored by most queries,
-	// thus the -1 from versions array within most queries
+	// When a creation is in draft, the very last version is ignored by most queries
 	Versions lib.UintSlice `json:"versions,omitempty" db:"versions"`
 
 	Alias      string `json:"alias,omitempty" db:"alias"`
@@ -91,6 +91,21 @@ func (c *Creation) PopulateFunctions() {
 	lib.DB.Select(&c.Functions, q, c.ID, c.Version)
 }
 
+// PopulateTags populates creation's tags
+func (c *Creation) PopulateTags() error {
+	q := `
+	SELECT
+		tag.id "tag.id",
+		tag.title "tag.title"
+	FROM creation_tag ct
+	INNER JOIN creation ON (creation.id=ct.creation_id)
+	INNER JOIN tag ON (tag.id=ct.tag_id)
+	WHERE ct.creation_id = $1
+	`
+
+	return lib.DB.Select(&c.Tags, q, c.ID)
+}
+
 // PopulatePreviewPositions populates available creation's preview positions
 func (c *Creation) PopulatePreviewPositions() {
 	q := `SELECT position_id, style_source FROM preview_position`
@@ -143,14 +158,16 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name|t.title", lib.CREATOR, "u.name")
 
-	q.Q += "GROUP BY c.id, u.id, e.name"
+	q.Q += " GROUP BY c.id, u.id, e.name"
 
 	q.SetOrder(lib.CREATED_AT, "c.created_at")
 
@@ -176,12 +193,14 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    u.name
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name|t.title", lib.CREATOR, "u.name")
 
 	q.Q += " GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
 
@@ -204,13 +223,15 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		FROM creation c
 		INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN package_creation pc ON (pc.creation_id = c.id)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pcc ON (pcc.creation_id = c.id)
     INNER JOIN package p ON (p.id = pc.package_id)
 		WHERE p.user_id = $1
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title")
+	q.SetFilters(true, lib.SEARCH, "c.title|t.title")
 
 	q.Q += " GROUP BY c.id, u.id"
 
@@ -238,7 +259,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title")
+	q.SetFilters(true, lib.SEARCH, "c.title")
 
 	q.Q += " GROUP BY c.id, u.id"
 
@@ -294,6 +315,8 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 	crea.PopulateParams()
 	crea.PopulateFunctions()
 	crea.PopulatePreviewPositions()
+	crea.PopulateTags()
+
 	return &crea, nil
 }
 
@@ -317,9 +340,12 @@ func UpdateCreation(crea *Creation) error {
 	}
 
 	if len(crea.Functions) > 0 {
-		return UpdateCreationFunctions(crea)
+		if err := UpdateCreationFunctions(crea); err != nil {
+			return err
+		}
 	}
-	return nil
+
+	return UpdateCreationTags(crea)
 }
 
 // UpdateCreationPatch updates a creation
@@ -340,6 +366,27 @@ func UpdateCreationPatch(uID uint64, creaID lib.ID, patch lib.SQLPatch) error {
 	return err
 }
 
+// UpdateCreationTags updates creation tags
+func UpdateCreationTags(crea *Creation) (err error) {
+	// Reset all tags
+	lib.DB.Exec(`DELETE FROM creation_tag WHERE creation_id = $1`, crea.ID)
+
+	if len(crea.Tags) > 0 {
+		bulk := lib.NewQuery(`INSERT INTO creation_tag(creation_id, tag_id) VALUES`, nil)
+
+		values := make([]interface{}, 0)
+		for _, t := range crea.Tags {
+			values = append(values, t)
+		}
+
+		bulk.SetBulkInsert([]interface{}{crea.ID}, []string{"ID"}, values...)
+
+		_, err = lib.DB.Exec(bulk.String(), bulk.Values...)
+	}
+
+	return err
+}
+
 // UpdateCreationFunctions updates creation functions
 func UpdateCreationFunctions(crea *Creation) error {
 	lastVersion := crea.Version
@@ -356,18 +403,16 @@ func UpdateCreationFunctions(crea *Creation) error {
 	`
 	lib.DB.Exec(q, crea.ID, lastVersion)
 
-	// Bulk insert
-	index := 3
-	vals := []interface{}{crea.ID, lastVersion}
-	q = `INSERT INTO creation_function(creation_id, version, call, detail) VALUES`
-	for _, fn := range crea.Functions {
-		q += `($1, $2, $` + fmt.Sprintf("%d", index) + `, $` + fmt.Sprintf("%d", index+1) + `),`
-		vals = append(vals, fn.Call, fn.Detail)
-		index += 2
-	}
-	q = strings.TrimRight(q, ",")
+	bulk := lib.NewQuery(`INSERT INTO creation_function(creation_id, version, call, detail) VALUES`, nil)
 
-	_, err := lib.DB.Exec(q, vals...)
+	values := make([]interface{}, 0)
+	for _, fn := range crea.Functions {
+		values = append(values, fn)
+	}
+
+	bulk.SetBulkInsert([]interface{}{crea.ID, lastVersion}, []string{"Call", "Detail"}, values...)
+
+	_, err := lib.DB.Exec(bulk.String(), bulk.Values...)
 	return err
 }
 
@@ -387,18 +432,16 @@ func UpdateCreationParams(crea *Creation) error {
 	`
 	lib.DB.Exec(q, crea.ID, lastVersion)
 
-	// Bulk insert
-	index := 3
-	vals := []interface{}{crea.ID, lastVersion}
-	q = `INSERT INTO creation_param(creation_id, version, field, value) VALUES`
-	for _, p := range crea.Params {
-		q += `($1, $2, $` + fmt.Sprintf("%d", index) + `, $` + fmt.Sprintf("%d", index+1) + `),`
-		vals = append(vals, p.Field, p.Value)
-		index += 2
-	}
-	q = strings.TrimRight(q, ",")
+	bulk := lib.NewQuery(`INSERT INTO creation_param(creation_id, version, field, value) VALUES`, nil)
 
-	_, err := lib.DB.Exec(q, vals...)
+	values := make([]interface{}, 0)
+	for _, p := range crea.Params {
+		values = append(values, p)
+	}
+
+	bulk.SetBulkInsert([]interface{}{crea.ID, lastVersion}, []string{"Field", "Value"}, values...)
+
+	_, err := lib.DB.Exec(bulk.String(), bulk.Values...)
 	return err
 }
 

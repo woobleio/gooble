@@ -4,8 +4,8 @@ package wbzr
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
+	"path"
 	"text/template"
 
 	"github.com/woobleio/wooblizer/engine"
@@ -31,7 +31,7 @@ type Wbzr struct {
 
 // New takes a script language which is used to inject and output a file.
 func New(sl ScriptLang) *Wbzr {
-	apiPath := "./apis/%s"
+	apiPath := "apis"
 	var filename string
 	switch sl {
 	case JS:
@@ -119,7 +119,11 @@ func (wb *Wbzr) Wrap() (*bytes.Buffer, error) {
 		},
 	}
 
-	tmpl := template.Must(template.New(wb.filename).Funcs(fns).ParseFiles(fmt.Sprintf(wb.apiPath, wb.filename)))
+	d, err := Asset(path.Join(wb.apiPath, wb.filename))
+	if err != nil {
+		return nil, err
+	}
+	tmpl := template.Must(template.New(wb.filename).Funcs(fns).Parse(string(d)))
 
 	var out bytes.Buffer
 	if err := tmpl.Execute(&out, wb); err != nil {
