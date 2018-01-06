@@ -52,9 +52,9 @@ func AllTags(opt lib.Option) ([]Tag, error) {
 	LEFT OUTER JOIN creation_tag ct ON (ct.tag_id=t.id)
 	`, &opt)
 
-	q.SetFilters(lib.SEARCH, "t.title")
+	q.SetFilters(false, lib.SEARCH, "t.title")
 
-	q.Q += `GROUP BY ct.tag_id, t.id`
+	q.Q += `GROUP BY t.id`
 
 	q.SetOrder(lib.NB_USE, "tag_nb_use")
 

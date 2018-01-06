@@ -17,7 +17,7 @@ type Creation struct {
 
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
-	Tags        []Tag           `json:"tags,omitempty" db:""`
+	Tags        []Tag           `json:"tags" db:""`
 	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
 	Creator     User            `json:"creator,omitempty" db:""`
 
@@ -163,7 +163,7 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
 
 	q.Q += "GROUP BY c.id, u.id, e.name"
 
@@ -196,7 +196,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
 
 	q.Q += " GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
 
@@ -225,7 +225,7 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title")
+	q.SetFilters(true, lib.SEARCH, "c.title")
 
 	q.Q += " GROUP BY c.id, u.id"
 
@@ -253,7 +253,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title")
+	q.SetFilters(true, lib.SEARCH, "c.title")
 
 	q.Q += " GROUP BY c.id, u.id"
 
@@ -309,6 +309,8 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 	crea.PopulateParams()
 	crea.PopulateFunctions()
 	crea.PopulatePreviewPositions()
+	crea.PopulateTags()
+
 	return &crea, nil
 }
 
