@@ -263,14 +263,27 @@ func PUTCreation(c *gin.Context) {
 	crea.Functions = creaForm.Functions
 	crea.Version = uint64(creaForm.Version)
 
+	tagsMap := map[uint64]bool{}
+
 	// Creates new tag if no id given
 	for i, tag := range creaForm.Tags {
 		if tag.ID == 0 {
 			model.NewOrGetTag(&creaForm.Tags[i])
+			tagsMap[creaForm.Tags[i].ID] = true
 		}
 	}
 
-	crea.Tags = creaForm.Tags
+	// Removes duplicate ID
+	cleanedTags := make([]model.Tag, 0)
+	for key := range tagsMap {
+		t := model.Tag{
+			ID:    key,
+			Title: "",
+		}
+		cleanedTags = append(cleanedTags, t)
+	}
+
+	crea.Tags = cleanedTags
 
 	if err := model.UpdateCreation(&crea); err != nil {
 		c.Error(err).SetMeta(ErrDB)
