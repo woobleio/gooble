@@ -33,6 +33,7 @@ func NewOrGetTag(tag *Tag) {
 
 	oneTag = strings.ToLower(oneTag)
 
+	// if unique constrain error (on tag title) then get the tag
 	if err := lib.DB.QueryRow(q, oneTag).Scan(&tag.ID); err != nil {
 		q = `SELECT id "tag.id", title "tag.title" FROM tag WHERE title = $1`
 		lib.DB.Get(tag, q, oneTag)
