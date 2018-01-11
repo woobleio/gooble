@@ -38,7 +38,6 @@ func GETCreations(c *gin.Context) {
 		}
 	}
 
-	s := lib.NewStorage(lib.SrcPreview)
 	if creaID != "" {
 		data, err = model.CreationByID(lib.InitID(creaID), authUserID, false)
 		if err != nil {
@@ -50,12 +49,7 @@ func GETCreations(c *gin.Context) {
 			return
 		}
 
-		creaLastVersion := fmt.Sprintf("%d", data.(*model.Creation).Version)
-		creatorID := fmt.Sprintf("%d", data.(*model.Creation).Creator.ID)
-		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)
-		previewURL := s.GetPathFor(creatorID, creaID, creaLastVersion, "index.html")
-		spltPath := strings.Split(previewURL, "/")
-		data.(*model.Creation).PreviewURL = strings.Join(spltPath[1:], "/")
+		data.(*model.Creation).RetrievePreviewURL()
 	} else {
 		data = make([]model.Creation, 0)
 		switch c.DefaultQuery("list", "") {
@@ -80,6 +74,7 @@ func GETCreations(c *gin.Context) {
 
 		for i := range data.([]model.Creation) {
 			data.([]model.Creation)[i].PopulateTags()
+			data.([]model.Creation)[i].RetrievePreviewURL()
 		}
 	}
 
@@ -259,6 +254,7 @@ func PUTCreation(c *gin.Context) {
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias
 	crea.Params = creaForm.Params
+	crea.IsThumbPreview = creaForm.IsThumbPreview
 	crea.PreviewPos = creaForm.PreviewPos
 	crea.Functions = creaForm.Functions
 	crea.Version = uint64(creaForm.Version)

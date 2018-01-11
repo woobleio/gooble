@@ -38,6 +38,7 @@ type Creation struct {
 
 	PreviewPos       PreviewPosition   `json:"previewPosition" db:""`
 	PreviewPositions []PreviewPosition `json:"previewPositions,omitempty" db:""`
+	IsThumbPreview   bool              `json:"isThumbPreview" db:"is_thumb_preview"`
 
 	Script       string `json:"script,omitempty"`
 	ParsedScript string `json:"parsedScript,omitempty"`
@@ -112,6 +113,27 @@ func (c *Creation) PopulatePreviewPositions() {
 	lib.DB.Select(&c.PreviewPositions, q)
 }
 
+// RetrievePreviewURL construct the creation's preview URL and sets the `PreviewUrl` field
+// It uses the current `Version` of the creation c
+func (c *Creation) RetrievePreviewURL() {
+	s := lib.NewStorage(lib.SrcPreview)
+
+	if c.Version == 0 {
+		c.Version = CreationLastVersion(c.ID)
+	}
+
+	creaLastVersion := fmt.Sprintf("%d", c.Version)
+
+	creatorID := fmt.Sprintf("%d", c.Creator.ID)
+	creaID := fmt.Sprintf("%d", c.ID.ValueDecoded)
+
+	previewURL := s.GetPathFor(creatorID, creaID, creaLastVersion, "index.html")
+
+	spltPath := strings.Split(previewURL, "/")
+
+	c.PreviewURL = strings.Join(spltPath[1:], "/")
+}
+
 // RetrieveSourceCode request the source files in the cloud and set the content to the Creation
 func (c *Creation) RetrieveSourceCode(version string, files ...string) error {
 	uIDStr := fmt.Sprintf("%d", c.Creator.ID)
@@ -144,6 +166,7 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    c.title,
 			c.description,
 			c.thumb_path,
+			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-1] END AS versions,
@@ -182,6 +205,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    c.title,
 			c.description,
 			c.thumb_path,
+			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
@@ -215,6 +239,7 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 			COUNT(pcc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
+			c.is_thumb_preview,
 			c.created_at "crea.created_at",
 			CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.thumb_path,
@@ -246,6 +271,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 			COUNT(pc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
+			c.is_thumb_preview,
 			c.created_at "crea.created_at",
 			c.versions[array_length(c.versions, 1)] AS version,
 			c.versions[array_length(c.versions, 1)-1] AS versions,
@@ -274,6 +300,7 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
     c.id "crea.id",
     c.title,
 		c.thumb_path,
+		c.is_thumb_preview,
 		c.description,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
@@ -324,12 +351,12 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, preview_position_id = $8
+  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, is_thumb_preview = $8, preview_position_id = $9
   WHERE id = $1
   AND creator_id = $2
   `
 
-	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.PreviewPos.Position); err != nil {
+	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.IsThumbPreview, crea.PreviewPos.Position); err != nil {
 		return err
 	}
 
@@ -470,8 +497,8 @@ func CreationByIDAndVersion(id lib.ID, version uint64) (*Creation, error) {
 }
 
 // CreationLastVersion gets creation's last version
-func CreationLastVersion(id lib.ID) int64 {
-	var version int64
+func CreationLastVersion(id lib.ID) uint64 {
+	var version uint64
 	q := `SELECT versions[array_length(versions,1)] AS version FROM creation WHERE id = $1`
 	lib.DB.Get(&version, q, id)
 	return version
