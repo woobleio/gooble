@@ -48,8 +48,6 @@ func GETCreations(c *gin.Context) {
 			}
 			return
 		}
-
-		data.(*model.Creation).RetrievePreviewURL()
 	} else {
 		data = make([]model.Creation, 0)
 		switch c.DefaultQuery("list", "") {

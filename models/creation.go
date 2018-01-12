@@ -119,7 +119,7 @@ func (c *Creation) RetrievePreviewURL() {
 	s := lib.NewStorage(lib.SrcPreview)
 
 	if c.Version == 0 {
-		c.Version = CreationLastVersion(c.ID)
+		c.Version = c.Versions[len(c.Versions)-1]
 	}
 
 	creaLastVersion := fmt.Sprintf("%d", c.Version)
@@ -343,6 +343,7 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 	crea.PopulateFunctions()
 	crea.PopulatePreviewPositions()
 	crea.PopulateTags()
+	crea.RetrievePreviewURL()
 
 	return &crea, nil
 }
