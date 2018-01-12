@@ -118,11 +118,13 @@ func (c *Creation) PopulatePreviewPositions() {
 func (c *Creation) RetrievePreviewURL() {
 	s := lib.NewStorage(lib.SrcPreview)
 
-	if c.Version == 0 {
-		c.Version = c.Versions[len(c.Versions)-1]
+	version := c.Version
+	// Get last public version if draft or get the last version if no version sets
+	if (c.State == enum.Draft && len(c.Versions) > 0) || version == 0 {
+		version = c.Versions[len(c.Versions)-1]
 	}
 
-	creaLastVersion := fmt.Sprintf("%d", c.Version)
+	creaLastVersion := fmt.Sprintf("%d", version)
 
 	creatorID := fmt.Sprintf("%d", c.Creator.ID)
 	creaID := fmt.Sprintf("%d", c.ID.ValueDecoded)
