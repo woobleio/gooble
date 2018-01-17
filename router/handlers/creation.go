@@ -418,11 +418,32 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 	}
 	params = strings.TrimRight(params, ",")
 
+	// Build the preview, loadScript makes the loading faster
 	preview := `<html>
 		<head>
-			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js"></script>
-			<script type="text/javascript">` + crea.Script + `</script>
-			<script type="text/javascript">window.onload = function(){
+			<script type="text/javascript">
+	      function loadScript(url, callback) {
+					var script = document.createElement("script")
+					script.type = "text/javascript";
+					if(script.readyState) {
+					  script.onreadystatechange = function() {
+					    if ( script.readyState === "loaded" || script.readyState === "complete" ) {
+					      script.onreadystatechange = null;
+					      callback();
+					    }
+					  };
+					} else {
+					  script.onload = function() {
+					    callback();
+					  };
+					}
+
+					script.src = url;
+					document.getElementsByTagName("head")[0].appendChild( script );
+				}
+			</script>
+			<script type="text/javascript">function setupWoobly(){
+				` + crea.Script + `
 				var s = document.body.attachShadow({mode: 'open'});
 				s.innerHTML = ` + "`" + crea.Document + "`;" + `
 				var a = document.createElement('style');
@@ -433,7 +454,7 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 			</script>
 			<style>html {height: 100%; width: 100%; margin: 0;} body {margin: 0;} ` + crea.PreviewPos.StyleSource + `</style>
 		</head>
-		<body>
+		<body onload="loadScript('https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js', setupWoobly)">
 		</body>
 	</html>`
 

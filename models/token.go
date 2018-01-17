@@ -105,6 +105,10 @@ func UserByToken(token interface{}) (*User, error) {
 	if token.(*jwt.Token) == nil {
 		return nil, errors.New("No tokens")
 	}
+	if token.(*jwt.Token).Claims == nil {
+		return nil, errors.New("No tokens")
+	}
+
 	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
 
 	userID, err := strconv.ParseUint(claims["sub"].(string), 10, 64)
