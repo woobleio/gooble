@@ -8,18 +8,23 @@ import (
 type CreationForm struct {
 	Title string `json:"title" validate:"required,min=3,max=30"`
 
-	Alias       string                   `json:"alias" validate:"omitempty,alpha,max=10"`
-	Engine      string                   `json:"engine" validate:"omitempty,alphanum"`
-	State       string                   `json:"state" validate:"omitempty,alpha"`
-	Description string                   `json:"description" validate:"omitempty,max=10000"`
-	ThumbPath   string                   `json:"thumbPath" validate:"omitempty,max=300"`
-	Params      []model.CreationParam    `json:"params" validate:"omitempty"`
-	Functions   []model.CreationFunction `json:"functions" validate:"omitempty"`
-	Version     int                      `json:"version" validate:"omitempty"`
+	Alias          string                   `json:"alias" validate:"omitempty,alpha,max=10"`
+	Engine         string                   `json:"engine" validate:"omitempty,alphanum"`
+	State          string                   `json:"state" validate:"omitempty,alpha"`
+	Description    string                   `json:"description" validate:"omitempty,max=10000"`
+	Tags           []model.Tag              `json:"tags" validate:"omitempty"`
+	ThumbPath      string                   `json:"thumbPath" validate:"omitempty,max=300"`
+	IsThumbPreview bool                     `json:"isThumbPreview" validate:"omitempty"`
+	PreviewPos     model.PreviewPosition    `json:"previewPosition" validate:"omitempty"`
+	Params         []model.CreationParam    `json:"params" validate:"omitempty"`
+	Functions      []model.CreationFunction `json:"functions" validate:"omitempty"`
+	Version        int                      `json:"version" validate:"omitempty"`
 }
 
 // CreationPatchForm is the form for patching creation
 type CreationPatchForm struct {
+	PreviewPositionID *string `json:"position" validate:"omitempty" db:"preview_position_id"`
+
 	// Operation generateDefaultThumb
 	Operation *string `json:"operation" validate:"omitempty"`
 }

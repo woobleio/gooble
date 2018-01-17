@@ -1,10 +1,8 @@
-// Package account provides the /account APIs
 package account
 
 import (
-	"strconv"
-
 	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/form"
 )
 
 // Client is used to invoke /account APIs.
@@ -18,101 +16,16 @@ func New(params *stripe.AccountParams) (*stripe.Account, error) {
 	return getC().New(params)
 }
 
-func writeAccountParams(
-	params *stripe.AccountParams, body *stripe.RequestValues,
-) {
-	if len(params.Country) > 0 {
-		body.Add("country", params.Country)
-	}
-
-	if len(params.Email) > 0 {
-		body.Add("email", params.Email)
-	}
-
-	if params.DebitNegativeBal {
-		body.Add("debit_negative_balances", strconv.FormatBool(true))
-	} else if params.NoDebitNegativeBal {
-		body.Add("debit_negative_balances", strconv.FormatBool(false))
-	}
-
-	if len(params.DefaultCurrency) > 0 {
-		body.Add("default_currency", params.DefaultCurrency)
-	}
-
-	if params.ExternalAccount != nil {
-		if len(params.ExternalAccount.Token) > 0 {
-			body.Add("external_account", params.ExternalAccount.Token)
-		} else {
-			body.Add("external_account[object]", "bank_account")
-			body.Add("external_account[account_number]", params.ExternalAccount.Account)
-			body.Add("external_account[country]", params.ExternalAccount.Country)
-			body.Add("external_account[currency]", params.ExternalAccount.Currency)
-
-			if len(params.ExternalAccount.Routing) > 0 {
-				body.Add("external_account[routing_number]", params.ExternalAccount.Routing)
-			}
-		}
-	}
-
-	if len(params.Statement) > 0 {
-		body.Add("statement_descriptor", params.Statement)
-	}
-
-	if len(params.BusinessName) > 0 {
-		body.Add("business_name", params.BusinessName)
-	}
-
-	if len(params.BusinessPrimaryColor) > 0 {
-		body.Add("business_primary_color", params.BusinessPrimaryColor)
-	}
-
-	if len(params.BusinessUrl) > 0 {
-		body.Add("business_url", params.BusinessUrl)
-	}
-
-	if len(params.SupportPhone) > 0 {
-		body.Add("support_phone", params.SupportPhone)
-	}
-
-	if len(params.SupportEmail) > 0 {
-		body.Add("support_email", params.SupportEmail)
-	}
-
-	if len(params.SupportUrl) > 0 {
-		body.Add("support_url", params.SupportUrl)
-	}
-
-	if params.LegalEntity != nil {
-		params.LegalEntity.AppendDetails(body)
-	}
-
-	if params.TransferSchedule != nil {
-		params.TransferSchedule.AppendDetails(body)
-	}
-
-	if params.TOSAcceptance != nil {
-		params.TOSAcceptance.AppendDetails(body)
-	}
-
-	if len(params.FromRecipient) > 0 {
-		body.Add("from_recipient", params.FromRecipient)
-	}
-}
-
 func (c Client) New(params *stripe.AccountParams) (*stripe.Account, error) {
-	body := &stripe.RequestValues{}
+	body := &form.Values{}
 
+	// Type is now required on creation and not allowed on update
+	// It can't be passed if you pass `from_recipient` though
 	if len(params.FromRecipient) == 0 {
-		body.Add("managed", strconv.FormatBool(params.Managed))
+		body.Add("type", string(params.Type))
 	}
 
-	writeAccountParams(params, body)
-
-	if params.TOSAcceptance != nil {
-		params.TOSAcceptance.AppendDetails(body)
-	}
-
-	params.AppendTo(body)
+	form.AppendTo(body, params)
 
 	acct := &stripe.Account{}
 	err := c.B.Call("POST", "/accounts", c.Key, body, &params.Params, acct)
@@ -138,13 +51,13 @@ func GetByID(id string, params *stripe.AccountParams) (*stripe.Account, error) {
 }
 
 func (c Client) GetByID(id string, params *stripe.AccountParams) (*stripe.Account, error) {
-	var body *stripe.RequestValues
+	var body *form.Values
 	var commonParams *stripe.Params
 
 	if params != nil {
 		commonParams = &params.Params
-		body = &stripe.RequestValues{}
-		params.AppendTo(body)
+		body = &form.Values{}
+		form.AppendTo(body, params)
 	}
 
 	account := &stripe.Account{}
@@ -159,20 +72,13 @@ func Update(id string, params *stripe.AccountParams) (*stripe.Account, error) {
 }
 
 func (c Client) Update(id string, params *stripe.AccountParams) (*stripe.Account, error) {
-	var body *stripe.RequestValues
+	var body *form.Values
 	var commonParams *stripe.Params
 
 	if params != nil {
 		commonParams = &params.Params
-		body = &stripe.RequestValues{}
-
-		writeAccountParams(params, body)
-
-		if params.TOSAcceptance != nil {
-			params.TOSAcceptance.AppendDetails(body)
-		}
-
-		params.AppendTo(body)
+		body = &form.Values{}
+		form.AppendTo(body, params)
 	}
 
 	acct := &stripe.Account{}
@@ -182,13 +88,22 @@ func (c Client) Update(id string, params *stripe.AccountParams) (*stripe.Account
 }
 
 // Del deletes an account
-func Del(id string) (*stripe.Account, error) {
-	return getC().Del(id)
+func Del(id string, params *stripe.AccountParams) (*stripe.Account, error) {
+	return getC().Del(id, params)
 }
 
-func (c Client) Del(id string) (*stripe.Account, error) {
+func (c Client) Del(id string, params *stripe.AccountParams) (*stripe.Account, error) {
+	var body *form.Values
+	var commonParams *stripe.Params
+
+	if params != nil {
+		body = &form.Values{}
+		form.AppendTo(body, params)
+		commonParams = &params.Params
+	}
+
 	acct := &stripe.Account{}
-	err := c.B.Call("DELETE", "/accounts/"+id, c.Key, nil, nil, acct)
+	err := c.B.Call("DELETE", "/accounts/"+id, c.Key, body, commonParams, acct)
 
 	return acct, err
 }
@@ -199,7 +114,7 @@ func Reject(id string, params *stripe.AccountRejectParams) (*stripe.Account, err
 }
 
 func (c Client) Reject(id string, params *stripe.AccountRejectParams) (*stripe.Account, error) {
-	body := &stripe.RequestValues{}
+	body := &form.Values{}
 	if len(params.Reason) > 0 {
 		body.Add("reason", params.Reason)
 	}
@@ -215,19 +130,19 @@ func List(params *stripe.AccountListParams) *Iter {
 }
 
 func (c Client) List(params *stripe.AccountListParams) *Iter {
-	var body *stripe.RequestValues
+	var body *form.Values
 	var lp *stripe.ListParams
 	var p *stripe.Params
 
 	if params != nil {
-		body = &stripe.RequestValues{}
+		body = &form.Values{}
 
-		params.AppendTo(body)
+		form.AppendTo(body, params)
 		lp = &params.ListParams
 		p = params.ToParams()
 	}
 
-	return &Iter{stripe.GetIter(lp, body, func(b *stripe.RequestValues) ([]interface{}, stripe.ListMeta, error) {
+	return &Iter{stripe.GetIter(lp, body, func(b *form.Values) ([]interface{}, stripe.ListMeta, error) {
 		list := &stripe.AccountList{}
 		err := c.B.Call("GET", "/accounts", c.Key, b, p, list)
 

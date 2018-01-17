@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tdewolff/minify"
 	"github.com/tdewolff/minify/js"
-	"github.com/woobleio/wooblizer/wbzr"
-	"github.com/woobleio/wooblizer/wbzr/engine"
+	"github.com/woobleio/wooblizer"
+	"github.com/woobleio/wooblizer/engine"
 
 	"wooble/forms"
 	"wooble/lib"
@@ -38,7 +38,6 @@ func GETCreations(c *gin.Context) {
 		}
 	}
 
-	s := lib.NewStorage(lib.SrcPreview)
 	if creaID != "" {
 		data, err = model.CreationByID(lib.InitID(creaID), authUserID, false)
 		if err != nil {
@@ -49,14 +48,8 @@ func GETCreations(c *gin.Context) {
 			}
 			return
 		}
-
-		creaLastVersion := fmt.Sprintf("%d", data.(*model.Creation).Version)
-		creatorID := fmt.Sprintf("%d", data.(*model.Creation).Creator.ID)
-		creaID := fmt.Sprintf("%d", data.(*model.Creation).ID.ValueDecoded)
-		previewURL := s.GetPathFor(creatorID, creaID, creaLastVersion, "index.html")
-		spltPath := strings.Split(previewURL, "/")
-		data.(*model.Creation).PreviewURL = strings.Join(spltPath[1:], "/")
 	} else {
+		data = make([]model.Creation, 0)
 		switch c.DefaultQuery("list", "") {
 		case "popular":
 			data, err = model.AllPopularCreations(opts, authUserID)
@@ -75,6 +68,11 @@ func GETCreations(c *gin.Context) {
 		if err != nil {
 			c.Error(err).SetMeta(ErrDB)
 			return
+		}
+
+		for i := range data.([]model.Creation) {
+			data.([]model.Creation)[i].PopulateTags()
+			data.([]model.Creation)[i].RetrievePreviewURL()
 		}
 	}
 
@@ -141,6 +139,11 @@ func PATCHCreation(c *gin.Context) {
 			path,
 			imgB64,
 		}
+	}
+
+	if err := model.UpdateCreationPatch(user.(*model.User).ID, crea.ID, lib.SQLPatches(creaPatchForm)); err != nil {
+		c.Error(err).SetMeta(ErrDB)
+		return
 	}
 
 	c.JSON(OK, NewRes(res))
@@ -249,8 +252,32 @@ func PUTCreation(c *gin.Context) {
 	crea.State = creaForm.State
 	crea.Alias = creaForm.Alias
 	crea.Params = creaForm.Params
+	crea.IsThumbPreview = creaForm.IsThumbPreview
+	crea.PreviewPos = creaForm.PreviewPos
 	crea.Functions = creaForm.Functions
 	crea.Version = uint64(creaForm.Version)
+
+	tagsMap := map[uint64]bool{}
+
+	// Creates new tag if no id given
+	for i, tag := range creaForm.Tags {
+		if tag.ID == 0 {
+			model.NewOrGetTag(&creaForm.Tags[i])
+			tagsMap[creaForm.Tags[i].ID] = true
+		}
+	}
+
+	// Removes duplicate ID
+	cleanedTags := make([]model.Tag, 0)
+	for key := range tagsMap {
+		t := model.Tag{
+			ID:    key,
+			Title: "",
+		}
+		cleanedTags = append(cleanedTags, t)
+	}
+
+	crea.Tags = cleanedTags
 
 	if err := model.UpdateCreation(&crea); err != nil {
 		c.Error(err).SetMeta(ErrDB)
@@ -261,7 +288,8 @@ func PUTCreation(c *gin.Context) {
 	if err := crea.RetrieveSourceCode(version, enum.Script, enum.Document, enum.Style); err != nil {
 		c.Error(err)
 	}
-	buildPreview(&crea, fmt.Sprintf("%d", crea.CreatorID), version)
+
+	buildPreview(&crea, fmt.Sprintf("%d", user.(*model.User).ID), version)
 
 	c.Header("Location", fmt.Sprintf("/creations/%s", creaID))
 
@@ -318,8 +346,6 @@ func SaveVersion(c *gin.Context) {
 	crea.Params = codeForm.Params
 
 	model.UpdateCreationParams(crea)
-
-	buildPreview(crea, userIDStr, version)
 
 	if storage.Error() != nil {
 		c.Error(storage.Error()).SetMeta(ErrServ.SetParams("source", "files"))
@@ -392,11 +418,32 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 	}
 	params = strings.TrimRight(params, ",")
 
+	// Build the preview, loadScript makes the loading faster
 	preview := `<html>
 		<head>
-			<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js"></script>
-			<script type="text/javascript">` + crea.Script + `</script>
-			<script type="text/javascript">window.onload = function(){
+			<script type="text/javascript">
+	      function loadScript(url, callback) {
+					var script = document.createElement("script")
+					script.type = "text/javascript";
+					if(script.readyState) {
+					  script.onreadystatechange = function() {
+					    if ( script.readyState === "loaded" || script.readyState === "complete" ) {
+					      script.onreadystatechange = null;
+					      callback();
+					    }
+					  };
+					} else {
+					  script.onload = function() {
+					    callback();
+					  };
+					}
+
+					script.src = url;
+					document.getElementsByTagName("head")[0].appendChild( script );
+				}
+			</script>
+			<script type="text/javascript">function setupWoobly(){
+				` + crea.Script + `
 				var s = document.body.attachShadow({mode: 'open'});
 				s.innerHTML = ` + "`" + crea.Document + "`;" + `
 				var a = document.createElement('style');
@@ -405,9 +452,9 @@ func buildPreview(crea *model.Creation, userID string, version string) {
 				s.appendChild(a);
 				new Woobly({` + params + `});}
 			</script>
-			<style>html, body { height: 100%; width: 100%; margin: 0; }</style>
+			<style>html {height: 100%; width: 100%; margin: 0;} body {margin: 0;} ` + crea.PreviewPos.StyleSource + `</style>
 		</head>
-		<body>
+		<body onload="loadScript('https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.0.0-rc.11/webcomponents-lite.js', setupWoobly)">
 		</body>
 	</html>`
 

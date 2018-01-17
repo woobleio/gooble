@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -30,15 +31,22 @@ func (q *Query) String() string {
 }
 
 // SetFilters adds sql filters (LIKE) to the query
-func (q *Query) SetFilters(filters ...string) {
+// isAnding tells the parser if it has to start whith a WHERE clause (false) or AND close (true)
+// filters are the string values to filter with LIKE %filtre%
+func (q *Query) SetFilters(isAnding bool, filters ...string) {
 	for i := 0; i < len(filters)-1; i += 2 {
 		queryFilter := filters[i]
 		filter := q.Opt.GetFilter(queryFilter)
 		if filter != nil {
+			if i == 0 && !isAnding {
+				q.Q += " WHERE "
+			} else {
+				q.Q += " AND "
+			}
 			switch queryFilter {
 			case SEARCH:
 				searchFilters := strings.Split(filters[i+1], "|")
-				q.Q += " AND ("
+				q.Q += "("
 				for _, searchFilter := range searchFilters {
 					q.Values = append(q.Values, "%"+filter.Value+"%")
 					q.Q += "LOWER(" + searchFilter + ") LIKE LOWER($" + fmt.Sprintf("%d", len(q.Values)) + ") OR "
@@ -48,10 +56,34 @@ func (q *Query) SetFilters(filters ...string) {
 				break
 			default:
 				q.Values = append(q.Values, filter.Value)
-				q.Q += " AND " + filters[i+1] + " = $" + fmt.Sprintf("%d", len(q.Values))
+				q.Q += filters[i+1] + " = $" + fmt.Sprintf("%d", len(q.Values))
 			}
 		}
 	}
+}
+
+// SetBulkInsert adds bulk insert to the query
+// baseValues are values that doesn't change or bulk inserting (can be empty)
+// atrs are attributes of the values interface
+// values are the dynamic values to bulk insert (attrs relates to this interfaces slice)
+func (q *Query) SetBulkInsert(baseValues []interface{}, attrs []string, values ...interface{}) {
+	var index = 1
+	for _, v := range values {
+		q.Q += ` (`
+		for _, base := range baseValues {
+			q.Q += `$` + fmt.Sprintf("%d", index) + `,`
+			q.Values = append(q.Values, base)
+			index++
+		}
+
+		for _, attr := range attrs {
+			q.Q += `$` + fmt.Sprintf("%d", index) + `,`
+			q.Values = append(q.Values, reflect.ValueOf(v).FieldByName(attr).Interface())
+			index++
+		}
+		q.Q = strings.TrimRight(q.Q, ",") + `),`
+	}
+	q.Q = strings.TrimRight(q.Q, ",")
 }
 
 // SetOrder adds order to the query

@@ -33,12 +33,14 @@ const (
 	CREATED_AT = "createdAt"
 	CREATOR    = "creator"
 	SEARCH     = "search"
+	NB_USE     = "nbUse"
 )
 
 var filters = []string{
 	CREATED_AT,
 	CREATOR,
 	SEARCH,
+	NB_USE,
 }
 
 // ParseOptions parses query options
@@ -59,6 +61,9 @@ func ParseOptions(c *gin.Context) Option {
 		switch sort[0] {
 		case '-':
 			sortObj = &Sort{sort[1:len(sort)], "DESC"}
+		case '+':
+			sort = sort[1:len(sort)]
+			fallthrough
 		default:
 			sortObj = &Sort{sort, "ASC"}
 		}

@@ -17,11 +17,11 @@ type Creation struct {
 
 	Title       string          `json:"title"  db:"title"`
 	Description *lib.NullString `json:"description,omitempty" db:"description"`
+	Tags        []Tag           `json:"tags" db:""`
 	ThumbPath   *lib.NullString `json:"thumbPath,omitempty" db:"thumb_path"`
 	Creator     User            `json:"creator,omitempty" db:""`
 
-	// When a creation is in draft, the very last version is ignored by most queries,
-	// thus the -1 from versions array within most queries
+	// When a creation is in draft, the very last version is ignored by most queries
 	Versions lib.UintSlice `json:"versions,omitempty" db:"versions"`
 
 	Alias      string `json:"alias,omitempty" db:"alias"`
@@ -35,6 +35,10 @@ type Creation struct {
 	Functions  []CreationFunction `json:"functions,omitempty" db:""`
 	PreviewURL string             `json:"previewUrl,omitempty"`
 	Version    uint64             `json:"version,omitempty"`
+
+	PreviewPos       PreviewPosition   `json:"previewPosition" db:""`
+	PreviewPositions []PreviewPosition `json:"previewPositions,omitempty" db:""`
+	IsThumbPreview   bool              `json:"isThumbPreview" db:"is_thumb_preview"`
 
 	Script       string `json:"script,omitempty"`
 	ParsedScript string `json:"parsedScript,omitempty"`
@@ -61,6 +65,12 @@ type CreationFunction struct {
 	Detail string `json:"detail" db:"detail"`
 }
 
+// PreviewPosition is the creation position in the preview
+type PreviewPosition struct {
+	Position    string `json:"position" db:"position_id"`
+	StyleSource string `json:"styleSource" db:"style_source"`
+}
+
 // BaseVersion is creation default version
 const BaseVersion uint64 = 1
 
@@ -80,6 +90,50 @@ func (c *Creation) PopulateParams() {
 func (c *Creation) PopulateFunctions() {
 	q := `SELECT call, detail FROM creation_function WHERE creation_id = $1 AND version ` + c.getLastVersionQuery()
 	lib.DB.Select(&c.Functions, q, c.ID, c.Version)
+}
+
+// PopulateTags populates creation's tags
+func (c *Creation) PopulateTags() error {
+	q := `
+	SELECT
+		tag.id "tag.id",
+		tag.title "tag.title"
+	FROM creation_tag ct
+	INNER JOIN creation ON (creation.id=ct.creation_id)
+	INNER JOIN tag ON (tag.id=ct.tag_id)
+	WHERE ct.creation_id = $1
+	`
+
+	return lib.DB.Select(&c.Tags, q, c.ID)
+}
+
+// PopulatePreviewPositions populates available creation's preview positions
+func (c *Creation) PopulatePreviewPositions() {
+	q := `SELECT position_id, style_source FROM preview_position`
+	lib.DB.Select(&c.PreviewPositions, q)
+}
+
+// RetrievePreviewURL construct the creation's preview URL and sets the `PreviewUrl` field
+// It uses the current `Version` of the creation c
+func (c *Creation) RetrievePreviewURL() {
+	s := lib.NewStorage(lib.SrcPreview)
+
+	version := c.Version
+	// Get last public version if draft or get the last version if no version sets
+	if (c.State == enum.Draft && len(c.Versions) > 0) || version == 0 {
+		version = c.Versions[len(c.Versions)-1]
+	}
+
+	creaLastVersion := fmt.Sprintf("%d", version)
+
+	creatorID := fmt.Sprintf("%d", c.Creator.ID)
+	creaID := fmt.Sprintf("%d", c.ID.ValueDecoded)
+
+	previewURL := s.GetPathFor(creatorID, creaID, creaLastVersion, "index.html")
+
+	spltPath := strings.Split(previewURL, "/")
+
+	c.PreviewURL = strings.Join(spltPath[1:], "/")
 }
 
 // RetrieveSourceCode request the source files in the cloud and set the content to the Creation
@@ -114,6 +168,7 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    c.title,
 			c.description,
 			c.thumb_path,
+			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    CASE WHEN c.state = 'public' THEN versions[0:array_length(c.versions, 1)] ELSE versions[0:array_length(c.versions, 1)-1] END AS versions,
@@ -128,14 +183,16 @@ func AllCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN engine e ON (c.engine=e.name)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name|t.title", lib.CREATOR, "u.name")
 
-	q.Q += "GROUP BY c.id, u.id, e.name"
+	q.Q += " GROUP BY c.id, u.id, e.name"
 
 	q.SetOrder(lib.CREATED_AT, "c.created_at")
 
@@ -150,6 +207,7 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    c.title,
 			c.description,
 			c.thumb_path,
+			c.is_thumb_preview,
 	    c.created_at "crea.created_at",
 	    c.updated_at "crea.updated_at",
 	    CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
@@ -161,12 +219,14 @@ func AllPopularCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 	    u.name
 	  FROM creation c
 	  INNER JOIN app_user u ON (c.creator_id = u.id)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pc ON (pc.creation_id = c.id)
 		WHERE (c.state = 'public' OR array_length(versions, 1) > 1) AND c.state != 'delete'
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title|u.name", lib.CREATOR, "u.name")
+	q.SetFilters(true, lib.SEARCH, "c.title|u.name|t.title", lib.CREATOR, "u.name")
 
 	q.Q += " GROUP BY c.id, u.id ORDER BY c.is_featured DESC, nb_use DESC"
 
@@ -181,6 +241,7 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 			COUNT(pcc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
+			c.is_thumb_preview,
 			c.created_at "crea.created_at",
 			CASE WHEN c.state = 'public' THEN c.versions[0:array_length(c.versions, 1)] ELSE c.versions[0:array_length(c.versions, 1)-1] END AS versions,
 			c.thumb_path,
@@ -189,13 +250,15 @@ func AllUsedCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		FROM creation c
 		INNER JOIN app_user u ON (c.creator_id = u.id)
 		INNER JOIN package_creation pc ON (pc.creation_id = c.id)
+		LEFT JOIN creation_tag ct ON (ct.creation_id = c.id)
+		LEFT JOIN tag t ON (t.id = ct.tag_id)
 		LEFT JOIN package_creation pcc ON (pcc.creation_id = c.id)
     INNER JOIN package p ON (p.id = pc.package_id)
 		WHERE p.user_id = $1
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title")
+	q.SetFilters(true, lib.SEARCH, "c.title|t.title")
 
 	q.Q += " GROUP BY c.id, u.id"
 
@@ -210,6 +273,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 			COUNT(pc.creation_id) AS nb_use,
 			c.title,
 			c.thumb_path,
+			c.is_thumb_preview,
 			c.created_at "crea.created_at",
 			c.versions[array_length(c.versions, 1)] AS version,
 			c.versions[array_length(c.versions, 1)-1] AS versions,
@@ -223,7 +287,7 @@ func AllDraftCreations(opt lib.Option, uID uint64) ([]Creation, error) {
 		`, &opt)
 
 	q.AddValues(uID)
-	q.SetFilters(lib.SEARCH, "c.title")
+	q.SetFilters(true, lib.SEARCH, "c.title")
 
 	q.Q += " GROUP BY c.id, u.id"
 
@@ -238,6 +302,7 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
     c.id "crea.id",
     c.title,
 		c.thumb_path,
+		c.is_thumb_preview,
 		c.description,
     c.created_at "crea.created_at",
     c.updated_at "crea.updated_at",
@@ -248,12 +313,15 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 		e.name "eng.name",
 		e.extension,
 		e.content_type,
+		pp.position_id,
+		pp.style_source,
     u.id "user.id",
     u.name,
 		u.pic_path
   FROM creation c
   INNER JOIN app_user u ON (c.creator_id = u.id)
 	INNER JOIN engine e ON (c.engine=e.name)
+	INNER JOIN preview_position pp ON (c.preview_position_id=pp.position_id)
   WHERE c.id = $1
 	`
 
@@ -275,6 +343,10 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 
 	crea.PopulateParams()
 	crea.PopulateFunctions()
+	crea.PopulatePreviewPositions()
+	crea.PopulateTags()
+	crea.RetrievePreviewURL()
+
 	return &crea, nil
 }
 
@@ -282,12 +354,12 @@ func CreationByID(id lib.ID, uID uint64, latestVersion bool) (*Creation, error) 
 func UpdateCreation(crea *Creation) error {
 	q := `
   UPDATE creation
-  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7
+  SET title = $3, description = $4, state = $5, alias = $6, thumb_path = $7, is_thumb_preview = $8, preview_position_id = $9
   WHERE id = $1
   AND creator_id = $2
   `
 
-	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath); err != nil {
+	if _, err := lib.DB.Exec(q, crea.ID, crea.Creator.ID, crea.Title, crea.Description, crea.State, crea.Alias, crea.ThumbPath, crea.IsThumbPreview, crea.PreviewPos.Position); err != nil {
 		return err
 	}
 
@@ -298,9 +370,51 @@ func UpdateCreation(crea *Creation) error {
 	}
 
 	if len(crea.Functions) > 0 {
-		return UpdateCreationFunctions(crea)
+		if err := UpdateCreationFunctions(crea); err != nil {
+			return err
+		}
 	}
-	return nil
+
+	return UpdateCreationTags(crea)
+}
+
+// UpdateCreationPatch updates a creation
+func UpdateCreationPatch(uID uint64, creaID lib.ID, patch lib.SQLPatch) error {
+	updateQuery := patch.GetUpdateQuery("creation")
+	if len(updateQuery) == 0 {
+		return nil
+	}
+	q := updateQuery +
+		` WHERE creator_id = $` + fmt.Sprintf("%d", patch.Index+1) +
+		` AND id = $` + fmt.Sprintf("%d", patch.Index+2)
+
+	patch.Args = append(patch.Args, uID)
+	patch.Args = append(patch.Args, creaID)
+
+	_, err := lib.DB.Exec(q, patch.Args...)
+
+	return err
+}
+
+// UpdateCreationTags updates creation tags
+func UpdateCreationTags(crea *Creation) (err error) {
+	// Reset all tags
+	lib.DB.Exec(`DELETE FROM creation_tag WHERE creation_id = $1`, crea.ID)
+
+	if len(crea.Tags) > 0 {
+		bulk := lib.NewQuery(`INSERT INTO creation_tag(creation_id, tag_id) VALUES`, nil)
+
+		values := make([]interface{}, 0)
+		for _, t := range crea.Tags {
+			values = append(values, t)
+		}
+
+		bulk.SetBulkInsert([]interface{}{crea.ID}, []string{"ID"}, values...)
+
+		_, err = lib.DB.Exec(bulk.String(), bulk.Values...)
+	}
+
+	return err
 }
 
 // UpdateCreationFunctions updates creation functions
@@ -319,18 +433,16 @@ func UpdateCreationFunctions(crea *Creation) error {
 	`
 	lib.DB.Exec(q, crea.ID, lastVersion)
 
-	// Bulk insert
-	index := 3
-	vals := []interface{}{crea.ID, lastVersion}
-	q = `INSERT INTO creation_function(creation_id, version, call, detail) VALUES`
-	for _, fn := range crea.Functions {
-		q += `($1, $2, $` + fmt.Sprintf("%d", index) + `, $` + fmt.Sprintf("%d", index+1) + `),`
-		vals = append(vals, fn.Call, fn.Detail)
-		index += 2
-	}
-	q = strings.TrimRight(q, ",")
+	bulk := lib.NewQuery(`INSERT INTO creation_function(creation_id, version, call, detail) VALUES`, nil)
 
-	_, err := lib.DB.Exec(q, vals...)
+	values := make([]interface{}, 0)
+	for _, fn := range crea.Functions {
+		values = append(values, fn)
+	}
+
+	bulk.SetBulkInsert([]interface{}{crea.ID, lastVersion}, []string{"Call", "Detail"}, values...)
+
+	_, err := lib.DB.Exec(bulk.String(), bulk.Values...)
 	return err
 }
 
@@ -350,18 +462,16 @@ func UpdateCreationParams(crea *Creation) error {
 	`
 	lib.DB.Exec(q, crea.ID, lastVersion)
 
-	// Bulk insert
-	index := 3
-	vals := []interface{}{crea.ID, lastVersion}
-	q = `INSERT INTO creation_param(creation_id, version, field, value) VALUES`
-	for _, p := range crea.Params {
-		q += `($1, $2, $` + fmt.Sprintf("%d", index) + `, $` + fmt.Sprintf("%d", index+1) + `),`
-		vals = append(vals, p.Field, p.Value)
-		index += 2
-	}
-	q = strings.TrimRight(q, ",")
+	bulk := lib.NewQuery(`INSERT INTO creation_param(creation_id, version, field, value) VALUES`, nil)
 
-	_, err := lib.DB.Exec(q, vals...)
+	values := make([]interface{}, 0)
+	for _, p := range crea.Params {
+		values = append(values, p)
+	}
+
+	bulk.SetBulkInsert([]interface{}{crea.ID, lastVersion}, []string{"Field", "Value"}, values...)
+
+	_, err := lib.DB.Exec(bulk.String(), bulk.Values...)
 	return err
 }
 
@@ -390,8 +500,8 @@ func CreationByIDAndVersion(id lib.ID, version uint64) (*Creation, error) {
 }
 
 // CreationLastVersion gets creation's last version
-func CreationLastVersion(id lib.ID) int64 {
-	var version int64
+func CreationLastVersion(id lib.ID) uint64 {
+	var version uint64
 	q := `SELECT versions[array_length(versions,1)] AS version FROM creation WHERE id = $1`
 	lib.DB.Get(&version, q, id)
 	return version

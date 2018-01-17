@@ -224,7 +224,7 @@ func UpdatePackage(pkg *Package) error {
 	return err
 }
 
-// UpdatePackagePatch updates user informations
+// UpdatePackagePatch updates a package
 func UpdatePackagePatch(uID uint64, pkgID lib.ID, patch lib.SQLPatch) error {
 	q := patch.GetUpdateQuery("package") +
 		` WHERE user_id = $` + fmt.Sprintf("%d", patch.Index+1) +
